@@ -1,7 +1,6 @@
 # 🎓 MATCH-TFE
 
 [![Docker Support](https://img.shields.io/badge/Docker-Supported-blue?logo=docker)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **MATCH-TFE** is a web-based platform designed to optimize the coordination and assignment of Bachelor's Theses (TFE) within the **School of Computer Engineering**.
 
@@ -35,5 +34,4 @@ or just
 ```bash
 docker compose up
 ```
-
-> The `-d` flag runs the containers in detached mode (background). If you need to see the real-time logs, you can use `docker compose logs -f`.
+The `-d` flag runs the containers in detached mode (background). If you need to see the real-time logs, you can use `docker compose logs -f`.
