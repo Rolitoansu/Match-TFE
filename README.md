@@ -36,4 +36,4 @@ or just
 docker compose up
 ```
 
-> [!NOTE] The `-d` flag runs the containers in detached mode (background). If you need to see the real-time logs, you can use `docker compose logs -f`.
+> The `-d` flag runs the containers in detached mode (background). If you need to see the real-time logs, you can use `docker compose logs -f`.
