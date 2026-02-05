@@ -1,0 +1,86 @@
+name: match-tfe
+services:
+  postgres:
+    container_name: database-matchtfe
+    image: postgres:18-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - match_network
+
+  authservice:
+    container_name: authservice-matchtfe
+    build:
+      context: ./authservice
+      target: development
+    develop:
+      watch:
+        - action: rebuild
+          path: ./authservice/package.json
+
+        - action: sync
+          path: ./authservice
+          target: /usr/src/authservice
+          ignore:
+            - node_modules
+    depends_on:
+      - postgres
+    networks:
+      - match_network
+    env_file:
+      - .env
+
+  gatewayservice:
+    container_name: gatewayservice-matchtfe
+    build:
+      context: ./gatewayservice
+      target: development
+    ports:
+      - "8000:8000"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./gatewayservice/package.json
+
+        - action: sync
+          path: ./gatewayservice
+          target: /usr/src/gatewayservice
+          ignore:
+            - node_modules
+    depends_on:
+      - authservice
+      - postgres
+    networks:
+      - match_network
+    env_file:
+      - .env
+
+  webapp:
+    container_name: webapp-matchtfe
+    build: ./webapp
+    ports:
+      - "3000:3000"
+    networks:
+      - match_network
+    env_file:
+      - .env
+
+networks:
+  match_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

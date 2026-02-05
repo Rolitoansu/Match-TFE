@@ -1,0 +1,93 @@
+CREATE TABLE users (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    username VARCHAR(150) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    registration_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    biography TEXT
+);
+
+CREATE TABLE students (
+    id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE professors (
+    id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    department VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE skills (
+   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+   name VARCHAR(100) NOT NULL,
+   description TEXT
+);
+
+CREATE TABLE student_skills (
+    student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+    skill_id INTEGER REFERENCES skills(id) ON DELETE CASCADE,
+    mark INTEGER CHECK (mark >= 0 AND mark <= 10),
+    PRIMARY KEY (student_id, skill_id)
+);
+
+CREATE TABLE matches (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+    professor_id INTEGER REFERENCES professors(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
+    match_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (student_id, professor_id)
+);
+
+CREATE TABLE chats (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+    professor_id INTEGER REFERENCES professors(id) ON DELETE SET NULL,
+    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (student_id, professor_id)
+);
+
+CREATE TABLE messages (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    content TEXT NOT NULL,
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    read BOOLEAN DEFAULT FALSE,
+    chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
+    sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE notifications (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    type VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    read BOOLEAN DEFAULT FALSE,
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE tfgs (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('proposed', 'in_progress', 'completed')),
+    publication_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    expiration_date TIMESTAMPTZ,
+    tutor_id INTEGER REFERENCES professors(id) ON DELETE SET NULL,
+    student_id INTEGER REFERENCES students(id) ON DELETE SET NULL
+);
+
+CREATE TABLE tags (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE tfg_tags (
+    tfg_id INTEGER REFERENCES tfgs(id) ON DELETE CASCADE,
+    tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (tfg_id, tag_id)
+);
+
+CREATE TABLE user_tags (
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, tag_id)
+);
