@@ -7,7 +7,6 @@ const PORT = process.env.PORT || 5000
 
 const app = express()
 
-
 app.get('/verify-cookie', async (req, res) => {
     const token = req.cookies?.['access_token']
     if (!token)
@@ -33,5 +32,5 @@ app.post('/login', async (req, res) => {
 })
 
 app.listen(PORT, () => {
-    console.log('Auth Service is running on port 5000')
+    console.log(`Auth Service is running on port ${PORT}`)
 })
