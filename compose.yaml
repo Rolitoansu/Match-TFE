@@ -71,6 +71,16 @@ services:
   webapp:
     container_name: webapp-matchtfe
     build: ./webapp
+    develop:
+      watch:
+        - action: rebuild
+          path: ./webapp/package.json
+        
+        - action: sync
+          path: ./webapp
+          target: /app
+          ignore:
+            - node_modules
     ports:
       - "3000:3000"
     networks:

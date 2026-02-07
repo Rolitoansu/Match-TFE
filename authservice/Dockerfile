@@ -16,5 +16,5 @@ FROM node:22-alpine AS production
 WORKDIR /usr/src/authservice
 COPY --from=builder /usr/src/authservice/dist ./dist
 COPY package.json pnpm-lock.yaml* ./
-RUN npm install -g pnpm && pnpm install --prod
+RUN npm install -g pnpm && pnpm install
 CMD ["node", "dist/authservice.js"]
