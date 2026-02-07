@@ -3,9 +3,8 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { query } from './db'
 import { validate } from './validate.middleware'
-import { LoginSchema } from './schemas'
 
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5001
 
 const app = express()
 app.use(express.json())
@@ -34,12 +33,12 @@ interface LoginBody {
     password: string
 }
 
-app.post('/login', validate(LoginSchema), async (req, res) => {
+app.post('/login', async (req, res) => {
 
     console.log(req.body)
     return res.json({ user: { id: 1, username: 'testuser' } })
 })
 
 app.listen(PORT, () => {
-    console.log(`Auth Service is running on port ${PORT}`)
+    console.log(`User Service is running on port ${PORT}`)
 })

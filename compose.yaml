@@ -42,6 +42,28 @@ services:
       - match_network
     env_file:
       - .env
+  
+  userservice:
+    container_name: userservice-matchtfe
+    build:
+      context: ./userservice
+      target: development
+    develop:
+      watch:
+        - action: rebuild
+          path: ./userservice/package.json
+
+        - action: sync
+          path: ./userservice
+          target: /usr/src/userservice
+          ignore:
+            - node_modules
+    depends_on:
+      - postgres
+    networks:
+      - match_network
+    env_file:
+      - .env
 
   gatewayservice:
     container_name: gatewayservice-matchtfe
@@ -62,6 +84,7 @@ services:
             - node_modules
     depends_on:
       - authservice
+      - userservice
       - postgres
     networks:
       - match_network

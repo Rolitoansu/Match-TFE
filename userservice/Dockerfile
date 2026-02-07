@@ -1,22 +1,22 @@
 FROM node:22-alpine AS base
 RUN npm install -g pnpm
-WORKDIR /usr/src/gatewayservice
+WORKDIR /usr/src/userservice
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install
 
 FROM base AS development
 COPY . .
-EXPOSE 5000
-CMD ["pnpm", "dlx", "tsx", "watch", "gatewayservice.ts"]
+EXPOSE 5001
+CMD ["pnpm", "dlx", "tsx", "watch", "userservice.ts"]
 
 FROM base AS builder
 COPY . .
 RUN pnpm run build
 
 FROM node:22-alpine AS production
-WORKDIR /usr/src/gatewayservice
-COPY --from=builder /usr/src/gatewayservice/dist ./dist
+WORKDIR /usr/src/userservice
+COPY --from=builder /usr/src/userservice/dist ./dist
 COPY package.json pnpm-lock.yaml* ./
 RUN npm install -g pnpm && pnpm install
-EXPOSE 5000
-CMD ["node", "dist/gatewayservice.js"]
+EXPOSE 5001
+CMD ["node", "dist/userservice.js"]

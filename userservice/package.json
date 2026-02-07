@@ -2,8 +2,8 @@
 	"type": "module",
 	"scripts": {
 		"build": "tsc",
-		"start": "node dist/authservice.js",
-		"dev": "tsx watch authservice.ts"
+		"start": "node dist/user-service.js",
+		"dev": "tsx watch user-service.ts"
 	},
 	"dependencies": {
 		"axios": "^1.13.4",
