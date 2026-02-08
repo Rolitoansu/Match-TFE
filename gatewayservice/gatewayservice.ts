@@ -1,5 +1,5 @@
-import express from 'express'
 import proxy from 'express-http-proxy'
+import express from 'express'
 import cors from 'cors'
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
@@ -17,10 +17,10 @@ app.use(cors({
 app.use(express.json())
 app.use('/auth', proxy(AUTH_SERVICE_URL, {
   userResHeaderDecorator(headers) {
-    return headers;
+    return headers
   }
 }))
-
+app.use('/user', proxy(USER_SERVICE_URL))
 
 app.listen(PORT, () => {
     console.log(`Gateway Service is running on port ${PORT}`)

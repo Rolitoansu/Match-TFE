@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 interface LoginProps {
     email: string
@@ -7,9 +7,9 @@ interface LoginProps {
 }
 
 export const Login = () => {
-    const [loginData, setLoginData] = useState<LoginProps>({ email: '', password: '' });
-    const [error, setError] = useState('');
-    const { login } = useAuth();
+    const [loginData, setLoginData] = useState<LoginProps>({ email: '', password: '' })
+    const [error, setError] = useState('')
+    const { login } = useAuth()
 
     const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -19,7 +19,7 @@ export const Login = () => {
         } catch (err) {
             setError('Credenciales incorrectas o error en el servidor')
         }
-    };
+    }
 
     return (
     <div style={{ maxWidth: '400px', margin: 'auto', padding: '2rem' }}>
@@ -49,5 +49,5 @@ export const Login = () => {
         <button type="submit">Entrar</button>
     </form>
     </div>
-  );
-};
+  )
+}

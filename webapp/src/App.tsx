@@ -2,7 +2,8 @@ import './App.css'
 import { Container } from '@mui/material'
 import { LandingPage } from './components/LandingPage'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { Login } from './components/Login/Login'
+import { Login } from './components/Login'
+import { Register } from './components/Register'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
@@ -15,6 +16,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route element={<ProtectedRoute />}>
                <Route path="/home" element={<h1>Home - Solo para usuarios autenticados</h1>} />
             </Route>

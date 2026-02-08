@@ -5,7 +5,6 @@ import { Button, Container, Typography, Box } from '@mui/material';
 export const LandingPage = () => {
   const { isAuthenticated } = useAuth();
 
-  // Si ya tiene sesión, "rebota" hacia el home
   if (isAuthenticated) {
     return <Navigate to="/home" replace />;
   }
@@ -17,8 +16,11 @@ export const LandingPage = () => {
         <Typography variant="h5" sx={{ mb: 4 }}>
           La plataforma para conectar con tu Trabajo Fin de Grado ideal.
         </Typography>
-        <Button variant="contained" href="/home">
-          Acceder
+        <Button variant="contained" href="/login" sx={{ mr: '1rem' }}>
+          Iniciar Sesión
+        </Button>
+        <Button variant="contained" href="/register">
+          Crear cuenta
         </Button>
       </Box>
     </Container>

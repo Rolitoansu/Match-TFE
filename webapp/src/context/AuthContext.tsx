@@ -3,10 +3,11 @@ import api from '../api/axios'
 
 interface AuthContextType {
     user: any;
-    login: (email: string, password: string) => Promise<void>;
-    logout: () => Promise<void>;
-    loading: boolean;
-    isAuthenticated: boolean;
+    login: (email: string, password: string) => Promise<void>
+    logout: () => Promise<void>
+    register: (email: string, name: string, surname: string, password: string) => Promise<void>
+    loading: boolean
+    isAuthenticated: boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -38,6 +39,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         checkAuth()
     }, [])
 
+    const register = async (email: string, name: string, surname: string, password: string) => {
+        try {
+            const { data } = await api.post('/user/register', { email, name, surname, password })
+            console.log(data)
+        } catch (error) {
+            console.error(error)
+            throw error
+        }
+    }
+
     const login = async (email: string, password: string) => {
         try {
             const { data } = await api.post('/auth/login', { email, password })
@@ -63,7 +74,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         <AuthContext.Provider value={{ 
             user, 
             login, 
-            logout, 
+            logout,
+            register,
             loading, 
             isAuthenticated: Boolean(user) 
         }}>
