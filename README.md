@@ -18,9 +18,11 @@ Create a `.env` file in the **root folder** of the project and define the follow
 
 ```bash
 # Database Configuration
-POSTGRES_USER=<admin_user>        # Admin name for the database instance
-POSTGRES_PASSWORD=<your_password> # Password for the database
-POSTGRES_DB=<database_name>       # Name of the database
+DB_HOST=<database_host>         # Database URL
+DB_PORT=<port>                  # Database port
+DB_USER=<admin_user>            # Admin name for the database instance
+DB_PASSWORD=<admin_password>    # Password for the database
+DB_NAME=<database_name>         # Name of the database       
 ```
 
 ### 2. Launching the System
