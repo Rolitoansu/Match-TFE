@@ -1,0 +1,11 @@
+{
+  "name": "match-tfe",
+  "private": true,
+  "workspaces": [
+    "database",
+    "authservice",
+    "userservice",
+    "gatewayservice",
+    "webapp"
+  ]
+}

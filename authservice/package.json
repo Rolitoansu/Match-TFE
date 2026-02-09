@@ -1,4 +1,6 @@
 {
+	"name": "@match-tfe/authservice",
+  	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
 		"build": "tsc",
@@ -6,8 +8,10 @@
 		"dev": "tsx watch authservice.ts"
 	},
 	"dependencies": {
+		"@match-tfe/db": "workspace:*",
 		"axios": "^1.13.4",
 		"bcrypt": "^6.0.0",
+		"drizzle-orm": "^0.45.1",
 		"express": "^5.2.1",
 		"jsonwebtoken": "^9.0.3",
 		"pg": "^8.18.0",

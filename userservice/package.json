@@ -1,24 +1,25 @@
 {
-	"type": "module",
-	"scripts": {
-		"build": "tsc",
-		"start": "node dist/user-service.js",
-		"dev": "tsx watch user-service.ts"
-	},
-	"dependencies": {
-		"axios": "^1.13.4",
-		"bcrypt": "^6.0.0",
-		"express": "^5.2.1",
-		"jsonwebtoken": "^9.0.3",
-		"pg": "^8.18.0",
-		"zod": "^4.3.6"
-	},
-	"devDependencies": {
-		"@types/bcrypt": "^6.0.0",
-		"@types/express": "^5.0.6",
-		"@types/jsonwebtoken": "^9.0.10",
-		"@types/pg": "^8.16.0",
-		"tsx": "^4.0.0",
-		"typescript": "^5.0.0"
-	}
+    "name": "@match-tfe/userservice",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/userservice.js",
+        "dev": "tsx watch userservice.ts"
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "pg": "^8.18.0",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@types/bcrypt": "^6.0.0",
+        "@types/express": "^5.0.6",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/pg": "^8.16.0",
+        "tsx": "^4.0.0",
+        "typescript": "^5.0.0"
+    }
 }

@@ -5,16 +5,16 @@ services:
     image: postgres:18-alpine
     restart: always
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:${DB_PORT}"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +24,8 @@ services:
   authservice:
     container_name: authservice-matchtfe
     build:
-      context: ./authservice
+      context: .
+      dockerfile: ./authservice/Dockerfile
       target: development
     develop:
       watch:
@@ -46,7 +47,8 @@ services:
   userservice:
     container_name: userservice-matchtfe
     build:
-      context: ./userservice
+      context: .
+      dockerfile: ./userservice/Dockerfile
       target: development
     develop:
       watch:
@@ -68,7 +70,8 @@ services:
   gatewayservice:
     container_name: gatewayservice-matchtfe
     build:
-      context: ./gatewayservice
+      context: .
+      dockerfile: ./gatewayservice/Dockerfile
       target: development
     ports:
       - "8000:8000"

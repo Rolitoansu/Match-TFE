@@ -1,0 +1,5 @@
+packages:
+  - 'authservice'
+  - 'userservice'
+  - 'gatewayservice'
+  - 'database'

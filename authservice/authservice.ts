@@ -4,8 +4,10 @@ import bcrypt from 'bcrypt'
 import { query } from './db'
 import { validate } from './validate.middleware'
 import { LoginSchema } from './schemas'
+import { dbClient } from '@match-tfe/db'
 
 const PORT = process.env.PORT || 5000
+const db = dbClient()
 
 const app = express()
 app.use(express.json())
