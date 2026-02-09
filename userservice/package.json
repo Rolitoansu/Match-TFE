@@ -8,6 +8,7 @@
         "dev": "tsx watch userservice.ts"
     },
     "dependencies": {
+        "@match-tfe/db": "workspace:*",
         "bcrypt": "^6.0.0",
         "express": "^5.2.1",
         "jsonwebtoken": "^9.0.3",

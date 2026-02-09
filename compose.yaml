@@ -32,9 +32,18 @@ services:
         - action: rebuild
           path: ./authservice/package.json
 
+        - action: rebuild
+          path: ./database/package.json
+
         - action: sync
           path: ./authservice
           target: /usr/src/authservice
+          ignore:
+            - node_modules
+
+        - action: sync
+          path: ./database
+          target: /usr/src/database
           ignore:
             - node_modules
     depends_on:
@@ -55,9 +64,18 @@ services:
         - action: rebuild
           path: ./userservice/package.json
 
+        - action: rebuild
+          path: ./database/package.json
+
         - action: sync
           path: ./userservice
           target: /usr/src/userservice
+          ignore:
+            - node_modules
+
+        - action: sync
+          path: ./database
+          target: /usr/src/database
           ignore:
             - node_modules
     depends_on:

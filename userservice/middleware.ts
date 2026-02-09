@@ -14,4 +14,5 @@ export const validate = (schema: ZodType<any, any, any>) =>
 
     req.body = result.data
     next()
-};
+}
+
