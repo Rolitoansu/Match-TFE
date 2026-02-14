@@ -14,7 +14,9 @@ app.use(cors({
     origin: FRONTEND_URL,
     credentials: true
 }))
+
 app.use(express.json())
+
 app.use('/auth', proxy(AUTH_SERVICE_URL, {
   userResHeaderDecorator(headers) {
     return headers

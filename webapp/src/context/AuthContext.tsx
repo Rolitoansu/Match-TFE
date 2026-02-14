@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const checkAuth = async () => {
             try {
                 const { data } = await api.get('/auth/verify-cookie')
-                setUser(data.user)
+                setUser(data)
             } catch (error) {
                 setUser(null)
             } finally {
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const login = async (email: string, password: string) => {
         try {
             const { data } = await api.post('/auth/login', { email, password })
-            setUser(data.user)
+            setUser(data)
         } catch (error) {
             setUser(null)
             console.error(error)

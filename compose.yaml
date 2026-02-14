@@ -88,8 +88,8 @@ services:
   gatewayservice:
     container_name: gatewayservice-matchtfe
     build:
-      context: .
-      dockerfile: ./gatewayservice/Dockerfile
+      context: ./gatewayservice
+      dockerfile: ./Dockerfile
       target: development
     ports:
       - "8000:8000"
@@ -114,7 +114,9 @@ services:
 
   webapp:
     container_name: webapp-matchtfe
-    build: ./webapp
+    build:
+      context: .
+      dockerfile: ./webapp/Dockerfile
     develop:
       watch:
         - action: rebuild

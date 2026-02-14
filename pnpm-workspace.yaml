@@ -1,4 +1,5 @@
 packages:
+  - 'webapp'
   - 'authservice'
   - 'userservice'
   - 'gatewayservice'

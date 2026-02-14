@@ -1,6 +1,6 @@
 {
 	"name": "@match-tfe/authservice",
-  	"version": "1.0.0",
+	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
 		"build": "tsc",
@@ -11,6 +11,7 @@
 		"@match-tfe/db": "workspace:*",
 		"axios": "^1.13.4",
 		"bcrypt": "^6.0.0",
+		"cookie-parser": "^1.4.7",
 		"drizzle-orm": "^0.45.1",
 		"express": "^5.2.1",
 		"jsonwebtoken": "^9.0.3",
@@ -19,6 +20,7 @@
 	},
 	"devDependencies": {
 		"@types/bcrypt": "^6.0.0",
+		"@types/cookie-parser": "^1.4.10",
 		"@types/express": "^5.0.6",
 		"@types/jsonwebtoken": "^9.0.10",
 		"@types/pg": "^8.16.0",
