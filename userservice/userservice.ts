@@ -21,7 +21,7 @@ app.post('/register', validate(registerSchema), async (req, res) => {
         return res.status(500).json({ error: 'Error creating user' })
     }
     
-    const token = await jwt.sign(email, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' })
+    const token = await jwt.sign({ email: email }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' })
     return res.cookie('session_token', token, { httpOnly: true }).json({ user: { email, name, surname } })
 })
 

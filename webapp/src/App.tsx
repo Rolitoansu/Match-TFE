@@ -4,8 +4,9 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Login } from './components/Login'
 import { Register } from './components/Register'
 import { AuthProvider } from './context/AuthContext'
-import { ProtectedRoute } from './components/ProtectedRoute'
-import { PublicRoute } from './components/PublicRoute'
+import { ProtectedRoute } from './components/routes/ProtectedRoute'
+import { PublicRoute } from './components/routes/PublicRoute'
+import { Home } from './components/Home'
 import './i18n'
 
 function App() {
@@ -21,7 +22,8 @@ function App() {
                <Route path="/register" element={<Register />} />
             </Route>
             <Route element={<ProtectedRoute />}>
-               <Route path="/home" element={<h1>Home - Solo para usuarios autenticados</h1>} />
+
+               <Route path="/home" element={<Home />} />
             </Route>
           </Routes>
         </BrowserRouter>

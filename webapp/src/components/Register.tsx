@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { UserPlus, Mail, Lock, User, Loader2, ArrowLeft } from "lucide-react"
+import { UserPlus, Mail, Lock, User, Loader2 } from "lucide-react"
 
 interface RegisterProps {
     email: string
@@ -37,7 +37,7 @@ export const Register = () => {
                 registerData.surname, 
                 registerData.password
             )
-            navigate('/login') // O directamente a /home según tu flujo
+            navigate('/home')
         } catch (err) {
             setError('Hubo un error al crear la cuenta. Inténtalo de nuevo.')
         } finally {
