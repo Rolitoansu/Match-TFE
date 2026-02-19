@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext, createContext } from 'react'
 import api from '../api/axios'
+import axios, { HttpStatusCode } from 'axios';
 
 interface AuthContextType {
     user: any;
@@ -29,8 +30,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             try {
                 const { data } = await api.get('/auth/verify-cookie')
                 setUser(data)
-            } catch (error) {
+            } catch (err) {
                 setUser(null)
+                
+                if (axios.isAxiosError(err)) {
+                    const status = err.response?.status
+                    if (status !== HttpStatusCode.Unauthorized && status !== HttpStatusCode.Forbidden) {
+                        throw err
+                    }
+                } else {
+                    throw err
+                }
             } finally {
                 setLoading(false)
             }
@@ -42,7 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const register = async (email: string, name: string, surname: string, password: string) => {
         try {
             const { data } = await api.post('/user/register', { email, name, surname, password })
-            console.log(data)
+            setUser(data)
         } catch (error) {
             console.error(error)
             throw error

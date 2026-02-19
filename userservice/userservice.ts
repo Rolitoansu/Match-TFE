@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { db, users } from '@match-tfe/db'
 import { validate, registerSchema } from './validate'
+import { eq } from 'drizzle-orm'
 
 const PORT = process.env.PORT || 5001
 const app = express()
@@ -10,10 +11,14 @@ const app = express()
 app.use(express.json())
 
 app.post('/register', validate(registerSchema), async (req, res) => {
-    console.log('Received user creation request:', req.body)
     const { email, name, surname, password } = req.body
 
     try {
+        const existingUser = (await db.select().from(users).where(eq(users.email, email)))[0]
+        if (existingUser) {
+            return res.status(400).json({ error: 'User already exists' })
+        }
+
         const passwordHash = await bcrypt.hash(password, 10)
         await db.insert(users).values({ email, name, surname, passwordHash })
     } catch (e: any) {

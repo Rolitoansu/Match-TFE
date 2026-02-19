@@ -3,25 +3,20 @@ import {
   ChevronDown, 
   BookOpen 
 } from 'lucide-react'
-import { Navbar } from './fragments/Navbar'
-import { Header } from './fragments/Header'
 
 // For now
 const MOCK_PROFILE = {
-  name: "Dra. Maria Lopez",
+  name: "Mario Farpón",
   department: "Ciencias de la Computacion",
-  bio: "Investigadora en procesamiento de lenguaje natural y aprendizaje automatico. Busco estudiantes motivados para explorar nuevas fronteras en NLP.",
-  interests: ["NLP", "Deep Learning", "Transformers", "Python"],
+  bio: "Investigador en procesamiento de lenguaje natural y aprendizaje automatico. Busco estudiantes motivados para explorar nuevas fronteras en DLP.",
+  interests: ["DLP", "Deep Learning", "Transformers", "Python"],
   profileCount: 6
 }
 
-export const Home = () => {
-  return (
-    <div className="flex min-h-svh flex-col bg-gray-50/50">
-      <Header title="Explorar" count={MOCK_PROFILE.profileCount} />
-
-      <main className="flex flex-1 items-center justify-center px-4 pb-24">
-        <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-border bg-card shadow-2xl shadow-gray-200/50">
+export const Explore = () => {
+    return (
+        <main className="flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-md overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-gray-200/50">
           
           <div className="flex aspect-square flex-col items-center justify-end bg-primary/5 pb-8 relative">
             <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -63,9 +58,5 @@ export const Home = () => {
           </div>
         </div>
       </main>
-      <Navbar />
-    </div>
-  )
+    )
 }
-
-export default Home

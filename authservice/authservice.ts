@@ -2,7 +2,6 @@ import express from 'express'
 import jwt from 'jsonwebtoken'
 import cookieParser from 'cookie-parser'
 import bcrypt from 'bcrypt'
-import { query } from './db'
 import { validate } from './validate.middleware'
 import { LoginSchema } from './schemas'
 import { db, users } from '@match-tfe/db'
@@ -22,28 +21,13 @@ app.get('/verify-cookie', async (req, res) => {
 
     try {
         const payload = jwt.verify(cookie, process.env.JWT_SECRET! || 'secret')
-        console.log('Token verified:', payload)
         res.json({ user: payload })
     } catch (error) {
-        console.log(error)
         res.status(403).json({ user: null })
     }
 })
 
-app.post('/user', async (req, res) => {
-    const pwd_hash = await bcrypt.hash(req.body.password, 10)
-    await query('INSERT INTO users (username, password_hash) VALUES ($1, $2)', [req.body.username, pwd_hash])
-})
-
-interface LoginBody {
-    email: string,
-    password: string
-}
-
 app.post('/login', validate(LoginSchema), async (req, res) => {
-    console.log(req.body)
-    const passwordHash = await bcrypt.hash(req.body.password, 10)
-    console.log("password:" + passwordHash)
     const user = (await db
         .select()
         .from(users)

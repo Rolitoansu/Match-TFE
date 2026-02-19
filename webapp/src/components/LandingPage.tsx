@@ -1,15 +1,7 @@
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { Button } from '@mui/material'
 import { GraduationCap, Users, MessageSquare, Sparkles } from "lucide-react"
 
 export const LandingPage = () => {
-  const { isAuthenticated } = useAuth()
-
-  if (isAuthenticated) {
-    return <Navigate to="/home" replace />
-  }
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
       <div className="flex w-full max-w-sm flex-col items-center gap-8">

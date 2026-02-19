@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext'
 export const PublicRoute = () => {
     const { user } = useAuth()
 
-    console.log(user)
     if (user) {
         return <Navigate to="/home" replace />
     }

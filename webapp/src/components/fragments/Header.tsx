@@ -1,23 +1,12 @@
-interface HeaderProps {
-  title: string;
-  count?: number;
-  countLabel?: string;
-}
+import { Bell } from "lucide-react"
 
-export const Header = ({ title, count, countLabel = "perfiles" }: HeaderProps) => {
+export const Header = () => {
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between bg-background/80 px-6 py-6 backdrop-blur-md">
-      {/* Título dinámico */}
+    <header className="sticky top-0 z-50 w-full bg-white border-b-2 flex justify-between items-center px-6 py-6">
       <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        {title}
+        Match-TFE
       </h1>
-
-      {/* Badge de conteo opcional */}
-      {count !== undefined && (
-        <div className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-muted-foreground shadow-sm border border-border/50 transition-all hover:scale-105">
-          {count} {countLabel}
-        </div>
-      )}
+      <Bell className="h-6 w-6 text-muted-foreground" />
     </header>
   );
 }
