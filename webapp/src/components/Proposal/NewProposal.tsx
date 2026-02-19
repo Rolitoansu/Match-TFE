@@ -60,7 +60,6 @@ export const NewProposal = () => {
               />
             </div>
 
-            {/* Descripción */}
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
                 Descripción y Objetivos
@@ -72,7 +71,6 @@ export const NewProposal = () => {
               ></textarea>
             </div>
 
-            {/* Tags / Intereses */}
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
                 Tecnologías e Intereses vinculados
@@ -120,7 +118,6 @@ export const NewProposal = () => {
           </div>
         </div>
 
-        {/* Columna Lateral: Configuración Adicional (1/3) */}
         <div className="space-y-6">
           <div className="bg-slate-50 border border-border rounded-3xl p-6 space-y-6">
             <h3 className="font-bold text-sm flex items-center gap-2 text-foreground">
@@ -128,7 +125,6 @@ export const NewProposal = () => {
               Configuración
             </h3>
 
-            {/* Capacidad */}
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                 <Users size={12} /> Capacidad de Alumnos
@@ -139,7 +135,6 @@ export const NewProposal = () => {
               </select>
             </div>
 
-            {/* Categoría */}
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                 <BookOpen size={12} /> Tipo de Trabajo
@@ -162,7 +157,6 @@ export const NewProposal = () => {
             </div>
           </div>
 
-          {/* Estado de validación (Opcional) */}
           <div className="p-4 flex items-start gap-3 text-orange-600 bg-orange-50 rounded-2xl border border-orange-100">
             <AlertCircle size={18} className="shrink-0 mt-0.5" />
             <p className="text-[11px] font-medium">

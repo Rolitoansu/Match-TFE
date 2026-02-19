@@ -4,7 +4,6 @@ import {
   BookOpen 
 } from 'lucide-react'
 
-// For now
 const MOCK_PROFILE = {
   name: "Mario Farpón",
   department: "Ciencias de la Computacion",
