@@ -1,50 +1,77 @@
-import { Flame, MessageCircle, User } from 'lucide-react'
+import { 
+  Flame, 
+  MessageCircle, 
+  User, 
+  FileText 
+} from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-interface NavbarProp {
+interface NavbarItem {
     name: string
     route: string
-    icon: React.ReactNode
-    active_icon: React.ReactNode
+    icon: React.ElementType
 }
 
 export const Navbar = () => {
     const navigate = useNavigate()
     const location = useLocation()
 
-    const items: NavbarProp[] = [
+    const items: NavbarItem[] = [
         {
             name: "Explorar",
             route: "/home",
-            icon: <Flame size={24} />,
-            active_icon: <Flame size={24} fill="currentColor" className="text-primary" />,
+            icon: Flame,
+        },
+        {
+            name: "Propuestas",
+            route: "/proposals",
+            icon: FileText,
         },
         {
             name: "Chat",
             route: "/chat",
-            icon: <MessageCircle size={24} />,
-            active_icon: <MessageCircle size={24} fill="currentColor" className="text-primary" />
+            icon: MessageCircle,
         },
         {
             name: "Perfil",
             route: "/profile",
-            icon: <User size={24} />,
-            active_icon: <User size={24} fill="currentColor" className="text-primary" />
+            icon: User,
         }
     ]
 
     return (
-        <nav className="sticky bottom-0 flex w-full border-t px-6 py-4 backdrop-blur-md">
-                <div className="mx-auto flex w-full max-w-md justify-between items-center">
-                {items.map((item) => (
-                    <button 
-                        key={item.name} 
-                        className={`flex flex-col items-center gap-1 ${item.route === location.pathname ? 'text-primary' : 'text-muted-foreground'}`}
-                        onClick={() => navigate(`/${item.route}`)}>
-                        {item.route === location.pathname ? item.active_icon : item.icon}
-                        <span className="text-[10px] font-bold uppercase">{item.name}</span>
-                    </button>
-                ))}
+        <nav className="fixed bottom-0 left-0 right-0 flex w-full border-t bg-white/80 px-6 py-3 pb-3 backdrop-blur-lg z-100">
+            <div className="mx-auto flex w-full max-w-md justify-between items-center">
+                {items.map((item) => {
+                    const isActive = location.pathname === item.route || location.pathname.startsWith(item.route + '/')
+                    const Icon = item.icon
+
+                    return (
+                        <button 
+                            key={item.name} 
+                            className="flex flex-col items-center gap-1 group transition-all active:scale-90"
+                            onClick={() => navigate(item.route)}>
+
+                            <div className={`
+                                px-5 py-1.5 rounded-2xl transition-all duration-300
+                                ${isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground group-hover:bg-secondary'}
+                            `}>
+                                <Icon 
+                                    size={24} 
+                                    strokeWidth={isActive ? 2.5 : 2} 
+                                    className="transition-transform"
+                                />
+                            </div>
+
+                            <span className={`
+                                text-[10px] font-black uppercase tracking-tighter transition-colors
+                                ${isActive ? 'text-primary' : 'text-muted-foreground'}
+                            `}>
+                                {item.name}
+                            </span>
+                        </button>
+                    )
+                })}
             </div>
         </nav>
     )

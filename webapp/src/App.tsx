@@ -8,7 +8,10 @@ import { PublicRoute } from './components/routes/PublicRoute'
 import { Home } from './components/Home/Home'
 import { Explore } from './components/Home/Explore'
 import { Profile } from './components/Profile/Profile'
-import { NewProposal } from './components/Proposal/NewProposal'
+import { Proposals } from './components/Proposals/Proposals'
+import { NewProposal } from './components/Proposals/NewProposal'
+import { ProposalDetails } from './components/Proposals/ProposalDetails'
+import { Chat } from './components/Chat/Chat'
 import './i18n'
 
 
@@ -26,9 +29,11 @@ function App() {
           <Route element={<ProtectedRoute />}>
               <Route element={<Home />}>
                 <Route path="home" element={<Explore />} />
-                <Route path="chat" element={<Explore />} />
+                <Route path="chat" element={<Chat />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="proposals" element={<Proposals />} />
                 <Route path="proposals/new" element={<NewProposal />} />
+                <Route path="proposals/mock" element={<ProposalDetails />} />
               </Route>
           </Route>
         </Routes>

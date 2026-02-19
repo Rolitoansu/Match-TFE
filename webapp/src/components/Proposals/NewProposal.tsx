@@ -32,11 +32,11 @@ export const NewProposal = () => {
   return (
     <div className="max-w-4xl mx-auto p-6 lg:p-10">
       <button 
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/proposals')}
         className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-        <span className="text-sm font-semibold">Volver al perfil</span>
+        <span className="text-sm font-semibold">Volver</span>
       </button>
 
       <div className="mb-10">
