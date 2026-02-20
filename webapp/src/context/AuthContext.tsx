@@ -1,14 +1,22 @@
 import { useState, useEffect, useContext, createContext } from 'react'
-import api from '../api/axios'
-import axios, { HttpStatusCode } from 'axios';
+import axios, { HttpStatusCode } from 'axios'
+import api, { setupHandlers } from '../api/axios'
 
 interface AuthContextType {
-    user: any;
+    user: any
     login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     register: (email: string, name: string, surname: string, password: string) => Promise<void>
     loading: boolean
     isAuthenticated: boolean
+}
+
+interface User {
+    email: string
+    name: string
+    surname: string
+    registrationDate: string
+    biography: string
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -22,17 +30,33 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState(null)
+    const [accessToken, setAccessToken] = useState<string | null>(null)
+    const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
+    
+    useEffect(() => {
+        setupHandlers(
+            (token, userData) => {
+                setAccessToken(token)
+                setUser(userData)
+            },
+            (error) => {
+                setAccessToken(null)
+                setUser(null)
+                console.error('Authentication error:', error)
+            }
+        )
+    }, [])
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const { data } = await api.get('/auth/verify-cookie')
-                setUser(data)
+                const { data } = await api.post('/auth/refresh', {}, { withCredentials: true })
+                const { access_token, user } = data
+                setAccessToken(access_token)
+                setUser(user)
             } catch (err) {
                 setUser(null)
-                
                 if (axios.isAxiosError(err)) {
                     const status = err.response?.status
                     if (status !== HttpStatusCode.Unauthorized && status !== HttpStatusCode.Forbidden) {
@@ -49,6 +73,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         checkAuth()
     }, [])
 
+    const authApi = async (config: any) => {
+        return api({
+            ...config,
+            headers: {
+                ...config.headers,
+                Authorization: `Bearer ${accessToken}`
+            }
+        })
+    }
+    
     const register = async (email: string, name: string, surname: string, password: string) => {
         try {
             const { data } = await api.post('/user/register', { email, name, surname, password })
@@ -61,7 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const login = async (email: string, password: string) => {
         try {
-            const { data } = await api.post('/auth/login', { email, password })
+            const { data } = await api.post('/auth/login', { email, password }, { withCredentials: true })
             setUser(data)
         } catch (error) {
             setUser(null)
