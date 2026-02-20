@@ -6,13 +6,13 @@ COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 COPY userservice/package.json ./userservice/
 COPY database/package.json ./database/
 
-RUN pnpm install
-
 FROM base AS development
 COPY database/ ./database/
 COPY userservice/ ./userservice/
 
 WORKDIR /usr/src/userservice
+RUN pnpm install
+
 EXPOSE 5001
 CMD ["pnpm", "run", "dev"]
 

@@ -6,13 +6,13 @@ COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 COPY authservice/package.json ./authservice/
 COPY database/package.json ./database/
 
-RUN pnpm install
-
 FROM base AS development
 COPY database/ ./database/
 COPY authservice/ ./authservice/
 
 WORKDIR /usr/src/authservice
+RUN pnpm install
+
 EXPOSE 5000
 CMD ["pnpm", "run", "dev"]
 
