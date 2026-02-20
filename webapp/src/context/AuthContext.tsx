@@ -7,6 +7,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     register: (email: string, name: string, surname: string, password: string) => Promise<void>
+    authApi: (config: any) => Promise<any>
     loading: boolean
     isAuthenticated: boolean
 }
@@ -52,9 +53,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const checkAuth = async () => {
             try {
                 const { data } = await api.post('/auth/refresh', {}, { withCredentials: true })
-                const { access_token, user } = data
-                setAccessToken(access_token)
-                setUser(user)
+                setAccessToken(data.access_token)
+                setUser(data.user)
             } catch (err) {
                 setUser(null)
                 if (axios.isAxiosError(err)) {
@@ -85,8 +85,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     const register = async (email: string, name: string, surname: string, password: string) => {
         try {
-            const { data } = await api.post('/user/register', { email, name, surname, password })
-            setUser(data)
+            const { data } = await api.post('/user/register', { email, name, surname, password }, { withCredentials: true })
+            setUser(data.user)
         } catch (error) {
             console.error(error)
             throw error
@@ -96,9 +96,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const login = async (email: string, password: string) => {
         try {
             const { data } = await api.post('/auth/login', { email, password }, { withCredentials: true })
-            setUser(data)
+            setUser(data.user)
+            setAccessToken(data.access_token)
         } catch (error) {
             setUser(null)
+            setAccessToken(null)
             console.error(error)
             throw error
         }
@@ -110,6 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } catch (error) {
             console.error(error)
         } finally {
+            setAccessToken(null)
             setUser(null)
         }
     }
@@ -120,6 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             login, 
             logout,
             register,
+            authApi,
             loading, 
             isAuthenticated: Boolean(user) 
         }}>

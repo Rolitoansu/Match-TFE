@@ -36,8 +36,18 @@ app.post('/refresh', async (req, res) => {
 
     try {
         const payload = jwt.verify(cookie, JWT_SECRET) as jwt.JwtPayload
-        
-        const user = await obtainUserFromEmail(payload.email)
+        const [user] = await db
+            .select({ 
+                name: users.name, 
+                surname: users.surname, 
+                passwordHash: users.passwordHash, 
+                registrationDate: users.registrationDate, 
+                biography: users.biography 
+            })
+            .from(users)
+            .where(eq(users.email, payload.email))
+            .limit(1)
+            
         if (!user) {
             return res.status(401).json({ message: "User no longer exists" })
         }
