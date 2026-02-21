@@ -13,7 +13,7 @@ import {
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-export const NewProposal = () => {
+export default function NewProposal() {
   const navigate = useNavigate()
   const [tags, setTags] = useState<string[]>(['DLP', 'React'])
   const [inputValue, setInputValue] = useState('')

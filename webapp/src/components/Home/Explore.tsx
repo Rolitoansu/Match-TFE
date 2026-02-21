@@ -12,7 +12,7 @@ const MOCK_PROFILE = {
   profileCount: 6
 }
 
-export const Explore = () => {
+export default function Explore() {
     return (
         <main className="flex items-center justify-center px-4 py-6">
         <div className="w-full max-w-md overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-gray-200/50">

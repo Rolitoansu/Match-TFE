@@ -20,7 +20,7 @@ const PROPOSAL_DATA = {
   tags: ["IoT", "LoRaWAN", "Hardware", "Smart Cities"]
 }
 
-export const ProposalDetails = () => {
+export default function ProposalDetails() {
   const navigate = useNavigate()
   const isAlumno = PROPOSAL_DATA.author.role === "ALUMNO"
 

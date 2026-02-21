@@ -2,7 +2,7 @@ import { Navbar } from '../fragments/Navbar'
 import { Header } from '../fragments/Header'
 import { Outlet } from 'react-router-dom'
 
-export const Home = () => {
+export default function Home() {
   return (
     <div className="flex min-h-svh flex-col bg-gray-50/50">
       <Header />
@@ -11,5 +11,3 @@ export const Home = () => {
     </div>
   )
 }
-
-export default Home

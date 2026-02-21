@@ -1,7 +1,7 @@
 import { Button } from '@mui/material'
 import { GraduationCap, Users, MessageSquare, Sparkles } from "lucide-react"
 
-export const LandingPage = () => {
+export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
       <div className="flex w-full max-w-sm flex-col items-center gap-8">

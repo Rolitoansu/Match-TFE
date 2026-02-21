@@ -42,7 +42,7 @@ const MY_PROPOSALS = [
   }
 ]
 
-export const Profile = () => {
+export default function Profile() {
     const navigate = useNavigate()
     
     return (

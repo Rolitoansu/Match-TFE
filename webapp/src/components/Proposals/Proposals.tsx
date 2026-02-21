@@ -38,7 +38,7 @@ const ALL_PROPOSALS = [
   }
 ]
 
-export const Proposals = () => {
+export default function Proposals() {
   const navigate = useNavigate()
 
   return (

@@ -1,19 +1,20 @@
-import { LandingPage } from './components/LandingPage'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { Login } from './components/Login'
-import { Register } from './components/Register'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/routes/ProtectedRoute'
 import { PublicRoute } from './components/routes/PublicRoute'
-import { Home } from './components/Home/Home'
-import { Explore } from './components/Home/Explore'
-import { Profile } from './components/Profile/Profile'
-import { Proposals } from './components/Proposals/Proposals'
-import { NewProposal } from './components/Proposals/NewProposal'
-import { ProposalDetails } from './components/Proposals/ProposalDetails'
-import { Chat } from './components/Chat/Chat'
+import { lazy } from 'react'
 import './i18n'
 
+const LandingPage = lazy(() => import('./components/LandingPage'))
+const Home = lazy(() => import('./components/Home/Home'))
+const Chat = lazy(() => import('./components/Chat/Chat'))
+const Explore = lazy(() => import('./components/Home/Explore'))
+const Profile = lazy(() => import('./components/Profile/Profile'))
+const Proposals = lazy(() => import('./components/Proposals/Proposals'))
+const NewProposal = lazy(() => import('./components/Proposals/NewProposal'))
+const ProposalDetails = lazy(() => import('./components/Proposals/ProposalDetails'))
+const Login = lazy(() => import('./components/Login'))
+const Register = lazy(() => import('./components/Register'))
 
 function App() {
 

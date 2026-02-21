@@ -8,7 +8,7 @@ interface LoginProps {
     password: string
 }
 
-export const Login = () => {
+export default function Login() {
     const [loginData, setLoginData] = useState<LoginProps>({ email: '', password: '' })
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')

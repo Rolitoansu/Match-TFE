@@ -21,7 +21,7 @@ const MOCK_MESSAGES = [
   { id: 4, senderId: 'me', text: "Perfecto. ¿Te vendría bien una reunión rápida por Teams para concretar?", time: "12:10" },
 ]
 
-export const Chat = () => {
+export default function Chat() {
   const [message, setMessage] = useState('')
 
   return (

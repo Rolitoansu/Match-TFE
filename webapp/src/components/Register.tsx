@@ -11,7 +11,7 @@ interface RegisterProps {
     repeatPassword: string
 }
 
-export const Register = () => {
+export default function Register() {
     const [registerData, setRegisterData] = useState<RegisterProps>({ 
         email: '', name: '', surname: '', password: '', repeatPassword: '' 
     })
