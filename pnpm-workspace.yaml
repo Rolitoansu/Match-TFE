@@ -2,5 +2,6 @@ packages:
   - 'webapp'
   - 'authservice'
   - 'userservice'
+  - 'projectservice'
   - 'gatewayservice'
   - 'database'

@@ -4,6 +4,7 @@ import {
   Users
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const USER_DATA = {
   name: "Mario Farpón",
@@ -44,7 +45,8 @@ const MY_PROPOSALS = [
 
 export default function Profile() {
     const navigate = useNavigate()
-    
+    const { user } = useAuth()
+
     return (
         <div className="max-w-350 mx-auto p-6 lg:p-10 mb-15">
         <div className="flex justify-between items-end mb-10 px-2">
@@ -72,7 +74,7 @@ export default function Profile() {
                     </button>
                 </div>
                 
-                <h2 className="text-2xl font-bold">{USER_DATA.name}</h2>
+                <h2 className="text-2xl font-bold">{user!.name}</h2>
                 <p className="text-primary font-semibold text-sm mb-1">{USER_DATA.role}</p>
                 <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold">{USER_DATA.department}</p>
                 

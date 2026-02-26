@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:25.7-alpine AS base
 RUN npm install -g pnpm
 WORKDIR /usr/src
 
@@ -23,7 +23,7 @@ COPY userservice/ ./userservice/
 WORKDIR /usr/src/userservice
 RUN pnpm run build
 
-FROM node:22-alpine AS production
+FROM node:25.7-alpine AS production
 WORKDIR /usr/src/userservice
 RUN npm install -g pnpm
 

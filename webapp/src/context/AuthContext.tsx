@@ -2,8 +2,16 @@ import { useState, useEffect, useContext, createContext } from 'react'
 import axios, { HttpStatusCode } from 'axios'
 import api, { setupHandlers } from '../api/axios'
 
+interface User {
+    email: string
+    name: string
+    surname: string
+    registrationDate: string
+    biography: string
+    interests: string[]
+}
 interface AuthContextType {
-    user: any
+    user: User | null
     login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     register: (email: string, name: string, surname: string, password: string) => Promise<void>

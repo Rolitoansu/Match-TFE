@@ -1,0 +1,24 @@
+{
+    "name": "@match-tfe/projectservice",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/projectservice.js",
+        "dev": "tsx watch projectservice.ts"
+    },
+    "dependencies": {
+        "@match-tfe/db": "workspace:*",
+        "drizzle-orm": "^0.45.1",
+        "express": "^5.2.1",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@types/bcrypt": "^6.0.0",
+        "@types/express": "^5.0.6",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/pg": "^8.16.0",
+        "tsx": "^4.0.0",
+        "typescript": "^5.0.0"
+    }
+}

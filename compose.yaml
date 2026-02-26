@@ -84,7 +84,37 @@ services:
       - match_network
     env_file:
       - .env
+  projectservice:
+    container_name: projectservice-matchtfe
+    build:
+      context: .
+      dockerfile: ./projectservice/Dockerfile
+      target: development
+    develop:
+      watch:
+        - action: rebuild
+          path: ./projectservice/package.json
 
+        - action: rebuild
+          path: ./database/package.json
+
+        - action: sync
+          path: ./projectservice
+          target: /usr/src/projectservice
+          ignore:
+            - node_modules
+
+        - action: sync
+          path: ./database
+          target: /usr/src/database
+          ignore:
+            - node_modules
+    depends_on:
+      - postgres
+    networks:
+      - match_network
+    env_file:
+      - .env
   gatewayservice:
     container_name: gatewayservice-matchtfe
     build:
@@ -105,7 +135,7 @@ services:
             - node_modules
     depends_on:
       - authservice
-      - userservice
+      - projectservice
       - postgres
     networks:
       - match_network
