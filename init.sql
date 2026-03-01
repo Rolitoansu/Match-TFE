@@ -65,13 +65,13 @@ CREATE TABLE notifications (
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE tfgs (
+CREATE TABLE projects (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     status VARCHAR(20) NOT NULL CHECK (status IN ('proposed', 'in_progress', 'completed')),
     publication_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    expiration_date TIMESTAMPTZ,
+    expiration_date TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '12 months'),
     tutor_id INTEGER REFERENCES professors(id) ON DELETE SET NULL,
     student_id INTEGER REFERENCES students(id) ON DELETE SET NULL
 );
@@ -81,10 +81,10 @@ CREATE TABLE tags (
     name VARCHAR(50) NOT NULL UNIQUE
 );
 
-CREATE TABLE tfg_tags (
-    tfg_id INTEGER REFERENCES tfgs(id) ON DELETE CASCADE,
+CREATE TABLE project_tags (
+    project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
     tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (tfg_id, tag_id)
+    PRIMARY KEY (project_id, tag_id)
 );
 
 CREATE TABLE user_tags (

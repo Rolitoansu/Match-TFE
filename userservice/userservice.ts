@@ -1,9 +1,10 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { db, users } from '@match-tfe/db'
+import { users } from '@match-tfe/db/schema'
 import { validate, registerSchema } from './validate'
 import { eq } from 'drizzle-orm'
+import db from '@match-tfe/db'
 
 const PORT = process.env.PORT || 5001
 const JWT_SECRET = process.env.JWT_SECRET || 'secret'

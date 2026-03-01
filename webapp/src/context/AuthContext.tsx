@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext, createContext } from 'react'
-import axios, { HttpStatusCode } from 'axios'
 import api, { setupHandlers } from '../api/axios'
+import { isAxiosError } from 'axios'
 
-interface User {
+export interface User {
     email: string
     name: string
     surname: string
@@ -15,17 +15,8 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     register: (email: string, name: string, surname: string, password: string) => Promise<void>
-    authApi: (config: any) => Promise<any>
     loading: boolean
     isAuthenticated: boolean
-}
-
-interface User {
-    email: string
-    name: string
-    surname: string
-    registrationDate: string
-    biography: string
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -39,38 +30,31 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [accessToken, setAccessToken] = useState<string | null>(null)
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
     
     useEffect(() => {
         setupHandlers(
-            (token, userData) => {
-                setAccessToken(token)
+            (userData) => {
                 setUser(userData)
             },
             (error) => {
-                setAccessToken(null)
                 setUser(null)
+                localStorage.removeItem('accessToken')
                 console.error('Authentication error:', error)
             }
         )
     }, [])
 
-    useEffect(() => {
+        useEffect(() => {
         const checkAuth = async () => {
             try {
                 const { data } = await api.post('/auth/refresh', {}, { withCredentials: true })
-                setAccessToken(data.access_token)
+                localStorage.setItem('accessToken', data.access_token)
                 setUser(data.user)
             } catch (err) {
                 setUser(null)
-                if (axios.isAxiosError(err)) {
-                    const status = err.response?.status
-                    if (status !== HttpStatusCode.Unauthorized && status !== HttpStatusCode.Forbidden) {
-                        throw err
-                    }
-                } else {
+                if (!isAxiosError(err) || (err.response?.status !== 401 && err.response?.status !== 403)) {
                     throw err
                 }
             } finally {
@@ -80,16 +64,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         checkAuth()
     }, [])
-
-    const authApi = async (config: any) => {
-        return api({
-            ...config,
-            headers: {
-                ...config.headers,
-                Authorization: `Bearer ${accessToken}`
-            }
-        })
-    }
     
     const register = async (email: string, name: string, surname: string, password: string) => {
         try {
@@ -105,10 +79,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const { data } = await api.post('/auth/login', { email, password }, { withCredentials: true })
             setUser(data.user)
-            setAccessToken(data.access_token)
+            localStorage.setItem('accessToken', data.access_token)
         } catch (error) {
             setUser(null)
-            setAccessToken(null)
+            localStorage.removeItem('accessToken')
             console.error(error)
             throw error
         }
@@ -120,7 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } catch (error) {
             console.error(error)
         } finally {
-            setAccessToken(null)
+            localStorage.removeItem('accessToken')
             setUser(null)
         }
     }
@@ -131,7 +105,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             login, 
             logout,
             register,
-            authApi,
             loading, 
             isAuthenticated: Boolean(user) 
         }}>

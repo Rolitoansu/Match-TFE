@@ -1,14 +1,15 @@
+import type { User } from '../context/AuthContext'
 import axios from 'axios'
 
 const api = axios.create({
     baseURL: import.meta.env.API_GATEWAY_URL || 'http://localhost:8000'
 })
 
-let handleAuthSuccess: (accessToken: string, user: any) => void = () => {}
+let handleAuthSuccess: (user: User) => void = () => {}
 let handleAuthFailure: (error: Error) => void = () => {}
 
 export function setupHandlers(
-    onAuthSuccess: (accessToken: string, user: any) => void, 
+    onAuthSuccess: (user: User) => void, 
     onAuthFailure: (error: Error) => void
 ) {
     handleAuthSuccess = onAuthSuccess
@@ -34,7 +35,8 @@ api.interceptors.response.use(
             if (axios.isAxiosError(error) && error.response?.status === 401) {
                 const { data } = await api.post('/auth/refresh', {}, { withCredentials: true })
                 const { access_token, user } = data
-                handleAuthSuccess(access_token, user)
+                localStorage.setItem('accessToken', access_token)
+                handleAuthSuccess(user)
 
                 originalRequest.headers.Authorization = `Bearer ${access_token}`
                 return api(originalRequest)

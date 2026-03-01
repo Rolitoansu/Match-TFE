@@ -11,5 +11,6 @@ const pool = new Pool({
     idleTimeoutMillis: 30000,
 })
 
-export const db = drizzle(pool, { schema })
-export * from './schema'
+const db = drizzle(pool, { schema })
+
+export default db

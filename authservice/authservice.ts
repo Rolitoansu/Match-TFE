@@ -4,8 +4,9 @@ import cookieParser from 'cookie-parser'
 import bcrypt from 'bcrypt'
 import { validate } from './validate.middleware'
 import { LoginSchema } from './schemas'
-import { db, users } from '@match-tfe/db'
+import { users } from '@match-tfe/db/schema'
 import { eq } from 'drizzle-orm'
+import db from '@match-tfe/db'
 
 const PORT = process.env.PORT || 5000
 const JWT_SECRET = process.env.JWT_SECRET || 'secret'
@@ -13,22 +14,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret'
 const app = express()
 app.use(express.json())
 app.use(cookieParser())
-
-async function obtainUserFromEmail(email: string) {
-    const [user] = await db
-        .select({ 
-            name: users.name, 
-            surname: users.surname, 
-            passwordHash: users.passwordHash, 
-            registrationDate: users.registrationDate, 
-            biography: users.biography 
-        })
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1)
-
-    return user
-}
 
 app.post('/refresh', async (req, res) => {
     const cookie = req.cookies['refresh_token']

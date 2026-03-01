@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
-import { treeifyError, ZodObject, string, optional } from 'zod'
+import { treeifyError, ZodObject } from 'zod'
+import { z } from 'zod'
 
-export const validate = (schema: ZodObject) => 
+export const validate = (schema: ZodObject<any>) => 
     (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body)
 
@@ -13,8 +14,13 @@ export const validate = (schema: ZodObject) =>
     next()
 }
 
-export const TfeSchema = ZodObject({
-    page: string().optional(),
-    pageSize: string().optional(),
-    search: string().optional()
+export const LoginSchema = z.object({
+    email: z.email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters long")
+})
+
+export const TFESchema = z.object({
+    title: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()).optional()
 })
