@@ -69,7 +69,7 @@ CREATE TABLE projects (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     description TEXT,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('proposed', 'in_progress', 'completed')),
+    status VARCHAR(20) DEFAULT 'proposed' CHECK (status IN ('proposed', 'in_progress', 'completed')),
     publication_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     expiration_date TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '12 months'),
     tutor_id INTEGER REFERENCES professors(id) ON DELETE SET NULL,

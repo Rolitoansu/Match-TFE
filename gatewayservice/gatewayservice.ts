@@ -1,26 +1,21 @@
-import authMiddleware from './middleware'
 import express from 'express'
 import proxy from 'express-http-proxy'
 import cors from 'cors'
+import authRoutes from './routes/authRoutes'
+import userRoutes from './routes/userRoutes'
+import projectRoutes from './routes/projectRoutes'
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://authservice:5000'
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://userservice:5001'
-const PROJECT_SERVICE_URL = process.env.PROJECT_SERVICE_URL || 'http://projectservice:5002'
 
 const PORT = process.env.PORT || 8000
-
 const app = express()
-app.set('trust proxy', 1)
 
 app.use(cors({ origin: FRONTEND_URL, credentials: true }))
 app.use(express.json())
 
-const resolver = { proxyReqPathResolver: (req: any) => req.originalUrl }
-
-app.use('/auth', proxy(AUTH_SERVICE_URL))
-app.use('/user', proxy(USER_SERVICE_URL))
-app.use('/project', proxy(PROJECT_SERVICE_URL))
+app.use('/auth', authRoutes)
+app.use('/user', userRoutes)
+app.use('/project', projectRoutes)
 
 app.listen(PORT, () => {
     console.log(`Gateway Service is running on port ${PORT}`)
