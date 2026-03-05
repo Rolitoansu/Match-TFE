@@ -1,15 +1,83 @@
 import express from 'express'
 import db from '@match-tfe/db'
-import { TFESchema, validate } from './validate'
+import validate, { GetTFESchema, TFECreationSchema } from './validate'
 import { users, projects, tags, projectTags } from '@match-tfe/db/schema'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 
 const PORT = process.env.PORT || 5002
 
 const app = express()
 app.use(express.json())
 
-app.post('/proposals', validate(TFESchema), async (req, res) => {
+app.get('/proposals', async (req, res) => {
+    try {
+        const proposals = await db
+            .select({
+                id: projects.id,
+                title: projects.title,
+                description: projects.description,
+                publicationDate: projects.publicationDate,
+                status: projects.status,
+                tags: sql`json_agg(${tags.name})`.as('tags')
+            })
+            .from(projects)
+            .leftJoin(projectTags, eq(projectTags.projectId, projects.id))
+            .leftJoin(tags, eq(tags.id, projectTags.tagId))
+            .groupBy(projects.id)
+            .limit(10)
+
+        return res.json({ proposals })
+        
+    } catch (exception) {
+        console.error(exception)
+        return res.status(500).json({ error: 'Error fetching project proposals' })
+    }
+})
+
+app.get('/proposals/:id', validate(GetTFESchema, 'params'), async (req, res) => {
+    const projectId = Number(req.params.id)
+
+    try {
+        const [proposal] = await db
+            .select({
+                title: projects.title,
+                description: projects.description,
+                publicationDate: projects.publicationDate,
+                status: projects.status,
+            })
+            .from(projects)
+            .where(eq(projects.id, projectId))
+
+        if (!proposal) {
+            return res.status(404).json({ error: 'Project proposal not found' })
+        }
+
+        const proposalTags = await db
+            .select({ name: tags.name })
+            .from(tags)
+            .innerJoin(projectTags, eq(projectTags.tagId, tags.id))
+            .where(eq(projectTags.projectId, projectId))
+        
+        const [proposalUser] = await db
+            .select({ name: users.name, surname: users.surname })
+            .from(users)
+            .innerJoin(projects, eq(projects.id, projectId))
+            .where(eq(projects.studentId, users.id))
+        
+        const proposalData = {
+            ...proposal,
+            tags: proposalTags.map(tag => tag.name),
+            user: proposalUser
+        }
+        return res.json({ proposal: proposalData })
+        
+    } catch (exception) {
+        console.error(exception)
+        return res.status(500).json({ error: 'Error fetching project proposal' })
+    }
+})
+
+app.post('/proposals', validate(TFECreationSchema), async (req, res) => {
     const user = req.headers['x-user-email'] as string
     const { title, description, tags: tagNames } = req.body
 
@@ -28,10 +96,10 @@ app.post('/proposals', validate(TFESchema), async (req, res) => {
             // IMPORTANTE: Cambiar cuando se tenga IAM. Por ahora se asume que el usuario es un estudiante.
             const [project] = await trx
                 .insert(projects)
-                .values({ title, description })
+                .values({ title, description, studentId: userId.id })
                 .returning({ id: projects.id })
             
-            if (tagNames && tagNames.length > 0) {
+            if (tagNames?.length > 0) {
                 const tagIds = await trx
                     .select({ id: tags.id })
                     .from(tags)

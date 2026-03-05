@@ -1,7 +1,7 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { users } from '@match-tfe/db/schema'
+import { students, users } from '@match-tfe/db/schema'
 import { validate, registerSchema } from './validate'
 import { eq } from 'drizzle-orm'
 import db from '@match-tfe/db'
@@ -29,9 +29,14 @@ app.post('/register', validate(registerSchema), async (req, res) => {
         const passwordHash = await bcrypt.hash(password, 10)
         const date = new Date()
 
-        await db
-            .insert(users)
-            .values({ email, name, surname, passwordHash, registrationDate: date })
+        await db.transaction(async (trx) => {
+            const [user] = await trx.insert(users)
+                .values({ email, name, surname, passwordHash, registrationDate: date })
+                .returning({ id: users.id })
+
+            await trx.insert(students)
+                .values({ id: user.id })  
+        })
 
         const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '30d' })
         const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '15m' })

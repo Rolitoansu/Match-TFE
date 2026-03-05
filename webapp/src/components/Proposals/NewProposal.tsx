@@ -7,29 +7,73 @@ import {
   BookOpen, 
   Settings
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 
 interface TFEProposalInfo {
   title: string
   description: string
+  type: number
   tags?: string[]
+}
+
+interface TFEErrors {
+  titleError: string | null
+  descriptionError: string | null
+  typeError: string | null
 }
 
 export default function NewProposal() {
   const navigate = useNavigate()
-  const [proposalInfo, setProposalInfo] = useState<TFEProposalInfo>({ title: '', description: '' })
+  const [proposalInfo, setProposalInfo] = useState<TFEProposalInfo>({ title: '', description: '', type: 0 })
+  const [errors, setErrors] = useState<TFEErrors>({ titleError: null, descriptionError: null, typeError: null })
 
-  const removeTag = (tagToRemove: string) => {
+  function removeTag(tagToRemove: string) {
     setProposalInfo({
       ...proposalInfo,
       tags: proposalInfo.tags?.filter(tag => tag !== tagToRemove)
     })
   }
 
-  const submitProposal = async () => {
-    await api.post('/project/proposals', proposalInfo)
+  function updateTitle(title: string) {
+    setErrors(prev => ({ ...prev, titleError: title ? null : 'blank' }))
+    setProposalInfo({ ...proposalInfo, title })
+  }
+
+  function updateDescription(description: string) {
+    setErrors(prev => ({ ...prev, descriptionError: description ? null : 'blank' }))
+    setProposalInfo({ ...proposalInfo, description })
+  }
+
+  function updateType(type: number) {
+    setErrors(prev => ({ ...prev, typeError: type ? null : 'blank' }))
+    setProposalInfo({ ...proposalInfo, type })
+  }
+
+  async function submitProposal() {
+    const newErrors = {
+      titleError: proposalInfo.title?.trim() ? null : 'blank',
+      descriptionError: proposalInfo.description?.trim() ? null : 'blank',
+      typeError: proposalInfo.type ? null : 'blank'
+    }
+
+    setErrors(prev => ({ ...prev, ...newErrors }))
+    
+    if (Object.values(newErrors).some(error => error !== null)) return
+
+    try {
+      const data = {
+        ...proposalInfo,
+        title: proposalInfo.title.trim(),
+        description: proposalInfo.description.trim()
+      }
+
+      await api.post('/project/proposals', data)     
+      navigate('/proposals')
+    } catch (error) {
+      console.error('Error al enviar:', error)
+    }
   }
 
   return (
@@ -59,9 +103,12 @@ export default function NewProposal() {
                 placeholder="Ej: Desarrollo de una herramienta de análisis para..."
                 className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-transparent focus:border-primary/50 focus:bg-white focus:ring-4 focus:ring-primary/5 outline-none transition-all text-lg font-semibold"
                 value={proposalInfo.title} 
-                onChange={(e) => setProposalInfo({ ...proposalInfo, title: e.target.value })} 
+                onChange={(e) => updateTitle(e.target.value)} 
                 required
               />
+              <div className="text-xs font-medium text-red-600 mt-1">
+                {errors.titleError === 'blank' && 'El título es obligatorio.'}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
@@ -72,8 +119,11 @@ export default function NewProposal() {
                 placeholder="Explica brevemente de qué trata el proyecto, las tecnologías a usar y qué esperas del alumno..."
                 className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-transparent focus:border-primary/50 focus:bg-white focus:ring-4 focus:ring-primary/5 outline-none transition-all text-sm leading-relaxed"
                 value={proposalInfo.description}
-                onChange={(e) => setProposalInfo({ ...proposalInfo, description: e.target.value })}
+                onChange={(e) => updateDescription(e.target.value)}
               ></textarea>
+              <div className="text-xs font-medium text-red-600 mt-1">
+                {errors.descriptionError === 'blank' && 'La descripción es obligatoria.'}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
@@ -125,11 +175,17 @@ export default function NewProposal() {
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                 <BookOpen size={12} /> Tipo de Trabajo
               </label>
-              <select className="w-full p-3 rounded-xl border border-border bg-white text-sm font-medium outline-none focus:border-primary">
-                <option>-- Seleccionar tipo --</option>
-                <option>Desarrollo de Software</option>
-                <option>Investigación</option>
+              <select className="w-full p-3 rounded-xl border border-border bg-white text-sm font-medium outline-none focus:border-primary"
+                value={proposalInfo.type}
+                onChange={(e) => updateType(Number(e.target.value))}
+              >
+                <option value="0">-- Seleccionar tipo --</option>
+                <option value="1">Desarrollo de Software</option>
+                <option value="2">Investigación</option>
               </select>
+              <div className="text-xs font-medium text-red-600 mt-1">
+                {errors.typeError === 'blank' && 'El tipo de trabajo es obligatorio.'}
+              </div>
             </div>
           </div>
         </div>

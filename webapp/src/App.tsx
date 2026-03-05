@@ -34,7 +34,7 @@ function App() {
                 <Route path="profile" element={<Profile />} />
                 <Route path="proposals" element={<Proposals />} />
                 <Route path="proposals/new" element={<NewProposal />} />
-                <Route path="proposals/mock" element={<ProposalDetails />} />
+                <Route path="proposals/details/:id" element={<ProposalDetails />} />
               </Route>
           </Route>
         </Routes>

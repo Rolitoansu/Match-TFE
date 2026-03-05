@@ -4,10 +4,13 @@ import { Outlet } from 'react-router-dom'
 
 export default function Home() {
   return (
-    <div className="flex min-h-svh flex-col bg-gray-50/50">
+    <div className="flex h-svh flex-col bg-gray-50/50 overflow-hidden">
       <Header />
+    <main className="flex-1 overflow-y-auto">
       <Outlet />
-      <Navbar />
+      <div className="h-24 w-full shrink-0" /> 
+    </main>
+    <Navbar />
     </div>
   )
 }

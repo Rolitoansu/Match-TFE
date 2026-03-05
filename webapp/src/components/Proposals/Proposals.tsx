@@ -9,37 +9,35 @@ import {
   Clock,
   CheckCircle2
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import api from '../../api/axios'
 
-const ALL_PROPOSALS = [
-  {
-    id: 1,
-    title: "Análisis de sentimientos en asturiano usando Transformers",
-    status: "Abierto",
-    applicants: 3,
-    lastActivity: "Hace 2 horas",
-    type: "Investigación"
-  },
-  {
-    id: 2,
-    title: "Optimización de hiperparámetros en modelos LLM",
-    status: "En curso",
-    applicants: 1,
-    lastActivity: "Ayer",
-    type: "Software"
-  },
-  {
-    id: 3,
-    title: "Detección de sesgos cognitivos mediante IA",
-    status: "Abierto",
-    applicants: 5,
-    lastActivity: "Hace 3 días",
-    type: "Análisis"
-  }
-]
+interface Proposal {
+  id: string
+  title: string
+  description: string
+  publicationDate: string
+  status: string
+  tags?: string[]
+}
 
 export default function Proposals() {
   const navigate = useNavigate()
+  const [proposals, setProposals] = useState<Proposal[]>([])
+  
+  useEffect(() => {
+    async function fetchProposals() {
+      try {
+        const { data: { proposals } } = await api.get('/project/proposals')
+        setProposals(proposals)
+      } catch (error) {
+        console.error('Error al obtener propuestas:', error)
+      }
+    }
+
+    fetchProposals()
+  }, [])
 
   return (
     <div className="max-w-300 mx-auto p-6 lg:p-10">
@@ -92,29 +90,29 @@ export default function Proposals() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {ALL_PROPOSALS.map((tfg) => (
+        {proposals.map((proposal) => (
           <div 
-            key={tfg.id} 
+            key={proposal.id} 
             className="group bg-white border border-border rounded-3xl p-5 hover:border-primary/30 hover:shadow-xl hover:shadow-slate-200/50 transition-all"
           >
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               
               <div className="flex items-start gap-4 flex-1">
                 <div className={`p-3 rounded-2xl shrink-0 ${
-                  tfg.status === 'Abierto' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'
+                  proposal.status === 'Abierto' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'
                 }`}>
                   <FileText size={24} />
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                    {tfg.title}
+                    {proposal.title}
                   </h3>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <Clock size={14} /> {tfg.lastActivity}
+                      <Clock size={14} /> {proposal.publicationDate}
                     </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <CheckCircle2 size={14} /> {tfg.type}
+                      <CheckCircle2 size={14} /> {"Por poner"}
                     </span>
                   </div>
                 </div>
@@ -125,19 +123,19 @@ export default function Proposals() {
                   <div className="text-center">
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5 justify-center">
                       <Users size={16} className="text-primary" />
-                      {tfg.applicants}
+                      {"Por poner"}
                     </p>
                     <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Interesados</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-foreground">{tfg.status}</p>
+                    <p className="text-sm font-bold text-foreground">{proposal.status}</p>
                     <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Estado</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-xl text-xs font-bold hover:bg-primary hover:text-white transition-all"
-                    onClick={() => navigate(`/proposals/mock`)}>
+                    onClick={() => navigate(`/proposals/details/${proposal.id}`)}>
                     Ver Detalles
                     <ArrowUpRight size={14} />
                   </button>

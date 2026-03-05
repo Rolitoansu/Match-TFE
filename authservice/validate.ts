@@ -14,16 +14,9 @@ function validate(schema: ZodObject<any>, source: 'body' | 'params' | 'query' = 
     }
 }
 
-export const TFECreationSchema = z.object({
-    title: z.string(),
-    description: z.string(),
-    tags: z.array(z.string()).optional()
-})
-
-export const GetTFESchema = z.object({
-    id: z.coerce.number('Invalid project ID')
-                .int('Invalid project ID')
-                .positive('Invalid project ID')
+export const LoginSchema = z.object({
+    email: z.email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters long")
 })
 
 export default validate

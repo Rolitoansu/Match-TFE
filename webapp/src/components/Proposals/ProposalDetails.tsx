@@ -2,29 +2,40 @@ import {
   ArrowLeft, BookOpen, MessageSquare, 
   Hash, GraduationCap, UserCheck 
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import api from '../../api/axios'
 
-const PROPOSAL_DATA = {
-  id: 1,
-  title: "Sistema de monitorización de calidad del aire con LoRaWAN",
-  author: {
-    name: "Lucía García",
-    role: "ALUMNO",
-    avatar: null,
-  },
-  description: "Tengo una idea para desplegar una red de sensores de bajo coste por el campus de Gijón. Busco un tutor que me oriente en la parte de protocolos de red y almacenamiento en bases de datos de series temporales.",
-  requirements: ["Electrónica básica", "C++ / Arduino", "Interés en Smart Cities"],
-  status: "Buscando Tutor",
-  capacity: "Propuesta de Alumno",
-  publishedAt: "18 Feb 2026",
-  tags: ["IoT", "LoRaWAN", "Hardware", "Smart Cities"]
+interface ProposalDetailsData {
+  title: string
+  description: string
+  publicationDate: string
+  status: string
+  tags: string[]
 }
 
 export default function ProposalDetails() {
+  const id = useParams().id
   const navigate = useNavigate()
-  const isAlumno = PROPOSAL_DATA.author.role === "ALUMNO"
+  const [proposal, setProposal] = useState<ProposalDetailsData | null>(null)
 
-  return (
+  useEffect(() => {
+    async function fetchProposal() {
+      try {
+        const { data: { proposal: proposalContents } } = await api.get(`/project/proposals/${id}`)
+        setProposal(proposalContents)
+      } catch (error) {
+        console.error("Error fetching proposal:", error)
+        navigate('/home/proposals')
+      }
+    }
+
+    fetchProposal()
+  }, [])
+
+  const isAlumno = true
+
+  return proposal && (
     <div className="max-w-6xl mx-auto p-6 lg:p-10 pb-32">
       <div className="flex justify-between items-center mb-8">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-semibold">
@@ -42,11 +53,11 @@ export default function ProposalDetails() {
               }`}>
                 {isAlumno ? '💡 Idea de Alumno' : '🎓 Proyecto de Profesor'}
               </span>
-              <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">{PROPOSAL_DATA.publishedAt}</span>
+              <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">{proposal.publicationDate}</span>
             </div>
             
             <h1 className="text-3xl md:text-4xl font-black text-foreground leading-tight">
-              {PROPOSAL_DATA.title}
+              {proposal.title}
             </h1>
           </div>
 
@@ -55,12 +66,12 @@ export default function ProposalDetails() {
               <BookOpen size={16} /> {isAlumno ? '¿En qué consiste mi idea?' : 'Descripción del Proyecto'}
             </h3>
             <p className="text-foreground/80 leading-relaxed text-lg">
-              {PROPOSAL_DATA.description}
+              {proposal.description}
             </p>
           </section>
 
           <div className="flex flex-wrap gap-2">
-            {PROPOSAL_DATA.tags.map(tag => (
+            {proposal.tags.map(tag => (
               <span key={tag} className="flex items-center gap-1.5 px-4 py-2 bg-white border border-border rounded-xl text-xs font-bold text-foreground">
                 <Hash size={14} className="text-primary" /> {tag}
               </span>
@@ -77,7 +88,7 @@ export default function ProposalDetails() {
               </div>
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">Publicado por</p>
-                <h4 className="text-xl font-bold">{PROPOSAL_DATA.author.name}</h4>
+                <h4 className="text-xl font-bold">{proposal.title}</h4>
                 <p className="text-sm text-primary font-medium">{isAlumno ? 'Estudiante de Ingeniería' : 'Departamento de C.C.'}</p>
               </div>
             </div>
