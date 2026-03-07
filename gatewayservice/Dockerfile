@@ -1,4 +1,4 @@
-FROM node:25.7-alpine as development
+FROM node:25.7-alpine AS development
 WORKDIR /usr/src/gatewayservice
 
 RUN npm install -g pnpm

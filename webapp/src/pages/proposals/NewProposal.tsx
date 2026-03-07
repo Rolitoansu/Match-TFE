@@ -7,7 +7,7 @@ import {
   BookOpen, 
   Settings
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 
@@ -70,7 +70,7 @@ export default function NewProposal() {
       }
 
       await api.post('/project/proposals', data)     
-      navigate('/proposals')
+      navigate(-1)
     } catch (error) {
       console.error('Error al enviar:', error)
     }
@@ -83,7 +83,7 @@ export default function NewProposal() {
         className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-        <span className="text-sm font-semibold">Volver</span>
+        <span className="text-sm font-semibold">Volver a propuestas</span>
       </button>
       <div className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Crear Nueva Propuesta</h1>

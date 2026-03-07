@@ -14,10 +14,10 @@ const MOCK_PROFILE = {
 
 export default function Explore() {
     return (
-        <main className="flex items-center justify-center px-4 py-6">
+      <div className="flex items-center justify-center px-4 py-6">
         <div className="w-full max-w-md overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-gray-200/50">
           
-          <div className="flex aspect-square flex-col items-center justify-end bg-primary/5 pb-8 relative">
+          <div className="flex flex-col items-center justify-end bg-primary/5 pt-8 pb-8 relative">
             <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary/10 text-primary">
               <GraduationCap size={64} strokeWidth={1.5} />
             </div>
@@ -56,6 +56,6 @@ export default function Explore() {
             </button>
           </div>
         </div>
-      </main>
+      </div>
     )
 }

@@ -1,8 +1,9 @@
-import { useState, useEffect, useContext, createContext } from 'react'
+import { useState, useEffect, createContext } from 'react'
 import api, { setupHandlers } from '../api/axios'
 import { isAxiosError } from 'axios'
 
 export interface User {
+    id: number
     email: string
     name: string
     surname: string
@@ -19,15 +20,7 @@ interface AuthContextType {
     isAuthenticated: boolean
 }
 
-const AuthContext = createContext<AuthContextType | null>(null)
-
-export const useAuth = () => {
-    const context = useContext(AuthContext)
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider')
-    }
-    return context
-}
+export const AuthContext = createContext<AuthContextType | null>(null)
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null)

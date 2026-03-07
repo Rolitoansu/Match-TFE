@@ -29,6 +29,7 @@ app.post('/register', validate(registerSchema), async (req, res) => {
 
         const passwordHash = await bcrypt.hash(password, 10)
         const date = new Date()
+        let userData: any
 
         await db.transaction(async (trx) => {
             const [user] = await trx.insert(users)
@@ -36,13 +37,20 @@ app.post('/register', validate(registerSchema), async (req, res) => {
                 .returning({ id: users.id })
 
             await trx.insert(students)
-                .values({ id: user.id })  
+                .values({ id: user.id })
+
+            userData = user
         })
+
+        if (!userData) {
+            throw new Error('User creation failed')
+        }
 
         const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '30d' })
         const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '15m' })
 
         const user_data = { 
+            id: userData.id,
             email, 
             name: name, 
             surname: surname, 
@@ -64,7 +72,7 @@ app.post('/register', validate(registerSchema), async (req, res) => {
     }
 })
 
-app.get('/proposals', async (req, res) => {
+app.get('/proposals/:id', async (req, res) => {
     const userEmail = req.headers['x-user-email'] as string
 
     try {

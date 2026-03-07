@@ -21,7 +21,8 @@ app.post('/refresh', async (req, res) => {
     try {
         const payload = jwt.verify(cookie, JWT_SECRET) as jwt.JwtPayload
         const [user] = await db
-            .select({ 
+            .select({
+                id: users.id, 
                 name: users.name, 
                 surname: users.surname, 
                 passwordHash: users.passwordHash, 
@@ -37,6 +38,7 @@ app.post('/refresh', async (req, res) => {
         }
 
         const user_data = { 
+            id: user.id,
             email: payload.email,
             name: user.name,
             surname: user.surname,
@@ -63,7 +65,8 @@ app.post('/login', validate(LoginSchema), async (req, res) => {
 
     try {
         const [user] = await db
-            .select({ 
+            .select({
+                id: users.id,
                 name: users.name, 
                 surname: users.surname, 
                 passwordHash: users.passwordHash, 
@@ -78,7 +81,8 @@ app.post('/login', validate(LoginSchema), async (req, res) => {
             const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '30d' })
             const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '15m' })
 
-            const user_data = { 
+            const user_data = {
+                id: user.id,
                 email, 
                 name: user.name, 
                 surname: user.surname, 

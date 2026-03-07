@@ -4,48 +4,36 @@ import {
   Users
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import useAuth from '../hooks/useAuth'
+import { useEffect, useState } from 'react'
+import api from '../api/axios'
 
-const USER_DATA = {
-  name: "Mario Farpón",
-  role: "Profesor",
-  department: "Ciencias de la Computación",
-  email: "farponmario@uniovi.es",
-  bio: "Investigador en procesamiento de lenguaje natural y aprendizaje automático. Busco estudiantes motivados para explorar nuevas fronteras en DLP.",
-  interests: ["DLP", "Deep Learning", "Transformers", "Python"],
-  stats: { matches: 12, proposals: 3, messages: 8 }
+interface Proposal {
+    id: number
+    title: string
+    description: string
+    publicationDate: string
+    status: string
+    tags: string[]
 }
-
-const MY_PROPOSALS = [
-  {
-    id: 1,
-    title: "Análisis de sentimientos en asturiano usando Transformers",
-    status: "Abierto",
-    date: "Publicado hace 2 días",
-    applicants: 3,
-    tags: ["DLP", "Python"]
-  },
-  {
-    id: 2,
-    title: "Optimización de hiperparámetros en modelos LLM",
-    status: "En curso",
-    date: "Publicado hace 1 semana",
-    applicants: 1,
-    tags: ["Deep Learning"]
-  },
-  {
-    id: 3,
-    title: "Detección de sesgos cognitivos mediante IA",
-    status: "Abierto",
-    date: "Publicado hace 2 semanas",
-    applicants: 5,
-    tags: ["Transformers", "Research"]
-  }
-]
 
 export default function Profile() {
     const navigate = useNavigate()
     const { user } = useAuth()
+    const [proposals, setProposals] = useState<Proposal[] | null>(null)
+    
+    useEffect(() => {
+        async function fetchUserData() {
+            try {
+                const { data: { proposals: proposals } } = await api.get(`/user/proposals/${user!.id}`)
+                setProposals(proposals)
+            } catch (error) {
+                console.error("Error al obtener las propuestas del usuario:", error)
+            }
+        }
+
+        fetchUserData()
+    }, [])
 
     return (
         <div className="max-w-350 mx-auto p-6 lg:p-10">
@@ -75,26 +63,26 @@ export default function Profile() {
                 </div>
                 
                 <h2 className="text-2xl font-bold">{user!.name}</h2>
-                <p className="text-primary font-semibold text-sm mb-1">{USER_DATA.role}</p>
-                <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold">{USER_DATA.department}</p>
+                <p className="text-primary font-semibold text-sm mb-1">Estudiante</p>
+                <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold">Departamento</p>
                 
                 <div className="flex items-center gap-2 mt-4 px-4 py-1.5 bg-secondary/50 rounded-full text-xs text-muted-foreground">
                     <Mail size={12} />
-                    <span>{USER_DATA.email}</span>
+                    <span>{user!.email}</span>
                 </div>
                 </div>
 
                 <div className="mt-8 grid grid-cols-3 gap-2 border-y border-border/50 py-6 text-center">
                 <div>
-                    <p className="text-lg font-bold">{USER_DATA.stats.matches}</p>
+                    <p className="text-lg font-bold">0</p>
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Matches</p>
                 </div>
                 <div className="border-x border-border/50">
-                    <p className="text-lg font-bold">{USER_DATA.stats.proposals}</p>
+                    <p className="text-lg font-bold">{proposals?.length ?? 0}</p>
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">TFGs</p>
                 </div>
                 <div>
-                    <p className="text-lg font-bold">{USER_DATA.stats.messages}</p>
+                    <p className="text-lg font-bold">0</p>
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Chats</p>
                 </div>
                 </div>
@@ -105,19 +93,14 @@ export default function Profile() {
                     Sobre mí <PencilLine size={12} className="cursor-pointer" />
                     </h3>
                     <p className="text-sm leading-relaxed text-foreground/80 italic">
-                    "{USER_DATA.bio}"
+                    "{user!.biography}"
                     </p>
                 </div>
 
                 <div>
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Intereses</h3>
                     <div className="flex flex-wrap gap-2">
-                    {USER_DATA.interests.map((tag) => (
-                        <span key={tag} className="flex items-center gap-1 rounded-lg bg-white px-3 py-1 text-[11px] font-bold text-foreground border border-border">
-                        <Hash size={10} className="text-primary" />
-                        {tag}
-                        </span>
-                    ))}
+                        Por poner
                     </div>
                 </div>
                 </div>
@@ -135,27 +118,27 @@ export default function Profile() {
             </div>
 
             <div className="grid gap-4">
-                {MY_PROPOSALS.map((tfg) => (
-                <div key={tfg.id} className="group bg-card border border-border rounded-3xl p-6 hover:border-primary/40 hover:shadow-md transition-all">
+                {proposals?.map((proposal) => (
+                <div key={proposal.id} className="group bg-card border border-border rounded-3xl p-6 hover:border-primary/40 hover:shadow-md transition-all">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-3 flex-1">
                         <div className="flex items-center gap-3">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            tfg.status === 'Abierto' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                            proposal.status === 'Abierto' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                         }`}>
-                            {tfg.status}
+                            {proposal.status}
                         </span>
                         <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                            <Calendar size={12} /> {tfg.date}
+                            <Calendar size={12} /> {proposal.publicationDate.toLocaleString()}
                         </span>
                         </div>
                         
                         <h4 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                        {tfg.title}
+                        {proposal.title}
                         </h4>
 
                         <div className="flex flex-wrap gap-2">
-                        {tfg.tags.map(tag => (
+                        {proposal.tags.map(tag => (
                             <span key={tag} className="text-[10px] font-medium px-2 py-0.5 bg-secondary rounded text-muted-foreground">
                             #{tag}
                             </span>
@@ -167,11 +150,12 @@ export default function Profile() {
                         <div className="text-center">
                         <div className="flex items-center gap-1.5 text-primary mb-1 justify-center">
                             <Users size={16} />
-                            <span className="text-lg font-black">{tfg.applicants}</span>
+                            <span className="text-lg font-black">{"3"}</span>
                         </div>
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">Candidatos</p>
                         </div>
-                        <button className="p-3 rounded-2xl bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                        <button className="p-3 rounded-2xl bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white transition-all"
+                        onClick={() => { navigate(`/proposals/details/${proposal.id}`) }}>
                         <ChevronRight size={20} />
                         </button>
                     </div>
@@ -180,11 +164,11 @@ export default function Profile() {
                 ))}
             </div>
 
-            {MY_PROPOSALS.length === 0 && (
+            {proposals?.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-3xl border border-dashed border-border">
                 <FileText size={48} className="text-muted-foreground/30 mb-4" />
                 <p className="text-muted-foreground font-medium">Aún no has publicado ninguna propuesta</p>
-                <button className="mt-4 text-primary font-bold text-sm hover:underline">Crear mi primera propuesta</button>
+                <a className="mt-4 text-primary font-bold text-sm hover:underline" href="/proposals/new">Crear mi primera propuesta</a>
                 </div>
             )}
             </div>

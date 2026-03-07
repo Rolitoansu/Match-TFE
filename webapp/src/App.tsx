@@ -5,16 +5,16 @@ import { PublicRoute } from './components/routes/PublicRoute'
 import { lazy } from 'react'
 import './i18n'
 
-const LandingPage = lazy(() => import('./components/LandingPage/LandingPage'))
-const Home = lazy(() => import('./components/Home/Home'))
-const Chat = lazy(() => import('./components/Chat/Chat'))
-const Explore = lazy(() => import('./components/Explore/Explore'))
-const Profile = lazy(() => import('./components/Profile/Profile'))
-const Proposals = lazy(() => import('./components/Proposals/Proposals'))
-const NewProposal = lazy(() => import('./components/Proposals/NewProposal'))
-const ProposalDetails = lazy(() => import('./components/Proposals/ProposalDetails'))
-const Login = lazy(() => import('./components/Login/Login'))
-const Register = lazy(() => import('./components/Register/Register'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const Home = lazy(() => import('./pages/Home'))
+const Chat = lazy(() => import('./pages/Chat'))
+const Explore = lazy(() => import('./pages/Explore'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Proposals = lazy(() => import('./pages/proposals/Proposals'))
+const NewProposal = lazy(() => import('./pages/proposals/NewProposal'))
+const ProposalDetails = lazy(() => import('./pages/proposals/ProposalDetails'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
 
 function App() {
 

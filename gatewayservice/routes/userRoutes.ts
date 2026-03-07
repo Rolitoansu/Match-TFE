@@ -6,6 +6,6 @@ const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://userservice:500
 const router = Router()
 
 router.post('/register', proxy(USER_SERVICE_URL))
-router.get('/proposals', authMiddleware, proxy(USER_SERVICE_URL))
+router.get('/proposals/:id', authMiddleware, proxy(USER_SERVICE_URL))
 
 export default router
