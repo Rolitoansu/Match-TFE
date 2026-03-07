@@ -40,7 +40,7 @@ export const Navbar = () => {
     ]
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 flex w-full border-t bg-white/80 px-6 py-3 pb-3 backdrop-blur-lg z-100">
+        <footer className="fixed bottom-0 left-0 right-0 flex w-full border-t bg-white/80 px-6 py-3 pb-3 backdrop-blur-lg z-100">
             <div className="mx-auto flex w-full max-w-md justify-between items-center">
                 {items.map((item) => {
                     const isActive = location.pathname === item.route || location.pathname.startsWith(item.route + '/')
@@ -73,6 +73,6 @@ export const Navbar = () => {
                     )
                 })}
             </div>
-        </nav>
+        </footer>
     )
 }

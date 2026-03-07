@@ -48,7 +48,7 @@ export default function Profile() {
     const { user } = useAuth()
 
     return (
-        <div className="max-w-350 mx-auto p-6 lg:p-10 mb-15">
+        <div className="max-w-350 mx-auto p-6 lg:p-10">
         <div className="flex justify-between items-end mb-10 px-2">
             <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Mi Panel de Control</h1>

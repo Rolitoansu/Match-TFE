@@ -53,7 +53,7 @@ export default function ProposalDetails() {
               }`}>
                 {isAlumno ? '💡 Idea de Alumno' : '🎓 Proyecto de Profesor'}
               </span>
-              <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">{proposal.publicationDate}</span>
+              <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">{new Date(proposal.publicationDate).toLocaleString()}</span>
             </div>
             
             <h1 className="text-3xl md:text-4xl font-black text-foreground leading-tight">

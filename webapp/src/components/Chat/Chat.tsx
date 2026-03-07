@@ -25,7 +25,7 @@ export default function Chat() {
   const [message, setMessage] = useState('')
 
   return (
-    <div className="flex h-[calc(100vh-140px)] overflow-hidden bg-white border border-border rounded-3xl shadow-sm mx-4 mb-24 lg:mx-10">
+    <div className="flex mt-6 mb-6 h-[calc(100vh-140px)] overflow-hidden bg-white border border-border rounded-3xl shadow-sm mx-4 lg:mx-10">
       
       <aside className="w-full md:w-80 border-r border-border flex flex-col bg-slate-50/50">
         <div className="p-6 border-b border-border bg-white">
@@ -118,7 +118,6 @@ export default function Chat() {
           </div>
         </footer>
       </main>
-
     </div>
   )
 }

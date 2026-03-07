@@ -1,7 +1,7 @@
 import express from 'express'
 import db from '@match-tfe/db'
-import validate, { GetTFESchema, TFECreationSchema } from './validate'
 import { users, projects, tags, projectTags } from '@match-tfe/db/schema'
+import validate, { GetTFESchema, TFECreationSchema } from './validate'
 import { eq, inArray, sql } from 'drizzle-orm'
 
 const PORT = process.env.PORT || 5002
@@ -112,8 +112,6 @@ app.post('/proposals', validate(TFECreationSchema), async (req, res) => {
                 }
             }
         })
-
-        console.log(`Project proposal created: ${title} by user ${user}`)
 
         return res.status(201).json({ message: 'Project proposal created successfully' })
         

@@ -109,7 +109,7 @@ export default function Proposals() {
                   </h3>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <Clock size={14} /> {proposal.publicationDate}
+                      <Clock size={14} /> {new Date(proposal.publicationDate).toLocaleString()}
                     </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       <CheckCircle2 size={14} /> {"Por poner"}
