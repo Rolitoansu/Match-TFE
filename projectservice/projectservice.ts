@@ -121,6 +121,72 @@ app.post('/proposals', validate(TFECreationSchema), async (req, res) => {
     }
 })
 
+// ── Admin: Tags management ──
+
+app.get('/admin/tags', async (_req, res) => {
+    try {
+        const allTags = await db.select().from(tags).orderBy(tags.name)
+        return res.json({ tags: allTags })
+    } catch (exception) {
+        console.error(exception)
+        return res.status(500).json({ error: 'Error fetching tags' })
+    }
+})
+
+app.post('/admin/tags', async (req, res) => {
+    const { name } = req.body
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({ error: 'Tag name is required' })
+    }
+
+    try {
+        const [existing] = await db
+            .select()
+            .from(tags)
+            .where(eq(tags.name, name.trim()))
+            .limit(1)
+
+        if (existing) {
+            return res.status(409).json({ error: 'Tag already exists' })
+        }
+
+        const [tag] = await db
+            .insert(tags)
+            .values({ name: name.trim() })
+            .returning({ id: tags.id, name: tags.name })
+
+        return res.status(201).json({ tag })
+    } catch (exception) {
+        console.error(exception)
+        return res.status(500).json({ error: 'Error creating tag' })
+    }
+})
+
+app.delete('/admin/tags/:id', async (req, res) => {
+    const tagId = Number(req.params.id)
+
+    if (isNaN(tagId)) {
+        return res.status(400).json({ error: 'Invalid tag ID' })
+    }
+
+    try {
+        const [deleted] = await db
+            .delete(tags)
+            .where(eq(tags.id, tagId))
+            .returning({ id: tags.id })
+
+        if (!deleted) {
+            return res.status(404).json({ error: 'Tag not found' })
+        }
+
+        return res.json({ message: 'Tag deleted' })
+    } catch (exception) {
+        console.error(exception)
+        return res.status(500).json({ error: 'Error deleting tag' })
+    }
+})
+
 app.listen(PORT, () => {
     console.log(`Project Service is running on port ${PORT}`)
 })

@@ -1,5 +1,6 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, Outlet } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { AdminAuthProvider } from './context/AdminAuthContext'
 import { ProtectedRoute } from './components/routes/ProtectedRoute'
 import { PublicRoute } from './components/routes/PublicRoute'
 import { lazy } from 'react'
@@ -16,12 +17,17 @@ const ProposalDetails = lazy(() => import('./pages/proposals/ProposalDetails'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 
+const AdminLogin = lazy(() => import('./pages/AdminLogin'))
+const AdminLayout = lazy(() => import('./pages/AdminLayout'))
+const Admin = lazy(() => import('./pages/Admin'))
+const AdministrationRoute = lazy(() => import('./components/routes/AdministrationRoute'))
+
 function App() {
 
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AuthProvider><Outlet /></AuthProvider>}>
           <Route path="/" element={<LandingPage />} />
           <Route element={<PublicRoute />}>
               <Route path="/login" element={<Login />} />
@@ -37,9 +43,17 @@ function App() {
                 <Route path="proposals/details/:id" element={<ProposalDetails />} />
               </Route>
           </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </Route>
+        <Route element={<AdminAuthProvider><Outlet /></AdminAuthProvider>}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route element={<AdministrationRoute />}>
+            <Route element={<AdminLayout />}>
+              <Route path="/admin" element={<Admin />} />
+            </Route>
+          </Route>
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 

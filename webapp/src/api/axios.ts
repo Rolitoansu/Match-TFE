@@ -16,6 +16,15 @@ export function setupHandlers(
     handleAuthFailure = onAuthFailure
 }
 
+api.interceptors.request.use(
+    config => {
+        const token = localStorage.getItem('accessToken')
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+        }
+        return config
+    }
+)
 api.interceptors.response.use(
     response => response,
     async error => {

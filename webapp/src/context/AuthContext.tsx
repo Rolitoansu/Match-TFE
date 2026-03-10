@@ -1,8 +1,9 @@
 import { useState, useEffect, createContext } from 'react'
+import { Outlet } from 'react-router-dom'
 import api, { setupHandlers } from '../api/axios'
 import { isAxiosError } from 'axios'
 
-export interface User {
+export interface MatchTFEUser {
     id: number
     email: string
     name: string
@@ -11,16 +12,17 @@ export interface User {
     biography: string
     interests: string[]
 }
+
+export type User = MatchTFEUser
+
 interface AuthContextType {
-    user: User | null
+    user: User | null 
     login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     register: (email: string, name: string, surname: string, password: string) => Promise<void>
-    loading: boolean
-    isAuthenticated: boolean
 }
 
-export const AuthContext = createContext<AuthContextType | null>(null)
+export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null)
@@ -98,10 +100,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             login, 
             logout,
             register,
-            loading, 
-            isAuthenticated: Boolean(user) 
         }}>
-            { !loading && children }
+            { !loading && (children ?? <Outlet />) }
         </AuthContext.Provider>
     )
 }
