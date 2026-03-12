@@ -2,7 +2,7 @@ import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { students, users } from '@match-tfe/db/schema'
-import { validate, registerSchema } from './validate'
+import { validate, registerSchema, adminStudentSchema } from './validate'
 import { eq, sql } from 'drizzle-orm'
 import db from '@match-tfe/db'
 import { projects, tags, projectTags } from '@match-tfe/db/schema'
@@ -103,12 +103,8 @@ app.get('/proposals/:id', async (req, res) => {
 
 // ── Admin: Import students from CSV data ──
 
-app.post('/admin/students/import', async (req, res) => {
+app.post('/admin/students/import', validate(adminStudentSchema), async (req, res) => {
     const { students: studentList } = req.body
-
-    if (!Array.isArray(studentList) || studentList.length === 0) {
-        return res.status(400).json({ error: 'A non-empty students array is required' })
-    }
 
     let created = 0
     let skipped = 0

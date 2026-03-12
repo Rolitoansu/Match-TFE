@@ -17,6 +17,12 @@ CREATE TABLE professors (
     department VARCHAR(100) NOT NULL
 );
 
+CREATE TABLE administrators (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL
+);
+
 CREATE TABLE skills (
    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
    name VARCHAR(100) NOT NULL,
@@ -92,3 +98,9 @@ CREATE TABLE user_tags (
     tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, tag_id)
 );
+
+-- Seed default admin user (password: admin123)
+-- Hash generated with bcrypt, 10 rounds
+-- By now, it is admin123
+INSERT INTO administrators (email, password_hash) VALUES 
+    ('admin@matchtfe.com', '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i');
