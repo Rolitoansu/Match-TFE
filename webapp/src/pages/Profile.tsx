@@ -20,7 +20,7 @@ interface Proposal {
 export default function Profile() {
     const navigate = useNavigate()
     const { user } = useAuth()
-    const [proposals, setProposals] = useState<Proposal[] | null>(null)
+    const [proposals, setProposals] = useState<Proposal[]>([])
     
     useEffect(() => {
         async function fetchUserData() {

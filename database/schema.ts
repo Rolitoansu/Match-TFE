@@ -34,6 +34,12 @@ export const professors = pgTable('professors', {
   department: varchar('department', { length: 100 }).notNull(),
 })
 
+export const administrators = pgTable('administrators', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  email: varchar('email', { length: 100 }).notNull().unique(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull()
+})
+
 export const skills = pgTable('skills', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   name: varchar('name', { length: 100 }).notNull(),

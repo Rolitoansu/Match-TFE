@@ -2,7 +2,7 @@ import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { students, users } from '@match-tfe/db/schema'
-import { validate, registerSchema } from './validate'
+import { validate, registerSchema, adminStudentSchema } from './validate'
 import { eq, sql } from 'drizzle-orm'
 import db from '@match-tfe/db'
 import { projects, tags, projectTags } from '@match-tfe/db/schema'
@@ -99,6 +99,59 @@ app.get('/proposals/:id', async (req, res) => {
         console.error(exception)
         return res.status(500).json({ error: 'Error fetching project proposals' })
     }
+})
+
+// ── Admin: Import students from CSV data ──
+
+app.post('/admin/students/import', validate(adminStudentSchema), async (req, res) => {
+    const { students: studentList } = req.body
+
+    let created = 0
+    let skipped = 0
+    const errors: string[] = []
+
+    for (const student of studentList) {
+        const { email, name, surname } = student
+
+        if (!email || !name || !surname) {
+            errors.push(`Datos incompletos para: ${email || 'sin correo'}`)
+            skipped++
+            continue
+        }
+
+        try {
+            const [existing] = await db
+                .select()
+                .from(users)
+                .where(eq(users.email, email))
+                .limit(1)
+
+            if (existing) {
+                skipped++
+                continue
+            }
+
+            // Default password: the email prefix before @
+            const defaultPassword = email.split('@')[0]
+            const passwordHash = await bcrypt.hash(defaultPassword, 10)
+
+            await db.transaction(async (trx) => {
+                const [user] = await trx.insert(users)
+                    .values({ email, name, surname, passwordHash, registrationDate: new Date() })
+                    .returning({ id: users.id })
+
+                await trx.insert(students)
+                    .values({ id: user.id })
+            })
+
+            created++
+        } catch (e: any) {
+            errors.push(`Error al crear ${email}: ${e.message}`)
+            skipped++
+        }
+    }
+
+    return res.json({ created, skipped, errors })
 })
 
 app.listen(PORT, () => {
