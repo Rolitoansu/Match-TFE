@@ -22,6 +22,9 @@ router.get('/tags', authMiddleware, proxy(PROJECT_SERVICE_URL, {
 router.post('/tags', authMiddleware, proxy(PROJECT_SERVICE_URL, {
     proxyReqPathResolver: () => '/admin/tags'
 }))
+router.post('/tags/import', authMiddleware, proxy(PROJECT_SERVICE_URL, {
+    proxyReqPathResolver: () => '/admin/tags/import'
+}))
 router.delete('/tags/:id', authMiddleware, proxy(PROJECT_SERVICE_URL, {
     proxyReqPathResolver: (req) => `/admin/tags/${req.params.id}`
 }))

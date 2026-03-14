@@ -26,4 +26,10 @@ export const GetTFESchema = z.object({
                 .positive('Invalid project ID')
 })
 
+export const AdminTagImportSchema = z.object({
+    tags: z.array(z.object({
+        name: z.string('Expected tag name').trim().min(1, 'Tag name cannot be empty'),
+    })).min(1, 'At least one tag is required')
+})
+
 export default validate

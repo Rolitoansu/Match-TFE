@@ -1,16 +1,18 @@
 import { 
   ArrowLeft, BookOpen, MessageSquare, 
-  Hash, GraduationCap, UserCheck, Mail, Heart, Users
+  Hash, GraduationCap, UserCheck, Mail, Heart, Users, RefreshCw
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import api from '../../api/axios'
+import useAuth from '../../hooks/useAuth'
 
 interface ProposalDetailsData {
   id: number
   title: string
   description: string
   publicationDate: string
+  isOwner: boolean
   status: 'proposed' | 'in_progress' | 'completed'
   tags: string[]
   user: {
@@ -38,7 +40,50 @@ const STATUS_LABEL: Record<ProposalDetailsData['status'], string> = {
 export default function ProposalDetails() {
   const id = useParams().id
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [proposal, setProposal] = useState<ProposalDetailsData | null>(null)
+  const [renewing, setRenewing] = useState(false)
+  const [renewFeedback, setRenewFeedback] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!renewFeedback) return
+
+    const timer = setTimeout(() => {
+      setRenewFeedback(null)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [renewFeedback])
+
+  async function handleRenew() {
+    if (!proposal) return
+    setRenewFeedback(null)
+    setRenewing(true)
+    try {
+      const { data } = await api.patch(`/project/proposals/${id}/renew`)
+
+      if (data?.publicationDate) {
+        setProposal(prev => prev ? { ...prev, publicationDate: data.publicationDate } : prev)
+      }
+
+      // Refresh from backend so the UI always reflects persisted values.
+      const { data: refreshedData } = await api.get(`/project/proposals/${id}`)
+      if (refreshedData?.proposal) {
+        setProposal(refreshedData.proposal)
+      }
+
+      if (data?.expiresAt) {
+        setRenewFeedback(`Caduca el ${new Date(data.expiresAt).toLocaleDateString('es-ES')}`)
+      } else {
+        setRenewFeedback('Caducidad renovada correctamente')
+      }
+    } catch (error) {
+      console.error('Error renewing proposal:', error)
+      setRenewFeedback('No se pudo renovar. Intenta de nuevo.')
+    } finally {
+      setRenewing(false)
+    }
+  }
 
   useEffect(() => {
     async function fetchProposal() {
@@ -53,6 +98,8 @@ export default function ProposalDetails() {
 
     fetchProposal()
   }, [])
+
+  const canRenew = Boolean(proposal?.isOwner || (proposal?.user?.id && user?.id && proposal.user.id === user.id))
 
   return proposal && (
     <div className="max-w-6xl mx-auto p-6 lg:p-10 pb-32">
@@ -119,6 +166,21 @@ export default function ProposalDetails() {
             <hr className="border-border/60" />
 
             <div className="space-y-3">
+              {canRenew && (
+                <button
+                  onClick={handleRenew}
+                  disabled={renewing}
+                  className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-emerald-700 text-emerald-50 font-black shadow-sm transition-colors hover:bg-emerald-800 disabled:opacity-60"
+                >
+                  <RefreshCw size={18} className={renewing ? 'animate-spin' : ''} />
+                  {renewing ? 'Renovando…' : 'Renovar TFG (1 año)'}
+                </button>
+              )}
+              {renewFeedback && (
+                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                  {renewFeedback}
+                </p>
+              )}
               <button className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:opacity-90 transition-all" disabled>
                 <MessageSquare size={20} />
                 Contacto por correo

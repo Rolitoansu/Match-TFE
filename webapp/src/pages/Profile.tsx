@@ -1,11 +1,11 @@
 import { 
     User, Settings, Mail, PencilLine,
   FileText, Plus, Calendar, ChevronRight,
-  Users
+    Users, Hash, X, ChevronDown
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import api from '../api/axios'
 
 interface Proposal {
@@ -17,6 +17,17 @@ interface Proposal {
     tags: string[]
 }
 
+interface TagOption {
+    id: number
+    name: string
+}
+
+interface ProfileData {
+    id: number
+    biography: string | null
+    interests: string[]
+}
+
 export default function Profile() {
     const navigate = useNavigate()
     const { user } = useAuth()
@@ -26,12 +37,34 @@ export default function Profile() {
     const [savingAboutMe, setSavingAboutMe] = useState(false)
     const [aboutMeError, setAboutMeError] = useState<string | null>(null)
     const [aboutMeSuccess, setAboutMeSuccess] = useState<string | null>(null)
+    const [availableTags, setAvailableTags] = useState<TagOption[]>([])
+    const [selectedInterests, setSelectedInterests] = useState<string[]>([])
+    const [isEditingInterests, setIsEditingInterests] = useState(false)
+    const [savingInterests, setSavingInterests] = useState(false)
+    const [interestsError, setInterestsError] = useState<string | null>(null)
+    const [interestsSuccess, setInterestsSuccess] = useState<string | null>(null)
+    const [interestSearch, setInterestSearch] = useState('')
+    const [debouncedInterestSearch, setDebouncedInterestSearch] = useState('')
+    const [interestInputFocused, setInterestInputFocused] = useState(false)
+    const interestInputRef = useRef<HTMLInputElement>(null)
+    const interestSuggestionRef = useRef<HTMLDivElement>(null)
     
     useEffect(() => {
         async function fetchUserData() {
             try {
-                const { data: { proposals: proposals } } = await api.get(`/user/proposals/${user!.id}`)
-                setProposals(proposals)
+                const [proposalsResponse, profileResponse, tagsResponse] = await Promise.all([
+                    api.get(`/user/proposals/${user!.id}`),
+                    api.get('/user/profile'),
+                    api.get('/project/tags'),
+                ])
+
+                setProposals(proposalsResponse.data.proposals)
+
+                const profile: ProfileData = profileResponse.data.user
+                setAboutMe(profile.biography ?? '')
+                setSelectedInterests(profile.interests ?? [])
+
+                setAvailableTags(tagsResponse.data.tags ?? [])
             } catch (error) {
                 console.error("Error al obtener las propuestas del usuario:", error)
             }
@@ -56,6 +89,37 @@ export default function Profile() {
         return () => clearTimeout(timeoutId)
     }, [aboutMeSuccess])
 
+    useEffect(() => {
+        if (!interestsSuccess) {
+            return
+        }
+
+        const timeoutId = setTimeout(() => {
+            setInterestsSuccess(null)
+        }, 3000)
+
+        return () => clearTimeout(timeoutId)
+    }, [interestsSuccess])
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedInterestSearch(interestSearch), 300)
+        return () => clearTimeout(timer)
+    }, [interestSearch])
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (
+                interestInputRef.current && !interestInputRef.current.contains(e.target as Node) &&
+                interestSuggestionRef.current && !interestSuggestionRef.current.contains(e.target as Node)
+            ) {
+                setInterestInputFocused(false)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
     async function saveAboutMe() {
         setSavingAboutMe(true)
         setAboutMeError(null)
@@ -70,6 +134,47 @@ export default function Profile() {
             setAboutMeError('No se pudo actualizar tu biografía. Inténtalo de nuevo.')
         } finally {
             setSavingAboutMe(false)
+        }
+    }
+
+    function toggleInterest(tagName: string) {
+        setSelectedInterests((previous) => {
+            if (previous.includes(tagName)) {
+                return previous.filter((value) => value !== tagName)
+            }
+
+            return [...previous, tagName]
+        })
+    }
+
+    function highlightMatch(text: string, query: string) {
+        if (!query.trim()) return <span>{text}</span>
+        const idx = text.toLowerCase().indexOf(query.trim().toLowerCase())
+        if (idx === -1) return <span>{text}</span>
+
+        return (
+            <span>
+                {text.slice(0, idx)}
+                <mark className="bg-primary/20 text-primary rounded px-0.5">{text.slice(idx, idx + query.trim().length)}</mark>
+                {text.slice(idx + query.trim().length)}
+            </span>
+        )
+    }
+
+    async function saveInterests() {
+        setSavingInterests(true)
+        setInterestsError(null)
+        setInterestsSuccess(null)
+
+        try {
+            await api.patch('/user/profile', { interests: selectedInterests })
+            setIsEditingInterests(false)
+            setInterestsSuccess('Intereses actualizados correctamente.')
+        } catch (error) {
+            console.error('Error actualizando intereses:', error)
+            setInterestsError('No se pudieron actualizar los intereses. Inténtalo de nuevo.')
+        } finally {
+            setSavingInterests(false)
         }
     }
 
@@ -188,10 +293,156 @@ export default function Profile() {
                 </div>
 
                 <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Intereses</h3>
-                    <div className="flex flex-wrap gap-2">
-                        Por poner
-                    </div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center justify-between">
+                        Intereses
+                        <button
+                            type="button"
+                            className="text-primary hover:opacity-80 transition-opacity"
+                            onClick={() => {
+                                setIsEditingInterests((prev) => !prev)
+                                setInterestsError(null)
+                                setInterestsSuccess(null)
+                            }}
+                        >
+                            <PencilLine size={12} className="cursor-pointer" />
+                        </button>
+                    </h3>
+
+                    {isEditingInterests ? (
+                        <div className="space-y-3">
+                            <p className="text-xs text-muted-foreground">Añade etiquetas para personalizar qué TFGs aparecen en explorar.</p>
+
+                            {selectedInterests.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedInterests.map((tag) => (
+                                        <span key={tag} className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-bold border border-primary/20 animate-in fade-in slide-in-from-top-1 duration-150">
+                                            {tag}
+                                            <button type="button" onClick={() => toggleInterest(tag)} className="p-0.5 hover:bg-primary/20 rounded-md transition-colors">
+                                                <X size={13} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="relative">
+                                <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={15} />
+                                <input
+                                    ref={interestInputRef}
+                                    type="text"
+                                    placeholder="Buscar y añadir intereses..."
+                                    className={`w-full pl-10 pr-9 py-3 rounded-xl bg-slate-50 border transition-all text-sm outline-none ${
+                                        interestInputFocused
+                                            ? 'border-primary/50 bg-white ring-4 ring-primary/5'
+                                            : 'border-transparent hover:border-border'
+                                    }`}
+                                    value={interestSearch}
+                                    onChange={(e) => setInterestSearch(e.target.value)}
+                                    onFocus={() => setInterestInputFocused(true)}
+                                    autoComplete="off"
+                                />
+                                <ChevronDown
+                                    size={15}
+                                    className={`absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-transform duration-200 ${
+                                        interestInputFocused ? 'rotate-180' : ''
+                                    }`}
+                                />
+
+                                {interestInputFocused && (() => {
+                                    const selectedSet = new Set(selectedInterests)
+                                    const filtered = availableTags
+                                        .map((tag) => tag.name)
+                                        .filter((tag) => !selectedSet.has(tag)
+                                            && (!debouncedInterestSearch.trim()
+                                                || tag.toLowerCase().includes(debouncedInterestSearch.trim().toLowerCase())))
+                                    const searching = debouncedInterestSearch.trim().length > 0
+
+                                    return (
+                                        <div
+                                            ref={interestSuggestionRef}
+                                            className="absolute z-60 bottom-full left-0 right-0 mb-1.5 bg-white border border-border rounded-2xl shadow-xl shadow-slate-200/70 overflow-hidden"
+                                        >
+                                            <div className="px-4 py-2 border-b border-border/50 flex items-center justify-between">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                                    {searching ? 'Resultados' : 'Disponibles'}
+                                                </span>
+                                                {filtered.length > 0 && (
+                                                    <span className="text-[10px] font-semibold text-muted-foreground bg-slate-100 rounded-full px-2 py-0.5">
+                                                        {filtered.length}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {filtered.length > 0 ? (
+                                                <div className="max-h-48 overflow-y-auto">
+                                                    {filtered.map((tag, i) => (
+                                                        <button
+                                                            key={tag}
+                                                            type="button"
+                                                            onMouseDown={(e) => e.preventDefault()}
+                                                            onClick={() => {
+                                                                toggleInterest(tag)
+                                                                setInterestSearch('')
+                                                            }}
+                                                            className={`w-full text-left px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors ${
+                                                                i !== filtered.length - 1 ? 'border-b border-border/40' : ''
+                                                            }`}
+                                                        >
+                                                            {highlightMatch(tag, debouncedInterestSearch)}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="px-4 py-4 text-center">
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {searching
+                                                            ? `No hay etiquetas que coincidan con «${debouncedInterestSearch}».`
+                                                            : 'Ya has añadido todas las etiquetas disponibles.'}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })()}
+                            </div>
+
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary transition-colors"
+                                    onClick={() => {
+                                        setIsEditingInterests(false)
+                                        setInterestSearch('')
+                                        setInterestInputFocused(false)
+                                    }}
+                                    disabled={savingInterests}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
+                                    onClick={saveInterests}
+                                    disabled={savingInterests}
+                                >
+                                    {savingInterests ? 'Guardando...' : 'Guardar intereses'}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {selectedInterests.length > 0 ? selectedInterests.map((interest) => (
+                                <span key={interest} className="text-[10px] font-semibold px-2 py-1 bg-secondary rounded-full text-muted-foreground border border-border/60">
+                                    #{interest}
+                                </span>
+                            )) : (
+                                <p className="text-sm italic text-foreground/70">Todavía no has definido intereses.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {interestsError && <p className="mt-2 text-xs text-red-600">{interestsError}</p>}
+                    {interestsSuccess && <p className="mt-2 text-xs text-green-600">{interestsSuccess}</p>}
                 </div>
                 </div>
             </div>

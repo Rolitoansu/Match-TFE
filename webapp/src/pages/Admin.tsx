@@ -17,12 +17,45 @@ interface CSVStudent {
   surname: string
 }
 
+interface CSVTag {
+  name: string
+}
+
 interface UploadResult {
   success: boolean
   message: string
   created?: number
   skipped?: number
   errors?: string[]
+}
+
+const MAX_CSV_SIZE_BYTES = 2 * 1024 * 1024
+
+function splitCSVLine(line: string) {
+  return line.split(',').map(c => c.trim())
+}
+
+function normalizeCSVText(text: string) {
+  return text.replace(/^\uFEFF/, '')
+}
+
+function validateCSVFile(file: File) {
+  const isCsvByExtension = file.name.toLowerCase().endsWith('.csv')
+  const isCsvByMime = file.type === 'text/csv' || file.type === 'application/vnd.ms-excel' || file.type === ''
+
+  if (!isCsvByExtension && !isCsvByMime) {
+    return 'El archivo debe ser un CSV (.csv)'
+  }
+
+  if (file.size === 0) {
+    return 'El archivo esta vacio'
+  }
+
+  if (file.size > MAX_CSV_SIZE_BYTES) {
+    return 'El CSV supera el tamano maximo de 2 MB'
+  }
+
+  return null
 }
 
 export default function Admin() {
@@ -38,6 +71,14 @@ export default function Admin() {
   const [uploading, setUploading] = useState(false)
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isStudentDragActive, setIsStudentDragActive] = useState(false)
+
+  const [csvTags, setCsvTags] = useState<CSVTag[]>([])
+  const [csvTagsFileName, setCsvTagsFileName] = useState<string | null>(null)
+  const [uploadingTags, setUploadingTags] = useState(false)
+  const [uploadTagsResult, setUploadTagsResult] = useState<UploadResult | null>(null)
+  const tagFileInputRef = useRef<HTMLInputElement>(null)
+  const [isTagDragActive, setIsTagDragActive] = useState(false)
 
   useEffect(() => {
     fetchTags()
@@ -89,6 +130,137 @@ export default function Admin() {
     }
   }
 
+  async function processTagCSV(file: File) {
+    setUploadTagsResult(null)
+    setCsvTagsFileName(file.name)
+
+    const fileError = validateCSVFile(file)
+    if (fileError) {
+      setCsvTags([])
+      throw new Error(fileError)
+    }
+
+    const text = normalizeCSVText(await file.text())
+    const lines = text
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line)
+
+    if (lines.length < 2) {
+      setCsvTags([])
+      throw new Error('El CSV de etiquetas debe incluir cabecera y al menos una fila')
+    }
+
+    const header = splitCSVLine(lines[0])[0]?.toLowerCase() ?? ''
+    if (!header.includes('nombre') && !header.includes('tag')) {
+      setCsvTags([])
+      throw new Error('Cabecera no valida en etiquetas. Usa una columna nombre')
+    }
+
+    const parsedTags: CSVTag[] = []
+    const invalidRows: string[] = []
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = splitCSVLine(lines[i])
+      const name = cols[0]
+
+      if (!name) {
+        invalidRows.push(`Fila ${i + 1}: nombre vacio`)
+        continue
+      }
+
+      if (name.length > 100) {
+        invalidRows.push(`Fila ${i + 1}: nombre supera 100 caracteres`)
+        continue
+      }
+
+      parsedTags.push({ name })
+    }
+
+    if (parsedTags.length === 0) {
+      setCsvTags([])
+      throw new Error('No hay filas validas para importar etiquetas')
+    }
+
+    if (invalidRows.length > 0) {
+      setUploadTagsResult({
+        success: false,
+        message: 'Hay filas invalidas en el CSV de etiquetas',
+        errors: invalidRows.slice(0, 5),
+      })
+    }
+
+    setCsvTags(parsedTags)
+  }
+
+  function handleTagFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    processTagCSV(file).catch((error: unknown) => {
+      setUploadTagsResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Archivo CSV de etiquetas invalido',
+      })
+    })
+  }
+
+  function handleTagDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setIsTagDragActive(true)
+  }
+
+  function handleTagDragLeave() {
+    setIsTagDragActive(false)
+  }
+
+  function handleTagDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setIsTagDragActive(false)
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+
+    processTagCSV(file).catch((error: unknown) => {
+      setUploadTagsResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Archivo CSV de etiquetas invalido',
+      })
+    })
+  }
+
+  function clearTagsCSV() {
+    setCsvTags([])
+    setCsvTagsFileName(null)
+    setUploadTagsResult(null)
+    if (tagFileInputRef.current) tagFileInputRef.current.value = ''
+  }
+
+  async function uploadTags() {
+    if (csvTags.length === 0) return
+    setUploadingTags(true)
+    setUploadTagsResult(null)
+
+    try {
+      const { data } = await adminApi.post('/admin/tags/import', { tags: csvTags })
+      setUploadTagsResult({
+        success: true,
+        message: 'Importación de etiquetas completada',
+        created: data.created,
+        skipped: data.skipped,
+        errors: data.errors,
+      })
+
+      await fetchTags()
+    } catch {
+      setUploadTagsResult({
+        success: false,
+        message: 'Error al importar las etiquetas',
+      })
+    } finally {
+      setUploadingTags(false)
+    }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -96,28 +268,109 @@ export default function Admin() {
     }
   }
 
+  async function processStudentCSV(file: File) {
+    setUploadResult(null)
+    setCsvFileName(file.name)
+
+    const fileError = validateCSVFile(file)
+    if (fileError) {
+      setCsvStudents([])
+      throw new Error(fileError)
+    }
+
+    const text = normalizeCSVText(await file.text())
+    const lines = text
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line)
+
+    if (lines.length < 2) {
+      setCsvStudents([])
+      throw new Error('El CSV de alumnos debe incluir cabecera y al menos una fila')
+    }
+
+    const header = splitCSVLine(lines[0]).map(col => col.toLowerCase())
+    const hasEmailHeader = header.some(col => col.includes('correo') || col.includes('email'))
+    const hasNameHeader = header.some(col => col.includes('nombre'))
+    const hasSurnameHeader = header.some(col => col.includes('apellido'))
+
+    if (!hasEmailHeader || !hasNameHeader || !hasSurnameHeader) {
+      setCsvStudents([])
+      throw new Error('Cabecera no valida. Usa columnas correo, nombre, apellidos')
+    }
+
+    const students: CSVStudent[] = []
+    const invalidRows: string[] = []
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = splitCSVLine(lines[i])
+      const email = cols[0] ?? ''
+      const name = cols[1] ?? ''
+      const surname = cols[2] ?? ''
+
+      if (cols.length < 3 || !email || !name || !surname) {
+        invalidRows.push(`Fila ${i + 1}: faltan columnas obligatorias`)
+        continue
+      }
+
+      if (!emailRegex.test(email)) {
+        invalidRows.push(`Fila ${i + 1}: correo invalido`)
+        continue
+      }
+
+      students.push({ email, name, surname })
+    }
+
+    if (students.length === 0) {
+      setCsvStudents([])
+      throw new Error('No hay filas validas para importar alumnos')
+    }
+
+    if (invalidRows.length > 0) {
+      setUploadResult({
+        success: false,
+        message: 'Hay filas invalidas en el CSV de alumnos',
+        errors: invalidRows.slice(0, 5),
+      })
+    }
+
+    setCsvStudents(students)
+  }
+
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    setUploadResult(null)
-    setCsvFileName(file.name)
+    processStudentCSV(file).catch((error: unknown) => {
+      setUploadResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Archivo CSV de alumnos invalido',
+      })
+    })
+  }
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const text = event.target?.result as string
-      const lines = text.split('\n').filter(line => line.trim())
-      
-      const students: CSVStudent[] = []
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.trim())
-        if (cols.length >= 3 && cols[0]) {
-          students.push({ email: cols[0], name: cols[1], surname: cols[2] })
-        }
-      }
-      setCsvStudents(students)
-    }
-    reader.readAsText(file)
+  function handleStudentDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setIsStudentDragActive(true)
+  }
+
+  function handleStudentDragLeave() {
+    setIsStudentDragActive(false)
+  }
+
+  function handleStudentDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setIsStudentDragActive(false)
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+
+    processStudentCSV(file).catch((error: unknown) => {
+      setUploadResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Archivo CSV de alumnos invalido',
+      })
+    })
   }
 
   function clearCSV() {
@@ -278,7 +531,15 @@ export default function Admin() {
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-border rounded-2xl p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group"
+              onDragOver={handleStudentDragOver}
+              onDragLeave={handleStudentDragLeave}
+              onDrop={handleStudentDrop}
+              className={[
+                'border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all group',
+                isStudentDragActive
+                  ? 'border-primary bg-primary/8'
+                  : 'border-border hover:border-primary/50 hover:bg-primary/5',
+              ].join(' ')}
             >
               <input
                 ref={fileInputRef}
@@ -386,6 +647,120 @@ export default function Admin() {
                 {uploadResult.errors && uploadResult.errors.length > 0 && (
                   <ul className="text-xs ml-6 mt-1 space-y-0.5">
                     {uploadResult.errors.slice(0, 5).map((err, i) => (
+                      <li key={i}>• {err}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-card border border-border rounded-3xl p-8 shadow-sm">
+            <h2 className="font-bold text-lg flex items-center gap-2 mb-4">
+              <FileSpreadsheet className="text-primary" size={20} />
+              Importar Etiquetas
+            </h2>
+
+            <p className="text-sm text-muted-foreground mb-4">
+              Sube un CSV con la columna: <strong>nombre</strong>
+            </p>
+
+            <div
+              onClick={() => tagFileInputRef.current?.click()}
+              onDragOver={handleTagDragOver}
+              onDragLeave={handleTagDragLeave}
+              onDrop={handleTagDrop}
+              className={[
+                'border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all group',
+                isTagDragActive
+                  ? 'border-primary bg-primary/8'
+                  : 'border-border hover:border-primary/50 hover:bg-primary/5',
+              ].join(' ')}
+            >
+              <input
+                ref={tagFileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleTagFileSelect}
+              />
+              <Upload
+                size={30}
+                className="mx-auto mb-2 text-muted-foreground group-hover:text-primary transition-colors"
+              />
+              <p className="text-sm font-semibold text-foreground">
+                {csvTagsFileName ? csvTagsFileName : 'Haz clic o arrastra un CSV de etiquetas'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Formato: nombre</p>
+            </div>
+
+            {csvTags.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-foreground">
+                    {csvTags.length} etiqueta{csvTags.length !== 1 ? 's' : ''} detectada{csvTags.length !== 1 ? 's' : ''}
+                  </p>
+                  <button
+                    onClick={clearTagsCSV}
+                    className="text-xs font-medium text-muted-foreground hover:text-red-600 transition-colors flex items-center gap-1"
+                  >
+                    <X size={14} /> Limpiar
+                  </button>
+                </div>
+
+                <div className="max-h-44 overflow-y-auto rounded-xl border border-border bg-slate-50/40">
+                  <ul className="divide-y divide-border/60">
+                    {csvTags.slice(0, 50).map((tag, i) => (
+                      <li key={`${tag.name}-${i}`} className="px-4 py-2 text-sm text-foreground/85">
+                        #{tag.name}
+                      </li>
+                    ))}
+                    {csvTags.length > 50 && (
+                      <li className="px-4 py-2 text-xs text-center text-muted-foreground">
+                        ... y {csvTags.length - 50} más
+                      </li>
+                    )}
+                  </ul>
+                </div>
+
+                <button
+                  onClick={uploadTags}
+                  disabled={uploadingTags}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all disabled:opacity-50"
+                >
+                  {uploadingTags ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      Importando etiquetas...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={18} />
+                      Importar Etiquetas
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {uploadTagsResult && (
+              <div className={`mt-4 p-4 rounded-2xl border ${
+                uploadTagsResult.success
+                  ? 'bg-green-50 border-green-200 text-green-800'
+                  : 'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                <div className="flex items-center gap-2 font-bold text-sm mb-1">
+                  {uploadTagsResult.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                  {uploadTagsResult.message}
+                </div>
+                {uploadTagsResult.success && (
+                  <p className="text-xs ml-6">
+                    {uploadTagsResult.created} creada{uploadTagsResult.created !== 1 ? 's' : ''} · {uploadTagsResult.skipped} omitida{uploadTagsResult.skipped !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {uploadTagsResult.errors && uploadTagsResult.errors.length > 0 && (
+                  <ul className="text-xs ml-6 mt-1 space-y-0.5">
+                    {uploadTagsResult.errors.slice(0, 5).map((err, i) => (
                       <li key={i}>• {err}</li>
                     ))}
                   </ul>

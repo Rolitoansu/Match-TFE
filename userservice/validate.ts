@@ -29,5 +29,8 @@ export const adminStudentSchema = z.object({
 })
 
 export const updateProfileSchema = z.object({
-    biography: z.string("Expected biography").max(2000, "Biography cannot exceed 2000 characters").nullable()
+    biography: z.string("Expected biography").max(2000, "Biography cannot exceed 2000 characters").nullable().optional(),
+    interests: z.array(z.string().trim().min(1, 'Interest tag cannot be empty')).max(30, 'Too many interests').optional(),
+}).refine((data) => data.biography !== undefined || data.interests !== undefined, {
+    message: 'At least one profile field must be provided',
 })

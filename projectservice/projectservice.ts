@@ -1,7 +1,7 @@
 import express from 'express'
 import db from '@match-tfe/db'
-import { users, projects, tags, projectTags, matches, proposalPasses } from '@match-tfe/db/schema'
-import validate, { GetTFESchema, TFECreationSchema } from './validate'
+import { users, projects, tags, projectTags, matches, proposalPasses, userTags } from '@match-tfe/db/schema'
+import validate, { AdminTagImportSchema, GetTFESchema, TFECreationSchema } from './validate'
 import { and, desc, eq, inArray, isNotNull, ne } from 'drizzle-orm'
 
 const PORT = process.env.PORT || 5002
@@ -48,6 +48,15 @@ async function getProjectTagNames(projectId: number) {
         .where(eq(projectTags.projectId, projectId))
 
     return proposalTags.map((tag) => tag.name)
+}
+
+async function getProjectTagIds(projectId: number) {
+    const proposalTagIds = await db
+        .select({ id: projectTags.tagId })
+        .from(projectTags)
+        .where(eq(projectTags.projectId, projectId))
+
+    return proposalTagIds.map((tag) => tag.id)
 }
 
 app.get('/proposals', async (req, res) => {
@@ -167,6 +176,17 @@ app.get('/explore', async (req, res) => {
             return res.status(404).json({ error: 'Authenticated user not found or role not supported' })
         }
 
+        const currentUserInterestRows = await db
+            .select({ tagId: userTags.tagId })
+            .from(userTags)
+            .where(eq(userTags.userId, currentUser.id))
+
+        const currentUserInterestTagIds = new Set(currentUserInterestRows.map((row) => row.tagId))
+
+        if (currentUserInterestTagIds.size === 0) {
+            return res.json({ viewerRole: currentUser.role, proposals: [] })
+        }
+
         if (currentUser.role === 'student') {
             const rawProposals = await db
                 .select({
@@ -193,6 +213,13 @@ app.get('/explore', async (req, res) => {
             const proposals = []
 
             for (const proposal of rawProposals) {
+                const proposalTagIds = await getProjectTagIds(proposal.id)
+                const hasSharedInterests = proposalTagIds.some((tagId) => currentUserInterestTagIds.has(tagId))
+
+                if (!hasSharedInterests) {
+                    continue
+                }
+
                 const [existingMatch] = await db
                     .select({ status: matches.status })
                     .from(matches)
@@ -245,6 +272,13 @@ app.get('/explore', async (req, res) => {
         const proposals = []
 
         for (const proposal of rawProposals) {
+            const proposalTagIds = await getProjectTagIds(proposal.id)
+            const hasSharedInterests = proposalTagIds.some((tagId) => currentUserInterestTagIds.has(tagId))
+
+            if (!hasSharedInterests) {
+                continue
+            }
+
             const [existingMatch] = await db
                 .select({ status: matches.status })
                 .from(matches)
@@ -376,6 +410,7 @@ app.get('/proposals/:id', validate(GetTFESchema, 'params'), async (req, res) => 
         
         const proposalData = {
             ...proposal,
+            isOwner,
             tags: proposalTags.map(tag => tag.name),
             user: proposalUser ? {
                 id: proposalUser.id,
@@ -462,6 +497,52 @@ app.post('/proposals', validate(TFECreationSchema), async (req, res) => {
         }
         console.error(exception)
         return res.status(500).json({ error: 'Error creating project proposal' })
+    }
+})
+
+app.patch('/proposals/:id/renew', validate(GetTFESchema, 'params'), async (req, res) => {
+    const userEmail = req.headers['x-user-email'] as string
+    const projectId = Number(req.params.id)
+
+    if (!userEmail) {
+        return res.status(401).json({ error: 'Missing authenticated user email' })
+    }
+
+    try {
+        const currentUser = await getUserWithRole(userEmail)
+
+        if (!currentUser) {
+            return res.status(404).json({ error: 'Authenticated user not found or role not supported' })
+        }
+
+        const [proposal] = await db
+            .select({ id: projects.id, studentId: projects.studentId, tutorId: projects.tutorId })
+            .from(projects)
+            .where(eq(projects.id, projectId))
+            .limit(1)
+
+        if (!proposal) {
+            return res.status(404).json({ error: 'Proposal not found' })
+        }
+
+        const isOwner = currentUser.role === 'student'
+            ? proposal.studentId === currentUser.id
+            : proposal.tutorId === currentUser.id
+
+        if (!isOwner) {
+            return res.status(403).json({ error: 'Only the owner can renew a proposal' })
+        }
+
+        const renewedAt = new Date()
+        const expiresAt = new Date(renewedAt)
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+
+        await db.update(projects).set({ publicationDate: renewedAt }).where(eq(projects.id, projectId))
+
+        return res.json({ publicationDate: renewedAt, renewedAt, expiresAt })
+    } catch (exception) {
+        console.error(exception)
+        return res.status(500).json({ error: 'Error renewing proposal' })
     }
 })
 
@@ -697,6 +778,52 @@ app.post('/admin/tags', async (req, res) => {
     } catch (exception) {
         console.error(exception)
         return res.status(500).json({ error: 'Error creating tag' })
+    }
+})
+
+app.post('/admin/tags/import', validate(AdminTagImportSchema), async (req, res) => {
+    const { tags: tagList } = req.body
+
+    try {
+        let created = 0
+        let skipped = 0
+        const errors: string[] = []
+
+        await db.transaction(async (trx) => {
+            for (const [index, item] of tagList.entries()) {
+                const normalizedName = item.name.trim()
+
+                if (!normalizedName) {
+                    skipped += 1
+                    errors.push(`Fila ${index + 2}: nombre vacio`)
+                    continue
+                }
+
+                const [existing] = await trx
+                    .select({ id: tags.id })
+                    .from(tags)
+                    .where(eq(tags.name, normalizedName))
+                    .limit(1)
+
+                if (existing) {
+                    skipped += 1
+                    continue
+                }
+
+                await trx.insert(tags).values({ name: normalizedName })
+                created += 1
+            }
+        })
+
+        return res.json({
+            message: 'Tag import completed',
+            created,
+            skipped,
+            errors,
+        })
+    } catch (exception) {
+        console.error(exception)
+        return res.status(500).json({ error: 'Error importing tags' })
     }
 })
 

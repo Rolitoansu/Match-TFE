@@ -1,9 +1,9 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { users } from '@match-tfe/db/schema'
+import { users, userTags } from '@match-tfe/db/schema'
 import { validate, registerSchema, adminStudentSchema, updateProfileSchema } from './validate'
-import { eq, sql } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import db from '@match-tfe/db'
 import { projects, tags, projectTags } from '@match-tfe/db/schema'
 
@@ -52,7 +52,9 @@ app.post('/register', validate(registerSchema), async (req, res) => {
             name: name, 
             surname: surname, 
             registrationDate: date, 
-            biography: null 
+            biography: null,
+            role: 'student',
+            interests: [],
         }
 
         res.cookie('refresh_token', refreshToken, { 
@@ -98,6 +100,45 @@ app.get('/proposals/:id', async (req, res) => {
     }
 })
 
+app.get('/profile', async (req, res) => {
+    const userEmail = req.headers['x-user-email'] as string
+
+    if (!userEmail) {
+        return res.status(401).json({ error: 'Missing authenticated user email' })
+    }
+
+    try {
+        const [profile] = await db
+            .select({
+                id: users.id,
+                email: users.email,
+                name: users.name,
+                surname: users.surname,
+                registrationDate: users.registrationDate,
+                biography: users.biography,
+                role: users.role,
+            })
+            .from(users)
+            .where(eq(users.email, userEmail))
+            .limit(1)
+
+        if (!profile) {
+            return res.status(404).json({ error: 'Authenticated user not found' })
+        }
+
+        const interestRows = await db
+            .select({ name: tags.name })
+            .from(userTags)
+            .innerJoin(tags, eq(tags.id, userTags.tagId))
+            .where(eq(userTags.userId, profile.id))
+
+        return res.json({ user: { ...profile, interests: interestRows.map((row) => row.name) } })
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ error: 'Error fetching user profile' })
+    }
+})
+
 app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
     const userEmail = req.headers['x-user-email'] as string
 
@@ -105,27 +146,76 @@ app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
         return res.status(401).json({ error: 'Missing authenticated user email' })
     }
 
-    const biography = req.body.biography?.trim() || null
+    const biography = req.body.biography !== undefined
+        ? (req.body.biography?.trim() || null)
+        : undefined
+    const interests = req.body.interests as string[] | undefined
 
     try {
-        const [updatedUser] = await db
-            .update(users)
-            .set({ biography })
+        const [currentUser] = await db
+            .select({ id: users.id })
+            .from(users)
             .where(eq(users.email, userEmail))
-            .returning({
+            .limit(1)
+
+        if (!currentUser) {
+            return res.status(404).json({ error: 'Authenticated user not found' })
+        }
+
+        if (biography !== undefined) {
+            await db
+                .update(users)
+                .set({ biography })
+                .where(eq(users.id, currentUser.id))
+        }
+
+        if (interests !== undefined) {
+            const normalizedInterests = [...new Set(interests.map((name) => name.trim()).filter(Boolean))]
+            const tagRows = normalizedInterests.length > 0
+                ? await db
+                    .select({ id: tags.id, name: tags.name })
+                    .from(tags)
+                    .where(inArray(tags.name, normalizedInterests))
+                : []
+
+            if (tagRows.length !== normalizedInterests.length) {
+                return res.status(400).json({ error: 'One or more interests are not valid tags' })
+            }
+
+            await db.delete(userTags).where(eq(userTags.userId, currentUser.id))
+
+            if (tagRows.length > 0) {
+                await db
+                    .insert(userTags)
+                    .values(tagRows.map((tag) => ({ userId: currentUser.id, tagId: tag.id })))
+            }
+        }
+
+        const [updatedUser] = await db
+            .select({
                 id: users.id,
                 email: users.email,
                 name: users.name,
                 surname: users.surname,
                 registrationDate: users.registrationDate,
-                biography: users.biography
+                biography: users.biography,
+                role: users.role,
             })
+            .from(users)
+            .where(eq(users.id, currentUser.id))
+            .limit(1)
 
         if (!updatedUser) {
             return res.status(404).json({ error: 'Authenticated user not found' })
         }
 
-        return res.json({ user: updatedUser })
+        const updatedInterestRows = await db
+            .select({ name: tags.name })
+            .from(userTags)
+            .innerJoin(tags, eq(tags.id, userTags.tagId))
+            .where(eq(userTags.userId, currentUser.id))
+
+        return res.json({ user: { ...updatedUser, interests: updatedInterestRows.map((row) => row.name) } })
     } catch (error) {
         console.error(error)
         return res.status(500).json({ error: 'Error updating user profile' })

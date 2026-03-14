@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, Outlet } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, Outlet, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { AdminAuthProvider } from './context/AdminAuthContext'
 import { ProtectedRoute } from './components/routes/ProtectedRoute'
@@ -52,6 +52,7 @@ function App() {
             </Route>
           </Route>
         </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

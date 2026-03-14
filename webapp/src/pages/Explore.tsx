@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import api from '../api/axios'
+import { useNavigate } from 'react-router-dom'
 
 type MatchStatus = 'pending' | 'accepted' | 'rejected' | null
 
@@ -31,6 +32,7 @@ interface ExploreResponse {
 }
 
 export default function Explore() {
+  const navigate = useNavigate()
   const [proposals, setProposals] = useState<ExploreProposal[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [viewerRole, setViewerRole] = useState<'student' | 'professor' | null>(null)
@@ -138,6 +140,16 @@ export default function Explore() {
           <Sparkles className="mx-auto mb-3 text-primary" size={24} />
           <h2 className="text-lg font-bold text-foreground">No hay más propuestas por ahora</h2>
           <p className="mt-2 text-sm text-muted-foreground">Vuelve más tarde para descubrir nuevos TFGs de {targetRolePluralLabel}.</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Si quieres que aparezcan más resultados, actualiza tus intereses en tu perfil.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/profile')}
+            className="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            Ir a mi perfil
+          </button>
         </div>
       </div>
     )

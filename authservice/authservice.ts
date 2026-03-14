@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import cookieParser from 'cookie-parser'
 import bcrypt from 'bcrypt'
 import validate, { LoginSchema } from './validate'
-import { users, administrators } from '@match-tfe/db/schema'
+import { users, administrators, userTags, tags } from '@match-tfe/db/schema'
 import { eq } from 'drizzle-orm'
 import db from '@match-tfe/db'
 
@@ -38,6 +38,12 @@ app.post('/refresh', async (req, res) => {
             return res.status(401).json({ message: "User no longer exists" })
         }
 
+        const interestRows = await db
+            .select({ name: tags.name })
+            .from(userTags)
+            .innerJoin(tags, eq(tags.id, userTags.tagId))
+            .where(eq(userTags.userId, user.id))
+
         const user_data = { 
             id: user.id,
             email: payload.email,
@@ -46,6 +52,7 @@ app.post('/refresh', async (req, res) => {
             registrationDate: user.registrationDate,
             biography: user.biography,
             role: user.role,
+            interests: interestRows.map((row) => row.name),
         }
 
         const accessToken = jwt.sign({ email: payload.email }, JWT_SECRET, { expiresIn: '15m' })
@@ -114,6 +121,12 @@ app.post('/login', validate(LoginSchema), async (req, res) => {
             .limit(1)
 
         if (user && await bcrypt.compare(password, user.passwordHash)) {
+            const interestRows = await db
+                .select({ name: tags.name })
+                .from(userTags)
+                .innerJoin(tags, eq(tags.id, userTags.tagId))
+                .where(eq(userTags.userId, user.id))
+
             const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '30d' })
             const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '15m' })
 
@@ -125,6 +138,7 @@ app.post('/login', validate(LoginSchema), async (req, res) => {
                 registrationDate: user.registrationDate, 
                 biography: user.biography,
                 role: user.role,
+                interests: interestRows.map((row) => row.name),
             }
             
             res.cookie('refresh_token', refreshToken, { 
