@@ -27,7 +27,8 @@ app.post('/refresh', async (req, res) => {
                 surname: users.surname, 
                 passwordHash: users.passwordHash, 
                 registrationDate: users.registrationDate, 
-                biography: users.biography 
+                biography: users.biography,
+                role: users.role,
             })
             .from(users)
             .where(eq(users.email, payload.email))
@@ -43,7 +44,8 @@ app.post('/refresh', async (req, res) => {
             name: user.name,
             surname: user.surname,
             registrationDate: user.registrationDate,
-            biography: user.biography
+            biography: user.biography,
+            role: user.role,
         }
 
         const accessToken = jwt.sign({ email: payload.email }, JWT_SECRET, { expiresIn: '15m' })
@@ -60,6 +62,39 @@ app.post('/refresh', async (req, res) => {
     }
 })
 
+app.post('/admin/refresh', async (req, res) => {
+    const cookie = req.cookies['admin_refresh_token']
+    if (!cookie) return res.status(401).send()
+
+    try {
+        const payload = jwt.verify(cookie, JWT_SECRET) as jwt.JwtPayload
+
+        if (payload.role !== 'admin') {
+            return res.status(401).send()
+        }
+
+        const [admin] = await db
+            .select({ id: administrators.id, email: administrators.email })
+            .from(administrators)
+            .where(eq(administrators.email, payload.email))
+            .limit(1)
+
+        if (!admin) {
+            return res.status(401).json({ message: 'Admin no longer exists' })
+        }
+
+        const accessToken = jwt.sign({ email: payload.email, role: 'admin' }, JWT_SECRET, { expiresIn: '15m' })
+        return res.json({ access_token: accessToken, admin })
+
+    } catch (error) {
+        console.error(error)
+        if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
+            return res.status(401).send()
+        }
+        return res.status(500).send()
+    }
+})
+
 app.post('/login', validate(LoginSchema), async (req, res) => {
     const { email, password } = req.body
 
@@ -71,7 +106,8 @@ app.post('/login', validate(LoginSchema), async (req, res) => {
                 surname: users.surname, 
                 passwordHash: users.passwordHash, 
                 registrationDate: users.registrationDate, 
-                biography: users.biography 
+                biography: users.biography,
+                role: users.role,
             })
             .from(users)
             .where(eq(users.email, email))
@@ -87,7 +123,8 @@ app.post('/login', validate(LoginSchema), async (req, res) => {
                 name: user.name, 
                 surname: user.surname, 
                 registrationDate: user.registrationDate, 
-                biography: user.biography 
+                biography: user.biography,
+                role: user.role,
             }
             
             res.cookie('refresh_token', refreshToken, { 
@@ -107,17 +144,6 @@ app.post('/login', validate(LoginSchema), async (req, res) => {
         return res.status(500).send()
     }
 })
-
-app.post('/logout', (_, res) => {
-    res.clearCookie('refresh_token', {
-        httpOnly: true,
-        sameSite: 'strict',
-        secure: process.env.STAGE === 'production'
-    })
-    return res.status(204).send()
-})
-
-// ── Admin authentication ──
 
 app.post('/admin/login', validate(LoginSchema), async (req, res) => {
     const { email, password } = req.body
@@ -158,37 +184,13 @@ app.post('/admin/login', validate(LoginSchema), async (req, res) => {
     }
 })
 
-app.post('/admin/refresh', async (req, res) => {
-    const cookie = req.cookies['admin_refresh_token']
-    if (!cookie) return res.status(401).send()
-
-    try {
-        const payload = jwt.verify(cookie, JWT_SECRET) as jwt.JwtPayload
-
-        if (payload.role !== 'admin') {
-            return res.status(401).send()
-        }
-
-        const [admin] = await db
-            .select({ id: administrators.id, email: administrators.email })
-            .from(administrators)
-            .where(eq(administrators.email, payload.email))
-            .limit(1)
-
-        if (!admin) {
-            return res.status(401).json({ message: 'Admin no longer exists' })
-        }
-
-        const accessToken = jwt.sign({ email: payload.email, role: 'admin' }, JWT_SECRET, { expiresIn: '15m' })
-        return res.json({ access_token: accessToken, admin })
-
-    } catch (error) {
-        console.error(error)
-        if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
-            return res.status(401).send()
-        }
-        return res.status(500).send()
-    }
+app.post('/logout', (_, res) => {
+    res.clearCookie('refresh_token', {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: process.env.STAGE === 'production'
+    })
+    return res.status(204).send()
 })
 
 app.post('/admin/logout', (_, res) => {

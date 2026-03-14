@@ -1,8 +1,8 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { students, users } from '@match-tfe/db/schema'
-import { validate, registerSchema, adminStudentSchema } from './validate'
+import { users } from '@match-tfe/db/schema'
+import { validate, registerSchema, adminStudentSchema, updateProfileSchema } from './validate'
 import { eq, sql } from 'drizzle-orm'
 import db from '@match-tfe/db'
 import { projects, tags, projectTags } from '@match-tfe/db/schema'
@@ -33,11 +33,8 @@ app.post('/register', validate(registerSchema), async (req, res) => {
 
         await db.transaction(async (trx) => {
             const [user] = await trx.insert(users)
-                .values({ email, name, surname, passwordHash, registrationDate: date })
+                .values({ email, name, surname, passwordHash, registrationDate: date, role: 'student' })
                 .returning({ id: users.id })
-
-            await trx.insert(students)
-                .values({ id: user.id })
 
             userData = user
         })
@@ -101,6 +98,40 @@ app.get('/proposals/:id', async (req, res) => {
     }
 })
 
+app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
+    const userEmail = req.headers['x-user-email'] as string
+
+    if (!userEmail) {
+        return res.status(401).json({ error: 'Missing authenticated user email' })
+    }
+
+    const biography = req.body.biography?.trim() || null
+
+    try {
+        const [updatedUser] = await db
+            .update(users)
+            .set({ biography })
+            .where(eq(users.email, userEmail))
+            .returning({
+                id: users.id,
+                email: users.email,
+                name: users.name,
+                surname: users.surname,
+                registrationDate: users.registrationDate,
+                biography: users.biography
+            })
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'Authenticated user not found' })
+        }
+
+        return res.json({ user: updatedUser })
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ error: 'Error updating user profile' })
+    }
+})
+
 app.post('/admin/students/import', validate(adminStudentSchema), async (req, res) => {
     const { students: studentList } = req.body
 
@@ -134,12 +165,8 @@ app.post('/admin/students/import', validate(adminStudentSchema), async (req, res
             const passwordHash = await bcrypt.hash(defaultPassword, 10)
 
             await db.transaction(async (trx) => {
-                const [user] = await trx.insert(users)
-                    .values({ email, name, surname, passwordHash, registrationDate: new Date() })
-                    .returning({ id: users.id })
-
-                await trx.insert(students)
-                    .values({ id: user.id })
+                await trx.insert(users)
+                    .values({ email, name, surname, passwordHash, registrationDate: new Date(), role: 'student' })
             })
 
             created++

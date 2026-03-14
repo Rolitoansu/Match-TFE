@@ -21,5 +21,13 @@ export const registerSchema = z.object({
 })
 
 export const adminStudentSchema = z.object({
-    students: z.array(z.string("Expected student ID").min(1, "Student ID cannot be empty"))
+    students: z.array(z.object({
+        email: z.email("Invalid email address"),
+        name: z.string("Expected name").min(2, "Name must be at least 2 characters long"),
+        surname: z.string("Expected surname").min(2, "Surname must be at least 2 characters long"),
+    }))
+})
+
+export const updateProfileSchema = z.object({
+    biography: z.string("Expected biography").max(2000, "Biography cannot exceed 2000 characters").nullable()
 })

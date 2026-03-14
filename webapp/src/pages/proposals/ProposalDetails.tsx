@@ -1,17 +1,38 @@
 import { 
   ArrowLeft, BookOpen, MessageSquare, 
-  Hash, GraduationCap, UserCheck 
+  Hash, GraduationCap, UserCheck, Mail, Heart, Users
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import api from '../../api/axios'
 
 interface ProposalDetailsData {
+  id: number
   title: string
   description: string
   publicationDate: string
-  status: string
+  status: 'proposed' | 'in_progress' | 'completed'
   tags: string[]
+  user: {
+    id: number
+    name: string
+    surname: string
+    email: string | null
+  } | null
+  interestedUsers: Array<{
+    id: number
+    name: string
+    surname: string
+    email: string | null
+    matchStatus: 'pending' | 'accepted' | 'rejected' | null
+    likedAt: string
+  }>
+}
+
+const STATUS_LABEL: Record<ProposalDetailsData['status'], string> = {
+  proposed: 'Abierta',
+  in_progress: 'En curso',
+  completed: 'Finalizada',
 }
 
 export default function ProposalDetails() {
@@ -33,8 +54,6 @@ export default function ProposalDetails() {
     fetchProposal()
   }, [])
 
-  const isAlumno = true
-
   return proposal && (
     <div className="max-w-6xl mx-auto p-6 lg:p-10 pb-32">
       <div className="flex justify-between items-center mb-8">
@@ -48,10 +67,8 @@ export default function ProposalDetails() {
         <div className="lg:col-span-8 space-y-8">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-                isAlumno ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-              }`}>
-                {isAlumno ? '💡 Idea de Alumno' : '🎓 Proyecto de Profesor'}
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter bg-blue-100 text-blue-700">
+                {STATUS_LABEL[proposal.status]}
               </span>
               <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">{new Date(proposal.publicationDate).toLocaleString()}</span>
             </div>
@@ -63,7 +80,7 @@ export default function ProposalDetails() {
 
           <section className="space-y-4">
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-              <BookOpen size={16} /> {isAlumno ? '¿En qué consiste mi idea?' : 'Descripción del Proyecto'}
+              <BookOpen size={16} /> Descripción del Proyecto
             </h3>
             <p className="text-foreground/80 leading-relaxed text-lg">
               {proposal.description}
@@ -84,29 +101,60 @@ export default function ProposalDetails() {
             
             <div className="space-y-4 text-center">
               <div className="mx-auto h-20 w-20 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">
-                {isAlumno ? <GraduationCap size={40} /> : <UserCheck size={40} />}
+                {proposal.status === 'in_progress' ? <UserCheck size={40} /> : <GraduationCap size={40} />}
               </div>
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">Publicado por</p>
-                <h4 className="text-xl font-bold">{proposal.title}</h4>
-                <p className="text-sm text-primary font-medium">{isAlumno ? 'Estudiante de Ingeniería' : 'Departamento de C.C.'}</p>
+                <h4 className="text-xl font-bold">{proposal.user ? `${proposal.user.name} ${proposal.user.surname}` : 'Autor no disponible'}</h4>
+                {proposal.user?.email ? (
+                  <p className="text-sm text-primary font-medium flex items-center justify-center gap-1.5 mt-1">
+                    <Mail size={14} /> {proposal.user.email}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">El correo se habilita cuando hay match.</p>
+                )}
               </div>
             </div>
 
             <hr className="border-border/60" />
 
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:opacity-90 transition-all">
+              <button className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:opacity-90 transition-all" disabled>
                 <MessageSquare size={20} />
-                {isAlumno ? 'Contactar con Alumno' : 'Solicitar este TFG'}
+                Contacto por correo
               </button>
               
-              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-3">
                 <p className="text-[10px] text-blue-800 font-bold leading-relaxed uppercase text-center">
-                  {isAlumno 
-                    ? "Si eres profesor, puedes ofrecerte como tutor para esta idea."
-                    : "Si eres alumno, puedes enviar tu perfil para que el profesor te acepte."}
+                  Si hay match, se muestran correos y podéis poneros en contacto.
                 </p>
+
+                <div className="flex items-center justify-between text-xs font-semibold text-blue-900">
+                  <span className="inline-flex items-center gap-1"><Users size={13} /> Likes recibidos</span>
+                  <span>{proposal.interestedUsers.length}</span>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                  {proposal.interestedUsers.length === 0 && (
+                    <p className="text-xs text-blue-800/80 text-center py-2">Todavía nadie ha dado like a este TFG.</p>
+                  )}
+
+                  {proposal.interestedUsers.map((person) => (
+                    <div key={person.id} className="rounded-xl border border-blue-200/80 bg-white/80 p-2.5">
+                      <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Heart size={12} className="text-rose-500" />
+                        {person.name} {person.surname}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        {person.matchStatus === 'accepted'
+                          ? person.email
+                            ? `Match confirmado · ${person.email}`
+                            : 'Match confirmado'
+                          : 'Like recibido · pendiente de match'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

@@ -7,7 +7,6 @@ const PROJECT_SERVICE_URL = process.env.PROJECT_SERVICE_URL || 'http://projectse
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://userservice:5001'
 const router = Router()
 
-// Admin authentication → auth service
 router.post('/auth/login', proxy(AUTH_SERVICE_URL, {
     proxyReqPathResolver: () => '/admin/login'
 }))
@@ -17,8 +16,6 @@ router.post('/auth/refresh', proxy(AUTH_SERVICE_URL, {
 router.post('/auth/logout', proxy(AUTH_SERVICE_URL, {
     proxyReqPathResolver: () => '/admin/logout'
 }))
-
-// Tag management → project service
 router.get('/tags', authMiddleware, proxy(PROJECT_SERVICE_URL, {
     proxyReqPathResolver: () => '/admin/tags'
 }))
@@ -29,9 +26,6 @@ router.delete('/tags/:id', authMiddleware, proxy(PROJECT_SERVICE_URL, {
     proxyReqPathResolver: (req) => `/admin/tags/${req.params.id}`
 }))
 
-// Student import → user service
-router.post('/students/import', authMiddleware, proxy(USER_SERVICE_URL, {
-    proxyReqPathResolver: () => '/admin/students/import'
-}))
+router.post('/students/import', authMiddleware, proxy(USER_SERVICE_URL))
 
 export default router

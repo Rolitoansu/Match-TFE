@@ -1,13 +1,13 @@
 import { 
   ArrowLeft, 
   Send, 
-  Plus, 
   X, 
   Hash, 
   BookOpen, 
-  Settings
+  Settings,
+  ChevronDown
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 
@@ -28,12 +28,56 @@ export default function NewProposal() {
   const navigate = useNavigate()
   const [proposalInfo, setProposalInfo] = useState<TFEProposalInfo>({ title: '', description: '', type: 0 })
   const [errors, setErrors] = useState<TFEErrors>({ titleError: null, descriptionError: null, typeError: null })
+  const [allowedTags, setAllowedTags] = useState<string[]>([])
+  const [tagSearch, setTagSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [tagInputFocused, setTagInputFocused] = useState(false)
+  const tagInputRef = useRef<HTMLInputElement>(null)
+  const suggestionRef = useRef<HTMLDivElement>(null)
 
-  function removeTag(tagToRemove: string) {
-    setProposalInfo({
-      ...proposalInfo,
-      tags: proposalInfo.tags?.filter(tag => tag !== tagToRemove)
-    })
+  useEffect(() => {
+    api.get('/project/tags')
+      .then(({ data }) => setAllowedTags(data.tags.map((t: { name: string }) => t.name)))
+      .catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(tagSearch), 300)
+    return () => clearTimeout(timer)
+  }, [tagSearch])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        tagInputRef.current && !tagInputRef.current.contains(e.target as Node) &&
+        suggestionRef.current && !suggestionRef.current.contains(e.target as Node)
+      ) {
+        setTagInputFocused(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  function highlightMatch(text: string, query: string) {
+    if (!query.trim()) return <span>{text}</span>
+    const idx = text.toLowerCase().indexOf(query.trim().toLowerCase())
+    if (idx === -1) return <span>{text}</span>
+    return (
+      <span>
+        {text.slice(0, idx)}
+        <mark className="bg-primary/20 text-primary rounded px-0.5">{text.slice(idx, idx + query.trim().length)}</mark>
+        {text.slice(idx + query.trim().length)}
+      </span>
+    )
+  }
+
+  function toggleTag(tag: string) {
+    const current = proposalInfo.tags ?? []
+    const updated = current.includes(tag)
+      ? current.filter(t => t !== tag)
+      : [...current, tag]
+    setProposalInfo({ ...proposalInfo, tags: updated })
   }
 
   function updateTitle(title: string) {
@@ -125,34 +169,95 @@ export default function NewProposal() {
                 {errors.descriptionError === 'blank' && 'La descripción es obligatoria.'}
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
-                Tecnologías e Intereses vinculados
+            <div className="space-y-3">
+              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-1">
+                <Hash size={12} /> Tecnologías e Intereses vinculados
               </label>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {proposalInfo.tags?.map(tag => (
-                  <span key={tag} className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-bold border border-primary/10">
-                    {tag}
-                    <button onClick={() => removeTag(tag)} className="p-0.5 hover:bg-primary/20 rounded-md transition-colors">
-                      <X size={14} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                  <input 
-                    type="text"
-                    placeholder="Añadir tecnología (ej: Python, Docker...)"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-transparent focus:border-primary/50 focus:bg-white outline-none transition-all text-sm"
-                  />
+              {(proposalInfo.tags ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {(proposalInfo.tags ?? []).map(tag => (
+                    <span key={tag} className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 bg-primary/10 text-primary rounded-xl text-xs font-bold border border-primary/20 animate-in fade-in slide-in-from-top-1 duration-150">
+                      {tag}
+                      <button type="button" onClick={() => toggleTag(tag)} className="p-0.5 hover:bg-primary/20 rounded-md transition-colors">
+                        <X size={13} />
+                      </button>
+                    </span>
+                  ))}
                 </div>
-                <button 
-                  className="p-3 bg-secondary text-foreground rounded-xl hover:bg-secondary/80 transition-colors"
-                >
-                  <Plus size={20} />
-                </button>
+              )}
+              <div className="relative">
+                <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={15} />
+                <input
+                  ref={tagInputRef}
+                  type="text"
+                  placeholder="Buscar y añadir tecnologías..."
+                  className={`w-full pl-10 pr-9 py-3 rounded-xl bg-slate-50 border transition-all text-sm outline-none ${
+                    tagInputFocused
+                      ? 'border-primary/50 bg-white ring-4 ring-primary/5'
+                      : 'border-transparent hover:border-border'
+                  }`}
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  onFocus={() => setTagInputFocused(true)}
+                  autoComplete="off"
+                />
+                <ChevronDown
+                  size={15}
+                  className={`absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-transform duration-200 ${
+                    tagInputFocused ? 'rotate-180' : ''
+                  }`}
+                />
+                {tagInputFocused && (() => {
+                  const selectedSet = new Set(proposalInfo.tags ?? [])
+                  const filtered = allowedTags.filter(
+                    tag => !selectedSet.has(tag) &&
+                      (!debouncedSearch.trim() || tag.toLowerCase().includes(debouncedSearch.trim().toLowerCase()))
+                  )
+                  const searching = debouncedSearch.trim().length > 0
+
+                  return (
+                    <div
+                      ref={suggestionRef}
+                      className="absolute z-[60] bottom-full left-0 right-0 mb-1.5 bg-white border border-border rounded-2xl shadow-xl shadow-slate-200/70 overflow-hidden"
+                    >
+                      <div className="px-4 py-2 border-b border-border/50 flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          {searching ? 'Resultados' : 'Disponibles'}
+                        </span>
+                        {filtered.length > 0 && (
+                          <span className="text-[10px] font-semibold text-muted-foreground bg-slate-100 rounded-full px-2 py-0.5">
+                            {filtered.length}
+                          </span>
+                        )}
+                      </div>
+                      {filtered.length > 0 ? (
+                        <div className="max-h-48 overflow-y-auto">
+                          {filtered.map((tag, i) => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => { toggleTag(tag); setTagSearch('') }}
+                              className={`w-full text-left px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors ${
+                                i !== filtered.length - 1 ? 'border-b border-border/40' : ''
+                              }`}
+                            >
+                              {highlightMatch(tag, debouncedSearch)}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="px-4 py-4 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {searching
+                              ? `No hay tecnologías que coincidan con «${debouncedSearch}».`
+                              : 'Ya has añadido todas las tecnologías disponibles.'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             </div>
           </div>

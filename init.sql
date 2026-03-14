@@ -5,16 +5,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     registration_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    biography TEXT
-);
-
-CREATE TABLE students (
-    id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE professors (
-    id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    department VARCHAR(100) NOT NULL
+    biography TEXT,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('student', 'professor'))
 );
 
 CREATE TABLE administrators (
@@ -24,42 +16,34 @@ CREATE TABLE administrators (
 );
 
 CREATE TABLE skills (
-   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-   name VARCHAR(100) NOT NULL,
-   description TEXT
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT
 );
 
-CREATE TABLE student_skills (
-    student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+CREATE TABLE user_skills (
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     skill_id INTEGER REFERENCES skills(id) ON DELETE CASCADE,
     mark INTEGER CHECK (mark >= 0 AND mark <= 10),
-    PRIMARY KEY (student_id, skill_id)
+    PRIMARY KEY (user_id, skill_id)
+);
+
+CREATE TABLE projects (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'proposed' CHECK (status IN ('proposed', 'in_progress', 'completed')),
+    publication_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    expiration_date TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '12 months'),
+    tutor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    student_id INTEGER REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE matches (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
-    professor_id INTEGER REFERENCES professors(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
-    match_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (student_id, professor_id)
-);
-
-CREATE TABLE chats (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
-    professor_id INTEGER REFERENCES professors(id) ON DELETE SET NULL,
-    creation_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (student_id, professor_id)
-);
-
-CREATE TABLE messages (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    content TEXT NOT NULL,
-    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    read BOOLEAN DEFAULT FALSE,
-    chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
-    sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+    PRIMARY KEY (project_id, user_id)
 );
 
 CREATE TABLE notifications (
@@ -69,17 +53,6 @@ CREATE TABLE notifications (
     read BOOLEAN DEFAULT FALSE,
     timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE Projects (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    description TEXT,
-    status VARCHAR(20) DEFAULT 'proposed' CHECK (status IN ('proposed', 'in_progress', 'completed')),
-    publication_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    expiration_date TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '12 months'),
-    tutor_id INTEGER REFERENCES professors(id) ON DELETE SET NULL,
-    student_id INTEGER REFERENCES students(id) ON DELETE SET NULL
 );
 
 CREATE TABLE tags (
@@ -93,20 +66,6 @@ CREATE TABLE project_tags (
     PRIMARY KEY (project_id, tag_id)
 );
 
-CREATE TABLE proposal_likes (
-    proposal_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (proposal_id, user_id)
-);
-
-CREATE TABLE proposal_passes (
-    proposal_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (proposal_id, user_id)
-);
-
 CREATE TABLE user_tags (
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
@@ -114,39 +73,45 @@ CREATE TABLE user_tags (
 );
 
 -- Seed default admin user (password: admin123)
--- Hash generated with bcrypt, 10 rounds
--- By now, it is admin123
-INSERT INTO administrators (email, password_hash) VALUES 
+INSERT INTO administrators (email, password_hash) VALUES
     ('admin@matchtfe.com', '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i');
 
--- Seed mock professors (password for all: admin123)
-INSERT INTO users (name, surname, password_hash, email, biography) VALUES
+-- Seed mock users (password for all: admin123)
+INSERT INTO users (name, surname, password_hash, email, biography, role) VALUES
     (
         'Marta',
         'Suarez',
         '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i',
         'marta.suarez@uni.es',
-        'Profesora de IA aplicada. Busco estudiantes con interes en NLP y sistemas inteligentes.'
+        'Profesora de IA aplicada. Busco estudiantes con interes en NLP y sistemas inteligentes.',
+        'professor'
     ),
     (
         'Javier',
         'Llaneza',
         '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i',
         'javier.llaneza@uni.es',
-        'Profesor de ciberseguridad y sistemas distribuidos. Interesado en proyectos aplicados.'
+        'Profesor de ciberseguridad y sistemas distribuidos. Interesado en proyectos aplicados.',
+        'professor'
+    ),
+    (
+        'Lucia',
+        'Fernandez',
+        '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i',
+        'lucia.fernandez@uni.es',
+        'Estudiante interesada en NLP y productos digitales.',
+        'student'
+    ),
+    (
+        'Carlos',
+        'Lopez',
+        '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i',
+        'carlos.lopez@uni.es',
+        'Estudiante con foco en ciberseguridad y sistemas distribuidos.',
+        'student'
     );
 
-INSERT INTO professors (id, department)
-SELECT id, 'Informatica'
-FROM users
-WHERE email = 'marta.suarez@uni.es';
-
-INSERT INTO professors (id, department)
-SELECT id, 'Ingenieria Telematica'
-FROM users
-WHERE email = 'javier.llaneza@uni.es';
-
--- Seed mock tags
+-- Seed tags
 INSERT INTO tags (name) VALUES
     ('NLP'),
     ('Machine Learning'),
@@ -155,7 +120,7 @@ INSERT INTO tags (name) VALUES
     ('Vision Artificial')
 ON CONFLICT (name) DO NOTHING;
 
--- Seed mock TFG proposals published by professors (visible in Explore for students)
+-- Seed professor proposals
 INSERT INTO projects (title, description, status, tutor_id) VALUES
     (
         'Asistente conversacional para campus universitario',
@@ -182,7 +147,22 @@ INSERT INTO projects (title, description, status, tutor_id) VALUES
         (SELECT id FROM users WHERE email = 'javier.llaneza@uni.es')
     );
 
--- Relate tags with professor proposals
+-- Seed student proposals
+INSERT INTO projects (title, description, status, student_id) VALUES
+    (
+        'Sistema de recomendacion de TFGs',
+        'Plataforma para recomendar TFGs en funcion de intereses, habilidades y experiencia previa.',
+        'proposed',
+        (SELECT id FROM users WHERE email = 'lucia.fernandez@uni.es')
+    ),
+    (
+        'Monitorizacion de rendimiento en microservicios',
+        'Analitica y observabilidad para detectar cuellos de botella en arquitecturas distribuidas.',
+        'proposed',
+        (SELECT id FROM users WHERE email = 'carlos.lopez@uni.es')
+    );
+
+-- Relate tags with proposals
 INSERT INTO project_tags (project_id, tag_id)
 SELECT p.id, t.id
 FROM projects p
@@ -210,3 +190,32 @@ FROM projects p
 JOIN tags t ON t.name IN ('Ciberseguridad', 'Sistemas Distribuidos')
 WHERE p.title = 'Arquitectura segura de microservicios para TFG Match'
 ON CONFLICT DO NOTHING;
+
+INSERT INTO project_tags (project_id, tag_id)
+SELECT p.id, t.id
+FROM projects p
+JOIN tags t ON t.name IN ('Machine Learning', 'Sistemas Distribuidos')
+WHERE p.title = 'Sistema de recomendacion de TFGs'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO project_tags (project_id, tag_id)
+SELECT p.id, t.id
+FROM projects p
+JOIN tags t ON t.name IN ('Ciberseguridad', 'Sistemas Distribuidos')
+WHERE p.title = 'Monitorizacion de rendimiento en microservicios'
+ON CONFLICT DO NOTHING;
+
+-- Seed match interactions (source of truth)
+INSERT INTO matches (user_id, project_id, status)
+VALUES
+    (
+        (SELECT id FROM users WHERE email = 'lucia.fernandez@uni.es'),
+        (SELECT id FROM projects WHERE title = 'Asistente conversacional para campus universitario' LIMIT 1),
+        'pending'
+    ),
+    (
+        (SELECT id FROM users WHERE email = 'javier.llaneza@uni.es'),
+        (SELECT id FROM projects WHERE title = 'Monitorizacion de rendimiento en microservicios' LIMIT 1),
+        'accepted'
+    )
+ON CONFLICT (project_id, user_id) DO NOTHING;

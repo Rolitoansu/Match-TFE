@@ -1,5 +1,5 @@
 import { 
-  User, Settings, Mail, Hash, PencilLine,
+    User, Settings, Mail, PencilLine,
   FileText, Plus, Calendar, ChevronRight,
   Users
 } from 'lucide-react'
@@ -21,6 +21,11 @@ export default function Profile() {
     const navigate = useNavigate()
     const { user } = useAuth()
     const [proposals, setProposals] = useState<Proposal[]>([])
+    const [aboutMe, setAboutMe] = useState('')
+    const [isEditingAboutMe, setIsEditingAboutMe] = useState(false)
+    const [savingAboutMe, setSavingAboutMe] = useState(false)
+    const [aboutMeError, setAboutMeError] = useState<string | null>(null)
+    const [aboutMeSuccess, setAboutMeSuccess] = useState<string | null>(null)
     
     useEffect(() => {
         async function fetchUserData() {
@@ -34,6 +39,39 @@ export default function Profile() {
 
         fetchUserData()
     }, [])
+
+    useEffect(() => {
+        setAboutMe(user?.biography ?? '')
+    }, [user?.biography])
+
+    useEffect(() => {
+        if (!aboutMeSuccess) {
+            return
+        }
+
+        const timeoutId = setTimeout(() => {
+            setAboutMeSuccess(null)
+        }, 3000)
+
+        return () => clearTimeout(timeoutId)
+    }, [aboutMeSuccess])
+
+    async function saveAboutMe() {
+        setSavingAboutMe(true)
+        setAboutMeError(null)
+        setAboutMeSuccess(null)
+
+        try {
+            await api.patch('/user/profile', { biography: aboutMe.trim() || null })
+            setIsEditingAboutMe(false)
+            setAboutMeSuccess('Tu perfil se ha actualizado correctamente.')
+        } catch (error) {
+            console.error('Error actualizando sobre mí:', error)
+            setAboutMeError('No se pudo actualizar tu biografía. Inténtalo de nuevo.')
+        } finally {
+            setSavingAboutMe(false)
+        }
+    }
 
     return (
         <div className="max-w-350 mx-auto p-6 lg:p-10">
@@ -64,7 +102,6 @@ export default function Profile() {
                 
                 <h2 className="text-2xl font-bold">{user!.name}</h2>
                 <p className="text-primary font-semibold text-sm mb-1">Estudiante</p>
-                <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold">Departamento</p>
                 
                 <div className="flex items-center gap-2 mt-4 px-4 py-1.5 bg-secondary/50 rounded-full text-xs text-muted-foreground">
                     <Mail size={12} />
@@ -90,11 +127,64 @@ export default function Profile() {
                 <div className="mt-8 space-y-6">
                 <div>
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center justify-between">
-                    Sobre mí <PencilLine size={12} className="cursor-pointer" />
+                    Sobre mí
+                    <button
+                        type="button"
+                        className="text-primary hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                            setIsEditingAboutMe((prev) => !prev)
+                            setAboutMeError(null)
+                            setAboutMeSuccess(null)
+                        }}
+                    >
+                        <PencilLine size={12} className="cursor-pointer" />
+                    </button>
                     </h3>
-                    <p className="text-sm leading-relaxed text-foreground/80 italic">
-                    "{user!.biography}"
-                    </p>
+
+                    {isEditingAboutMe ? (
+                        <div className="space-y-2">
+                            <textarea
+                                value={aboutMe}
+                                onChange={(event) => setAboutMe(event.target.value)}
+                                maxLength={2000}
+                                rows={4}
+                                className="w-full rounded-xl border border-border bg-white p-3 text-sm leading-relaxed outline-none focus:border-primary/50"
+                                placeholder="Cuéntanos brevemente sobre ti, tus intereses y objetivos de TFG."
+                            />
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{aboutMe.length}/2000</span>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        className="rounded-lg border border-border px-3 py-1.5 font-semibold hover:bg-secondary transition-colors"
+                                        onClick={() => {
+                                            setIsEditingAboutMe(false)
+                                            setAboutMe(user?.biography ?? '')
+                                            setAboutMeError(null)
+                                        }}
+                                        disabled={savingAboutMe}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="rounded-lg bg-primary px-3 py-1.5 font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
+                                        onClick={saveAboutMe}
+                                        disabled={savingAboutMe}
+                                    >
+                                        {savingAboutMe ? 'Guardando...' : 'Guardar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm leading-relaxed text-foreground/80 italic">
+                        "{aboutMe || 'Todavía no has escrito información sobre ti.'}"
+                        </p>
+                    )}
+
+                    {aboutMeError && <p className="mt-2 text-xs text-red-600">{aboutMeError}</p>}
+                    {aboutMeSuccess && <p className="mt-2 text-xs text-green-600">{aboutMeSuccess}</p>}
                 </div>
 
                 <div>

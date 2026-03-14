@@ -23,15 +23,7 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 100 }).notNull().unique(),
   registrationDate: timestamp('registration_date', { withTimezone: true, mode: 'date' }).defaultNow(),
   biography: text('biography'),
-})
-
-export const students = pgTable('students', {
-  id: integer('id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
-})
-
-export const professors = pgTable('professors', {
-  id: integer('id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
-  department: varchar('department', { length: 100 }).notNull(),
+  role: varchar('role', { length: 20 }).notNull(),
 })
 
 export const administrators = pgTable('administrators', {
@@ -47,7 +39,7 @@ export const skills = pgTable('skills', {
 })
 
 export const studentSkills = pgTable('student_skills', {
-  studentId: integer('student_id').references(() => students.id, { onDelete: 'cascade' }).notNull(),
+  studentId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   skillId: integer('skill_id').references(() => skills.id, { onDelete: 'cascade' }).notNull(),
   mark: integer('mark'),
 }, (table) => [
@@ -56,19 +48,17 @@ export const studentSkills = pgTable('student_skills', {
 ])
 
 export const matches = pgTable('matches', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  studentId: integer('student_id').references(() => students.id, { onDelete: 'cascade' }),
-  professorId: integer('professor_id').references(() => professors.id, { onDelete: 'cascade' }),
-  status: matchStatusEnum('status').notNull(), 
-  matchDate: timestamp('match_date', { withTimezone: true, mode: 'date' }).defaultNow(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  status: matchStatusEnum('status').notNull(),
 }, (table) => [
-  unique().on(table.studentId, table.professorId),
+  primaryKey({ columns: [table.projectId, table.userId] }),
 ])
 
 export const chats = pgTable('chats', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  studentId: integer('student_id').references(() => students.id, { onDelete: 'set null' }),
-  professorId: integer('professor_id').references(() => professors.id, { onDelete: 'set null' }),
+  studentId: integer('student_id').references(() => users.id, { onDelete: 'set null' }),
+  professorId: integer('professor_id').references(() => users.id, { onDelete: 'set null' }),
   creationDate: timestamp('creation_date', { withTimezone: true, mode: 'date' }).defaultNow(),
 }, (table) => [
   unique().on(table.studentId, table.professorId),
@@ -99,8 +89,8 @@ export const projects = pgTable('projects', {
   status: projectStatusEnum('status').notNull().default('proposed'),
   publicationDate: timestamp('publication_date', { withTimezone: true, mode: 'date' }).defaultNow(),
   expirationDate: timestamp('expiration_date', { withTimezone: true, mode: 'date' }).default(sql`CURRENT_TIMESTAMP + INTERVAL '12 months'`),
-  tutorId: integer('tutor_id').references(() => professors.id, { onDelete: 'set null' }),
-  studentId: integer('student_id').references(() => students.id, { onDelete: 'set null' }),
+  tutorId: integer('tutor_id').references(() => users.id, { onDelete: 'set null' }),
+  studentId: integer('student_id').references(() => users.id, { onDelete: 'set null' }),
 })
 
 export const tags = pgTable('tags', {

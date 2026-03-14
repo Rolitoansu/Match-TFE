@@ -11,7 +11,7 @@ export default function AdminLogin() {
     const navigate = useNavigate()
     const { login } = useAdminAuth()
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault()
         setError('')
         setIsLoading(true)
@@ -75,7 +75,7 @@ export default function AdminLogin() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground shadow-md transition-all hover:opacity-90 disabled:opacity-50"
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-white font-semibold text-primary-foreground shadow-md transition-all hover:opacity-90 disabled:opacity-50"
                     >
                         {isLoading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
