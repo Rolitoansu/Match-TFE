@@ -64,19 +64,37 @@ app.get('/proposals', async (req, res) => {
             return res.status(404).json({ error: 'Authenticated user not found or role not supported' })
         }
 
-        const proposals = await db
-            .select({
-                id: projects.id,
-                title: projects.title,
-                description: projects.description,
-                publicationDate: projects.publicationDate,
-                status: projects.status,
-                studentId: projects.studentId,
-                tutorId: projects.tutorId,
-            })
-            .from(projects)
-            .orderBy(desc(projects.publicationDate))
-            .limit(50)
+        const proposals = currentUser.role === 'student'
+            ? await db
+                .select({
+                    id: projects.id,
+                    title: projects.title,
+                    description: projects.description,
+                    publicationDate: projects.publicationDate,
+                    status: projects.status,
+                    studentId: projects.studentId,
+                    tutorId: projects.tutorId,
+                })
+                .from(projects)
+                .innerJoin(users, eq(users.id, projects.tutorId))
+                .where(and(eq(users.role, 'professor'), isNotNull(projects.tutorId)))
+                .orderBy(desc(projects.publicationDate))
+                .limit(50)
+            : await db
+                .select({
+                    id: projects.id,
+                    title: projects.title,
+                    description: projects.description,
+                    publicationDate: projects.publicationDate,
+                    status: projects.status,
+                    studentId: projects.studentId,
+                    tutorId: projects.tutorId,
+                })
+                .from(projects)
+                .innerJoin(users, eq(users.id, projects.studentId))
+                .where(and(eq(users.role, 'student'), isNotNull(projects.studentId)))
+                .orderBy(desc(projects.publicationDate))
+                .limit(50)
 
         const proposalsWithInterestedUsers = await Promise.all(proposals.map(async (proposal) => {
             const { ownerId } = getOwner(proposal)

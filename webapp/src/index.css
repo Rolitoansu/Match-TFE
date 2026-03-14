@@ -4,3 +4,7 @@
     --color-primary: #E53864;
     --color-foreground: #000;
 }
+
+html {
+    scrollbar-gutter: stable;
+}

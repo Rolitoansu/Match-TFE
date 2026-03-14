@@ -11,6 +11,7 @@ export interface MatchTFEUser {
     registrationDate: string
     biography: string
     interests: string[]
+    role: 'student' | 'professor'
 }
 
 export type User = MatchTFEUser

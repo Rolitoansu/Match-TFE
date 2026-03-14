@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
+import useAuth from '../../hooks/useAuth'
 
 interface Proposal {
   id: number
@@ -48,10 +49,12 @@ const STATUS_STYLE: Record<Proposal['status'], string> = {
 
 export default function Proposals() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [proposals, setProposals] = useState<Proposal[]>([])
   const [search, setSearch] = useState('')
   const [selectedTab, setSelectedTab] = useState<StatusTab>('all')
   const [onlyInterested, setOnlyInterested] = useState(false)
+  const oppositeRolePluralLabel = user?.role === 'student' ? 'profesores' : 'alumnos'
   
   useEffect(() => {
     async function fetchProposals() {
@@ -98,7 +101,7 @@ export default function Proposals() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Gestión de Propuestas</h1>
-          <p className="text-muted-foreground mt-1">Administra tus temas de TFG y revisa las solicitudes de los alumnos.</p>
+          <p className="text-muted-foreground mt-1">Consulta los TFGs publicados por {oppositeRolePluralLabel} y revisa su estado.</p>
         </div>
         
         <button 

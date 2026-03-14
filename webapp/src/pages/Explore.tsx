@@ -60,6 +60,7 @@ export default function Explore() {
   const currentProposal = useMemo(() => proposals[currentIndex] ?? null, [proposals, currentIndex])
 
   const profileTypeLabel = viewerRole === 'student' ? 'Profesor' : 'Estudiante'
+  const targetRolePluralLabel = viewerRole === 'student' ? 'profesores' : 'estudiantes'
 
   async function likeCurrentProposal() {
     if (!currentProposal || loadingLike) {
@@ -136,7 +137,7 @@ export default function Explore() {
         <div className="w-full max-w-md rounded-4xl border border-border bg-card p-10 text-center shadow-2xl shadow-gray-200/50">
           <Sparkles className="mx-auto mb-3 text-primary" size={24} />
           <h2 className="text-lg font-bold text-foreground">No hay más propuestas por ahora</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Vuelve más tarde para descubrir nuevos TFGs del otro rol.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Vuelve más tarde para descubrir nuevos TFGs de {targetRolePluralLabel}.</p>
         </div>
       </div>
     )

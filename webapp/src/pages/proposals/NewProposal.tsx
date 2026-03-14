@@ -10,6 +10,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
+import useAuth from '../../hooks/useAuth'
 
 interface TFEProposalInfo {
   title: string
@@ -26,6 +27,7 @@ interface TFEErrors {
 
 export default function NewProposal() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [proposalInfo, setProposalInfo] = useState<TFEProposalInfo>({ title: '', description: '', type: 0 })
   const [errors, setErrors] = useState<TFEErrors>({ titleError: null, descriptionError: null, typeError: null })
   const [allowedTags, setAllowedTags] = useState<string[]>([])
@@ -34,6 +36,7 @@ export default function NewProposal() {
   const [tagInputFocused, setTagInputFocused] = useState(false)
   const tagInputRef = useRef<HTMLInputElement>(null)
   const suggestionRef = useRef<HTMLDivElement>(null)
+  const targetRolePluralLabel = user?.role === 'student' ? 'profesores' : 'estudiantes'
 
   useEffect(() => {
     api.get('/project/tags')
@@ -132,7 +135,7 @@ export default function NewProposal() {
       <div className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Crear Nueva Propuesta</h1>
         <p className="text-muted-foreground mt-2">
-          Define tu idea de TFG para que los estudiantes interesados puedan encontrarte.
+          Define tu idea de TFG para que los {targetRolePluralLabel} interesados puedan encontrarte.
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -218,7 +221,7 @@ export default function NewProposal() {
                   return (
                     <div
                       ref={suggestionRef}
-                      className="absolute z-[60] bottom-full left-0 right-0 mb-1.5 bg-white border border-border rounded-2xl shadow-xl shadow-slate-200/70 overflow-hidden"
+                      className="absolute z-60 bottom-full left-0 right-0 mb-1.5 bg-white border border-border rounded-2xl shadow-xl shadow-slate-200/70 overflow-hidden"
                     >
                       <div className="px-4 py-2 border-b border-border/50 flex items-center justify-between">
                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
