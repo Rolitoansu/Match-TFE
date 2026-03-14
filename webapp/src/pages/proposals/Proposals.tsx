@@ -7,18 +7,21 @@ import {
   Users, 
   ArrowUpRight,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Heart
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 
 interface Proposal {
-  id: string
+  id: number
   title: string
   description: string
   publicationDate: string
   status: string
+  interestCount: number
+  likedByCurrentUser: boolean
   tags?: string[]
 }
 
@@ -104,9 +107,16 @@ export default function Proposals() {
                   <FileText size={24} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                    {proposal.title}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      {proposal.title}
+                    </h3>
+                    {proposal.likedByCurrentUser && (
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600" title="Interes registrado">
+                        <Heart size={13} fill="currentColor" />
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       <Clock size={14} /> {new Date(proposal.publicationDate).toLocaleString()}
@@ -123,7 +133,7 @@ export default function Proposals() {
                   <div className="text-center">
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5 justify-center">
                       <Users size={16} className="text-primary" />
-                      {"Por poner"}
+                      {proposal.interestCount}
                     </p>
                     <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Interesados</p>
                   </div>

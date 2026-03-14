@@ -101,8 +101,6 @@ app.get('/proposals/:id', async (req, res) => {
     }
 })
 
-// ── Admin: Import students from CSV data ──
-
 app.post('/admin/students/import', validate(adminStudentSchema), async (req, res) => {
     const { students: studentList } = req.body
 

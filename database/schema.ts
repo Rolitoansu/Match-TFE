@@ -115,6 +115,22 @@ export const projectTags = pgTable('project_tags', {
   primaryKey({ columns: [table.projectId, table.tagId] }),
 ])
 
+export const proposalLikes = pgTable('proposal_likes', {
+  proposalId: integer('proposal_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.proposalId, table.userId] }),
+])
+
+export const proposalPasses = pgTable('proposal_passes', {
+  proposalId: integer('proposal_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.proposalId, table.userId] }),
+])
+
 export const userTags = pgTable('user_tags', {
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   tagId: integer('tag_id').references(() => tags.id, { onDelete: 'cascade' }).notNull(),

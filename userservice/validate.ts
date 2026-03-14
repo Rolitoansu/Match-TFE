@@ -19,3 +19,7 @@ export const registerSchema = z.object({
     email: z.email("Invalid email address"),
     password: z.string("Expected password").min(6, "Password must be at least 6 characters long"),
 })
+
+export const adminStudentSchema = z.object({
+    students: z.array(z.string("Expected student ID").min(1, "Student ID cannot be empty"))
+})
