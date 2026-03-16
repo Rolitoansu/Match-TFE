@@ -32,4 +32,14 @@ export const AdminTagImportSchema = z.object({
     })).min(1, 'At least one tag is required')
 })
 
+export const AdminTagCreateSchema = z.object({
+    name: z.string('Expected tag name').trim().min(1, 'Tag name cannot be empty')
+})
+
+export const TagIdParamsSchema = z.object({
+    id: z.coerce.number('Invalid tag ID')
+        .int('Invalid tag ID')
+        .positive('Invalid tag ID')
+})
+
 export default validate

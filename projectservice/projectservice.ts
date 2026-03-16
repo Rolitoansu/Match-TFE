@@ -1,5 +1,5 @@
 import express from 'express'
-import validate, { AdminTagImportSchema, GetTFESchema, TFECreationSchema } from './validate'
+import validate, { AdminTagCreateSchema, AdminTagImportSchema, GetTFESchema, TFECreationSchema, TagIdParamsSchema } from './validate'
 import { HttpError, ProjectApplicationService } from './services/projectApplicationService'
 
 const PORT = process.env.PORT || 5002
@@ -177,14 +177,10 @@ app.get('/admin/tags', async (_req, res) => {
     }
 })
 
-app.post('/admin/tags', async (req, res) => {
+app.post('/admin/tags', validate(AdminTagCreateSchema), async (req, res) => {
     const { name } = req.body
 
     try {
-        if (typeof name !== 'string') {
-            return res.status(400).json({ error: 'Tag name is required' })
-        }
-
         const result = await projectService.createAdminTag(name)
         return res.status(201).json(result)
     } catch (exception) {
@@ -213,12 +209,8 @@ app.post('/admin/tags/import', validate(AdminTagImportSchema), async (req, res) 
     }
 })
 
-app.delete('/admin/tags/:id', async (req, res) => {
+app.delete('/admin/tags/:id', validate(TagIdParamsSchema, 'params'), async (req, res) => {
     const tagId = Number(req.params.id)
-
-    if (isNaN(tagId)) {
-        return res.status(400).json({ error: 'Invalid tag ID' })
-    }
 
     try {
         const result = await projectService.deleteAdminTag(tagId)

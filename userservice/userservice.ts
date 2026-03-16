@@ -1,5 +1,5 @@
 import express from 'express'
-import { validate, registerSchema, adminStudentSchema, updateProfileSchema } from './validate'
+import { validate, registerSchema, adminStudentSchema, updateProfileSchema, userIdParamsSchema } from './validate'
 import { HttpError, UserApplicationService } from './services/userApplicationService'
 
 const PORT = process.env.PORT || 5001
@@ -33,12 +33,8 @@ app.post('/register', validate(registerSchema), async (req, res) => {
     }
 })
 
-app.get('/proposals/:id', async (req, res) => {
+app.get('/proposals/:id', validate(userIdParamsSchema, 'params'), async (req, res) => {
     const userId = Number(req.params.id)
-
-    if (isNaN(userId) || userId <= 0) {
-        return res.status(400).json({ error: 'Invalid user ID' })
-    }
 
     try {
         const result = await userService.getUserProposals(userId)
@@ -99,12 +95,8 @@ app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
     }
 })
 
-app.get('/:id', async (req, res) => {
+app.get('/:id', validate(userIdParamsSchema, 'params'), async (req, res) => {
     const userId = Number(req.params.id)
-
-    if (isNaN(userId) || userId <= 0) {
-        return res.status(400).json({ error: 'Invalid user ID' })
-    }
 
     try {
         const result = await userService.getPublicProfile(userId)

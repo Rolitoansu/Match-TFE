@@ -1,15 +1,15 @@
 import { Request, Response, NextFunction } from 'express'
 import { z, treeifyError, ZodObject } from 'zod'
 
-export const validate = (schema: ZodObject) => 
+export const validate = (schema: ZodObject, source: 'body' | 'params' | 'query' = 'body') => 
     (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.body)
+    const result = schema.safeParse(req[source])
 
     if (!result.success) {
         return res.status(400).json({ details: treeifyError(result.error) })
     }
 
-    req.body = result.data
+    req[source] = result.data
     next()
 }
 
@@ -33,4 +33,10 @@ export const updateProfileSchema = z.object({
     interests: z.array(z.string().trim().min(1, 'Interest tag cannot be empty')).max(30, 'Too many interests').optional(),
 }).refine((data) => data.biography !== undefined || data.interests !== undefined, {
     message: 'At least one profile field must be provided',
+})
+
+export const userIdParamsSchema = z.object({
+    id: z.coerce.number('Invalid user ID')
+        .int('Invalid user ID')
+        .positive('Invalid user ID')
 })
