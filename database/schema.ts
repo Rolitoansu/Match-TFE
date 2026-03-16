@@ -6,7 +6,6 @@ import {
   timestamp, 
   boolean, 
   primaryKey, 
-  unique, 
   check,
   pgEnum 
 } from 'drizzle-orm/pg-core'
@@ -38,12 +37,12 @@ export const skills = pgTable('skills', {
   description: text('description'),
 })
 
-export const studentSkills = pgTable('student_skills', {
-  studentId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+export const userSkills = pgTable('user_skills', {
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   skillId: integer('skill_id').references(() => skills.id, { onDelete: 'cascade' }).notNull(),
   mark: integer('mark'),
 }, (table) => [
-  primaryKey({ columns: [table.studentId, table.skillId] }),
+  primaryKey({ columns: [table.userId, table.skillId] }),
   check('mark_range', sql`${table.mark} >= 0 AND ${table.mark} <= 10`),
 ])
 
@@ -54,24 +53,6 @@ export const matches = pgTable('matches', {
 }, (table) => [
   primaryKey({ columns: [table.projectId, table.userId] }),
 ])
-
-export const chats = pgTable('chats', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  studentId: integer('student_id').references(() => users.id, { onDelete: 'set null' }),
-  professorId: integer('professor_id').references(() => users.id, { onDelete: 'set null' }),
-  creationDate: timestamp('creation_date', { withTimezone: true, mode: 'date' }).defaultNow(),
-}, (table) => [
-  unique().on(table.studentId, table.professorId),
-])
-
-export const messages = pgTable('messages', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  content: text('content').notNull(),
-  timestamp: timestamp('timestamp', { withTimezone: true, mode: 'date' }).defaultNow(),
-  read: boolean('read').default(false),
-  chatId: integer('chat_id').references(() => chats.id, { onDelete: 'cascade' }),
-  senderId: integer('sender_id').references(() => users.id, { onDelete: 'set null' }),
-})
 
 export const notifications = pgTable('notifications', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
@@ -103,22 +84,6 @@ export const projectTags = pgTable('project_tags', {
   tagId: integer('tag_id').references(() => tags.id, { onDelete: 'cascade' }).notNull(),
 }, (table) => [
   primaryKey({ columns: [table.projectId, table.tagId] }),
-])
-
-export const proposalLikes = pgTable('proposal_likes', {
-  proposalId: integer('proposal_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow(),
-}, (table) => [
-  primaryKey({ columns: [table.proposalId, table.userId] }),
-])
-
-export const proposalPasses = pgTable('proposal_passes', {
-  proposalId: integer('proposal_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow(),
-}, (table) => [
-  primaryKey({ columns: [table.proposalId, table.userId] }),
 ])
 
 export const userTags = pgTable('user_tags', {

@@ -206,7 +206,7 @@ export default function Profile() {
                 </div>
                 
                 <h2 className="text-2xl font-bold">{user!.name}</h2>
-                <p className="text-primary font-semibold text-sm mb-1">Estudiante</p>
+                <p className="text-primary font-semibold text-sm mb-1">{user!.role === 'professor' ? 'Profesor/a' : 'Estudiante'}</p>
                 
                 <div className="flex items-center gap-2 mt-4 px-4 py-1.5 bg-secondary/50 rounded-full text-xs text-muted-foreground">
                     <Mail size={12} />
@@ -219,14 +219,11 @@ export default function Profile() {
                     <p className="text-lg font-bold">0</p>
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Matches</p>
                 </div>
-                <div className="border-x border-border/50">
+                <div>
                     <p className="text-lg font-bold">{proposals?.length ?? 0}</p>
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">TFGs</p>
                 </div>
-                <div>
-                    <p className="text-lg font-bold">0</p>
-                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Chats</p>
-                </div>
+
                 </div>
 
                 <div className="mt-8 space-y-6">

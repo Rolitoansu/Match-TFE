@@ -1,4 +1,4 @@
-FROM node:25-alpine AS development
+FROM node:alpine AS development
 WORKDIR /usr/src
 RUN npm install -g pnpm
 

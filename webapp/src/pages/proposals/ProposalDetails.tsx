@@ -152,7 +152,17 @@ export default function ProposalDetails() {
               </div>
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">Publicado por</p>
-                <h4 className="text-xl font-bold">{proposal.user ? `${proposal.user.name} ${proposal.user.surname}` : 'Autor no disponible'}</h4>
+                {proposal.user ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/users/${proposal.user!.id}`)}
+                    className="text-xl font-bold hover:text-primary transition-colors"
+                  >
+                    {proposal.user.name} {proposal.user.surname}
+                  </button>
+                ) : (
+                  <h4 className="text-xl font-bold">Autor no disponible</h4>
+                )}
                 {proposal.user?.email ? (
                   <p className="text-sm text-primary font-medium flex items-center justify-center gap-1.5 mt-1">
                     <Mail size={14} /> {proposal.user.email}

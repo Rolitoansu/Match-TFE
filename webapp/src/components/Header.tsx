@@ -2,14 +2,16 @@ import {
   Bell,
   FileText,
   Flame,
-  MessageCircle,
+  LogOut,
   User,
 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import useAuth from '../hooks/useAuth'
 
 export const Header = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { logout } = useAuth()
 
   const items = [
     {
@@ -21,11 +23,6 @@ export const Header = () => {
       name: 'Propuestas',
       route: '/proposals',
       icon: FileText,
-    },
-    {
-      name: 'Chat',
-      route: '/chat',
-      icon: MessageCircle,
     },
     {
       name: 'Perfil',
@@ -80,12 +77,20 @@ export const Header = () => {
           })}
         </nav>
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             className="flex h-11 w-11 items-center justify-center rounded-full border border-black/5 bg-slate-100/85 text-slate-500 transition-colors hover:bg-white hover:text-foreground"
           >
             <Bell className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            title="Cerrar sesión"
+            onClick={() => logout().then(() => navigate('/login'))}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/5 bg-slate-100/85 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500"
+          >
+            <LogOut className="h-5 w-5" />
           </button>
         </div>
       </div>

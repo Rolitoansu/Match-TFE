@@ -1,5 +1,5 @@
 import { Button } from '@mui/material'
-import { GraduationCap, Users, MessageSquare, Sparkles } from "lucide-react"
+import { GraduationCap, Users, Sparkles } from "lucide-react"
 
 export default function LandingPage() {
   return (
@@ -30,12 +30,7 @@ export default function LandingPage() {
               Conecta profesores y estudiantes
             </p>
           </div>
-          <div className="flex items-center gap-3 rounded-xl bg-primary-foreground/10 px-4 py-3">
-            <MessageSquare className="h-5 w-5 shrink-0 text-primary-foreground" />
-            <p className="text-sm text-primary-foreground">
-              Chat integrado para definir tu TFG
-            </p>
-          </div>
+
         </div>
 
         <div className="flex w-full flex-col gap-3">

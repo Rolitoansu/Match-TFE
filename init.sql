@@ -83,7 +83,7 @@ INSERT INTO users (name, surname, password_hash, email, biography, role) VALUES
         'Suarez',
         '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i',
         'marta.suarez@uni.es',
-        'Profesora de IA aplicada. Busco estudiantes con interes en NLP y sistemas inteligentes.',
+        'Profesora de IA aplicada. Busco estudiantes con interes en DLP y sistemas inteligentes.',
         'professor'
     ),
     (
@@ -99,7 +99,7 @@ INSERT INTO users (name, surname, password_hash, email, biography, role) VALUES
         'Fernandez',
         '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i',
         'lucia.fernandez@uni.es',
-        'Estudiante interesada en NLP y productos digitales.',
+        'Estudiante interesada en DLP y productos digitales.',
         'student'
     ),
     (
@@ -113,7 +113,7 @@ INSERT INTO users (name, surname, password_hash, email, biography, role) VALUES
 
 -- Seed tags
 INSERT INTO tags (name) VALUES
-    ('NLP'),
+    ('DLP'),
     ('Machine Learning'),
     ('Ciberseguridad'),
     ('Sistemas Distribuidos'),
@@ -166,7 +166,7 @@ INSERT INTO projects (title, description, status, student_id) VALUES
 INSERT INTO project_tags (project_id, tag_id)
 SELECT p.id, t.id
 FROM projects p
-JOIN tags t ON t.name IN ('NLP', 'Machine Learning')
+JOIN tags t ON t.name IN ('DLP', 'Machine Learning')
 WHERE p.title = 'Asistente conversacional para campus universitario'
 ON CONFLICT DO NOTHING;
 
@@ -219,3 +219,28 @@ VALUES
         'accepted'
     )
 ON CONFLICT (project_id, user_id) DO NOTHING;
+
+-- Seed user interests (user_tags)
+INSERT INTO user_tags (user_id, tag_id)
+SELECT u.id, t.id
+FROM users u, tags t
+WHERE u.email = 'lucia.fernandez@uni.es' AND t.name IN ('DLP', 'Machine Learning')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO user_tags (user_id, tag_id)
+SELECT u.id, t.id
+FROM users u, tags t
+WHERE u.email = 'carlos.lopez@uni.es' AND t.name IN ('Ciberseguridad', 'Sistemas Distribuidos')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO user_tags (user_id, tag_id)
+SELECT u.id, t.id
+FROM users u, tags t
+WHERE u.email = 'marta.suarez@uni.es' AND t.name IN ('DLP', 'Machine Learning')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO user_tags (user_id, tag_id)
+SELECT u.id, t.id
+FROM users u, tags t
+WHERE u.email = 'javier.llaneza@uni.es' AND t.name IN ('Ciberseguridad', 'Sistemas Distribuidos')
+ON CONFLICT DO NOTHING;

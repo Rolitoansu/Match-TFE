@@ -9,5 +9,6 @@ router.post('/register', proxy(USER_SERVICE_URL))
 router.get('/profile', authMiddleware, proxy(USER_SERVICE_URL))
 router.get('/proposals/:id', authMiddleware, proxy(USER_SERVICE_URL))
 router.patch('/profile', authMiddleware, proxy(USER_SERVICE_URL))
+router.get('/:id', authMiddleware, proxy(USER_SERVICE_URL))
 
 export default router

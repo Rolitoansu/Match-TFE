@@ -225,7 +225,7 @@ export default function Explore() {
             <p className="mt-3 text-center text-xs text-amber-600 font-medium">Interés registrado. Esperando respuesta de la otra parte.</p>
           )}
           {currentProposal.matchStatus === 'accepted' && (
-            <p className="mt-3 text-center text-xs text-emerald-600 font-medium">¡Es un match! Ya podéis pasar al chat.</p>
+            <p className="mt-3 text-center text-xs text-emerald-600 font-medium">¡Es un match! Ya podéis contactar por correo.</p>
           )}
           {currentProposal.matchStatus === 'rejected' && (
             <p className="mt-3 text-center text-xs text-rose-600 font-medium">La propuesta no está disponible para match actualmente.</p>

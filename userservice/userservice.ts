@@ -1,100 +1,54 @@
 import express from 'express'
-import jwt from 'jsonwebtoken'
-import bcrypt from 'bcrypt'
-import { users, userTags } from '@match-tfe/db/schema'
 import { validate, registerSchema, adminStudentSchema, updateProfileSchema } from './validate'
-import { eq, inArray, sql } from 'drizzle-orm'
-import db from '@match-tfe/db'
-import { projects, tags, projectTags } from '@match-tfe/db/schema'
+import { HttpError, UserApplicationService } from './services/userApplicationService'
 
 const PORT = process.env.PORT || 5001
 const JWT_SECRET = process.env.JWT_SECRET || 'secret'
 
 const app = express()
 app.use(express.json())
+const userService = new UserApplicationService(JWT_SECRET)
 
 app.post('/register', validate(registerSchema), async (req, res) => {
     const { email, name, surname, password } = req.body
 
     try {
-        const [existingUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, email))
-            .limit(1)
-            
-        if (existingUser) {
-            return res.status(409).json({ error: 'User already exists' })
-        }
+        const result = await userService.registerStudent({ email, name, surname, password })
 
-        const passwordHash = await bcrypt.hash(password, 10)
-        const date = new Date()
-        let userData: any
-
-        await db.transaction(async (trx) => {
-            const [user] = await trx.insert(users)
-                .values({ email, name, surname, passwordHash, registrationDate: date, role: 'student' })
-                .returning({ id: users.id })
-
-            userData = user
-        })
-
-        if (!userData) {
-            throw new Error('User creation failed')
-        }
-
-        const refreshToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '30d' })
-        const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: '15m' })
-
-        const user_data = { 
-            id: userData.id,
-            email, 
-            name: name, 
-            surname: surname, 
-            registrationDate: date, 
-            biography: null,
-            role: 'student',
-            interests: [],
-        }
-
-        res.cookie('refresh_token', refreshToken, { 
+        res.cookie('refresh_token', result.refreshToken, {
             httpOnly: true, 
             sameSite: 'strict',
             secure: process.env.STAGE === 'production',
             maxAge: 30 * 24 * 60 * 60 * 1000
         })
 
-        return res.json({ access_token: accessToken, user: user_data })
-    } catch (e: any) {
-        console.error(e)
+        return res.json({ access_token: result.accessToken, user: result.user })
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
+        }
+
+        console.error(error)
         return res.status(500).json({ error: 'Error creating user' })
     }
 })
 
 app.get('/proposals/:id', async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userId = Number(req.params.id)
+
+    if (isNaN(userId) || userId <= 0) {
+        return res.status(400).json({ error: 'Invalid user ID' })
+    }
 
     try {
-        const proposals = await db
-            .select({
-                id: projects.id,
-                title: projects.title,
-                description: projects.description,
-                publicationDate: projects.publicationDate,
-                status: projects.status,
-                tags: sql`json_agg(${tags.name})`.as('tags')
-            })
-            .from(projects)
-            .innerJoin(users, eq(users.id, projects.studentId))
-            .leftJoin(projectTags, eq(projectTags.projectId, projects.id))
-            .leftJoin(tags, eq(tags.id, projectTags.tagId))
-            .where(eq(users.email, userEmail))
-            .groupBy(projects.id)
-            .limit(10)
+        const result = await userService.getUserProposals(userId)
+        return res.json(result)
 
-        return res.json({ proposals })
-        
     } catch (exception) {
+        if (exception instanceof HttpError) {
+            return res.status(exception.status).json(exception.payload)
+        }
+
         console.error(exception)
         return res.status(500).json({ error: 'Error fetching project proposals' })
     }
@@ -108,32 +62,13 @@ app.get('/profile', async (req, res) => {
     }
 
     try {
-        const [profile] = await db
-            .select({
-                id: users.id,
-                email: users.email,
-                name: users.name,
-                surname: users.surname,
-                registrationDate: users.registrationDate,
-                biography: users.biography,
-                role: users.role,
-            })
-            .from(users)
-            .where(eq(users.email, userEmail))
-            .limit(1)
-
-        if (!profile) {
-            return res.status(404).json({ error: 'Authenticated user not found' })
+        const result = await userService.getAuthenticatedProfile(userEmail)
+        return res.json(result)
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
         }
 
-        const interestRows = await db
-            .select({ name: tags.name })
-            .from(userTags)
-            .innerJoin(tags, eq(tags.id, userTags.tagId))
-            .where(eq(userTags.userId, profile.id))
-
-        return res.json({ user: { ...profile, interests: interestRows.map((row) => row.name) } })
-    } catch (error) {
         console.error(error)
         return res.status(500).json({ error: 'Error fetching user profile' })
     }
@@ -152,121 +87,52 @@ app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
     const interests = req.body.interests as string[] | undefined
 
     try {
-        const [currentUser] = await db
-            .select({ id: users.id })
-            .from(users)
-            .where(eq(users.email, userEmail))
-            .limit(1)
-
-        if (!currentUser) {
-            return res.status(404).json({ error: 'Authenticated user not found' })
-        }
-
-        if (biography !== undefined) {
-            await db
-                .update(users)
-                .set({ biography })
-                .where(eq(users.id, currentUser.id))
-        }
-
-        if (interests !== undefined) {
-            const normalizedInterests = [...new Set(interests.map((name) => name.trim()).filter(Boolean))]
-            const tagRows = normalizedInterests.length > 0
-                ? await db
-                    .select({ id: tags.id, name: tags.name })
-                    .from(tags)
-                    .where(inArray(tags.name, normalizedInterests))
-                : []
-
-            if (tagRows.length !== normalizedInterests.length) {
-                return res.status(400).json({ error: 'One or more interests are not valid tags' })
-            }
-
-            await db.delete(userTags).where(eq(userTags.userId, currentUser.id))
-
-            if (tagRows.length > 0) {
-                await db
-                    .insert(userTags)
-                    .values(tagRows.map((tag) => ({ userId: currentUser.id, tagId: tag.id })))
-            }
-        }
-
-        const [updatedUser] = await db
-            .select({
-                id: users.id,
-                email: users.email,
-                name: users.name,
-                surname: users.surname,
-                registrationDate: users.registrationDate,
-                biography: users.biography,
-                role: users.role,
-            })
-            .from(users)
-            .where(eq(users.id, currentUser.id))
-            .limit(1)
-
-        if (!updatedUser) {
-            return res.status(404).json({ error: 'Authenticated user not found' })
-        }
-
-        const updatedInterestRows = await db
-            .select({ name: tags.name })
-            .from(userTags)
-            .innerJoin(tags, eq(tags.id, userTags.tagId))
-            .where(eq(userTags.userId, currentUser.id))
-
-        return res.json({ user: { ...updatedUser, interests: updatedInterestRows.map((row) => row.name) } })
+        const result = await userService.updateAuthenticatedProfile(userEmail, { biography, interests })
+        return res.json(result)
     } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
+        }
+
         console.error(error)
         return res.status(500).json({ error: 'Error updating user profile' })
+    }
+})
+
+app.get('/:id', async (req, res) => {
+    const userId = Number(req.params.id)
+
+    if (isNaN(userId) || userId <= 0) {
+        return res.status(400).json({ error: 'Invalid user ID' })
+    }
+
+    try {
+        const result = await userService.getPublicProfile(userId)
+        return res.json(result)
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
+        }
+
+        console.error(error)
+        return res.status(500).json({ error: 'Error fetching user profile' })
     }
 })
 
 app.post('/admin/students/import', validate(adminStudentSchema), async (req, res) => {
     const { students: studentList } = req.body
 
-    let created = 0
-    let skipped = 0
-    const errors: string[] = []
-
-    for (const student of studentList) {
-        const { email, name, surname } = student
-
-        if (!email || !name || !surname) {
-            errors.push(`Datos incompletos para: ${email || 'sin correo'}`)
-            skipped++
-            continue
+    try {
+        const result = await userService.importStudents(studentList)
+        return res.json(result)
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
         }
 
-        try {
-            const [existing] = await db
-                .select()
-                .from(users)
-                .where(eq(users.email, email))
-                .limit(1)
-
-            if (existing) {
-                skipped++
-                continue
-            }
-
-            // Default password: the email prefix before @
-            const defaultPassword = email.split('@')[0]
-            const passwordHash = await bcrypt.hash(defaultPassword, 10)
-
-            await db.transaction(async (trx) => {
-                await trx.insert(users)
-                    .values({ email, name, surname, passwordHash, registrationDate: new Date(), role: 'student' })
-            })
-
-            created++
-        } catch (e: any) {
-            errors.push(`Error al crear ${email}: ${e.message}`)
-            skipped++
-        }
+        console.error(error)
+        return res.status(500).json({ error: 'Error importing students' })
     }
-
-    return res.json({ created, skipped, errors })
 })
 
 app.listen(PORT, () => {
