@@ -26,6 +26,15 @@ export const GetTFESchema = z.object({
                 .positive('Invalid project ID')
 })
 
+export const AcceptMatchParamsSchema = z.object({
+    id: z.coerce.number('Invalid project ID')
+        .int('Invalid project ID')
+        .positive('Invalid project ID'),
+    userId: z.coerce.number('Invalid user ID')
+        .int('Invalid user ID')
+        .positive('Invalid user ID')
+})
+
 export const AdminTagImportSchema = z.object({
     tags: z.array(z.object({
         name: z.string('Expected tag name').trim().min(1, 'Tag name cannot be empty'),

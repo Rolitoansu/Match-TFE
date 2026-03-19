@@ -265,7 +265,7 @@ export default function NewProposal() {
             </div>
           </div>
           <div className="flex items-center justify-end gap-4">
-            <button className="flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all"
+            <button className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all"
               onClick={submitProposal}
             >
               Publicar Propuesta

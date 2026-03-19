@@ -35,6 +35,23 @@ export const updateProfileSchema = z.object({
     message: 'At least one profile field must be provided',
 })
 
+export const adminProfessorSchema = z.object({
+    professors: z.array(z.object({
+        email: z.email("Invalid email address"),
+        name: z.string("Expected name").min(2, "Name must be at least 2 characters long"),
+        surname: z.string("Expected surname").min(2, "Surname must be at least 2 characters long"),
+    }))
+})
+
+export const adminUpdateUserSchema = z.object({
+    name: z.string("Expected name").min(2, "Name must be at least 2 characters long").optional(),
+    surname: z.string("Expected surname").min(2, "Surname must be at least 2 characters long").optional(),
+    email: z.email("Invalid email address").optional(),
+    biography: z.string("Expected biography").max(2000, "Biography cannot exceed 2000 characters").nullable().optional(),
+}).refine((data) => Object.values(data).some(v => v !== undefined), {
+    message: 'At least one field must be provided for update',
+})
+
 export const userIdParamsSchema = z.object({
     id: z.coerce.number('Invalid user ID')
         .int('Invalid user ID')

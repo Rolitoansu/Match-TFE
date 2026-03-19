@@ -87,7 +87,7 @@ export default function Chat() {
             <div key={msg.id} className={`flex ${msg.senderId === 'me' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[70%] px-4 py-3 rounded-2xl text-sm shadow-sm ${
                 msg.senderId === 'me' 
-                ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                ? 'bg-primary text-white rounded-tr-none' 
                 : 'bg-white border border-border rounded-tl-none'
               }`}>
                 <p>{msg.text}</p>

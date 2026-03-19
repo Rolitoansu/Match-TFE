@@ -1,5 +1,5 @@
 import express from 'express'
-import { validate, registerSchema, adminStudentSchema, updateProfileSchema, userIdParamsSchema } from './validate'
+import { validate, registerSchema, adminStudentSchema, adminProfessorSchema, adminUpdateUserSchema, updateProfileSchema, userIdParamsSchema } from './validate'
 import { HttpError, UserApplicationService } from './services/userApplicationService'
 
 const PORT = process.env.PORT || 5001
@@ -124,6 +124,69 @@ app.post('/admin/students/import', validate(adminStudentSchema), async (req, res
 
         console.error(error)
         return res.status(500).json({ error: 'Error importing students' })
+    }
+})
+
+app.post('/admin/professors/import', validate(adminProfessorSchema), async (req, res) => {
+    const { professors: professorList } = req.body
+
+    try {
+        const result = await userService.importProfessors(professorList)
+        return res.json(result)
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
+        }
+
+        console.error(error)
+        return res.status(500).json({ error: 'Error importing professors' })
+    }
+})
+
+app.get('/admin/users', async (req, res) => {
+    try {
+        const result = await userService.listUsers()
+        return res.json(result)
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
+        }
+
+        console.error(error)
+        return res.status(500).json({ error: 'Error fetching users' })
+    }
+})
+
+app.patch('/admin/users/:id', validate(adminUpdateUserSchema), validate(userIdParamsSchema, 'params'), async (req, res) => {
+    const userId = Number(req.params.id)
+    const { name, surname, email, biography } = req.body
+
+    try {
+        const result = await userService.updateUser(userId, { name, surname, email, biography })
+        return res.json(result)
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
+        }
+
+        console.error(error)
+        return res.status(500).json({ error: 'Error updating user' })
+    }
+})
+
+app.delete('/admin/users/:id', validate(userIdParamsSchema, 'params'), async (req, res) => {
+    const userId = Number(req.params.id)
+
+    try {
+        const result = await userService.deleteUser(userId)
+        return res.json(result)
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return res.status(error.status).json(error.payload)
+        }
+
+        console.error(error)
+        return res.status(500).json({ error: 'Error deleting user' })
     }
 })
 

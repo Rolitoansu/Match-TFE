@@ -1,5 +1,5 @@
 import express from 'express'
-import validate, { AdminTagCreateSchema, AdminTagImportSchema, GetTFESchema, TFECreationSchema, TagIdParamsSchema } from './validate'
+import validate, { AcceptMatchParamsSchema, AdminTagCreateSchema, AdminTagImportSchema, GetTFESchema, TFECreationSchema, TagIdParamsSchema } from './validate'
 import { HttpError, ProjectApplicationService } from './services/projectApplicationService'
 
 const PORT = process.env.PORT || 5002
@@ -163,6 +163,28 @@ app.post('/proposals/:id/pass', validate(GetTFESchema, 'params'), async (req, re
     }
 })
 
+app.post('/proposals/:id/match/:userId', validate(AcceptMatchParamsSchema, 'params'), async (req, res) => {
+    const userEmail = req.headers['x-user-email'] as string
+    const projectId = Number(req.params.id)
+    const interestedUserId = Number(req.params.userId)
+
+    if (!userEmail) {
+        return res.status(401).json({ error: 'Missing authenticated user email' })
+    }
+
+    try {
+        const result = await projectService.acceptProposalMatch(userEmail, projectId, interestedUserId)
+        return res.json(result)
+    } catch (exception) {
+        if (exception instanceof HttpError) {
+            return res.status(exception.status).json(exception.payload)
+        }
+
+        console.error(exception)
+        return res.status(500).json({ error: 'Error accepting match for proposal' })
+    }
+})
+
 app.get('/admin/tags', async (_req, res) => {
     try {
         const result = await projectService.listAdminTags()
@@ -222,6 +244,23 @@ app.delete('/admin/tags/:id', validate(TagIdParamsSchema, 'params'), async (req,
 
         console.error(exception)
         return res.status(500).json({ error: 'Error deleting tag' })
+    }
+})
+
+app.patch('/admin/tags/:id', validate(TagIdParamsSchema, 'params'), validate(AdminTagCreateSchema), async (req, res) => {
+    const tagId = Number(req.params.id)
+    const { name } = req.body
+
+    try {
+        const result = await projectService.updateAdminTag(tagId, name)
+        return res.json(result)
+    } catch (exception) {
+        if (exception instanceof HttpError) {
+            return res.status(exception.status).json(exception.payload)
+        }
+
+        console.error(exception)
+        return res.status(500).json({ error: 'Error updating tag' })
     }
 })
 

@@ -333,4 +333,145 @@ export class UserApplicationService {
 
         return { created, skipped, errors }
     }
+
+    async importProfessors(professorList: Array<{ email: string; name: string; surname: string }>) {
+        let created = 0
+        let skipped = 0
+        const errors: string[] = []
+
+        for (const professor of professorList) {
+            const { email, name, surname } = professor
+
+            if (!email || !name || !surname) {
+                errors.push(`Datos incompletos para: ${email || 'sin correo'}`)
+                skipped += 1
+                continue
+            }
+
+            try {
+                const [existing] = await db
+                    .select()
+                    .from(users)
+                    .where(eq(users.email, email))
+                    .limit(1)
+
+                if (existing) {
+                    skipped += 1
+                    continue
+                }
+
+                const defaultPassword = email.split('@')[0]
+                const passwordHash = await bcrypt.hash(defaultPassword, 10)
+
+                await db.transaction(async (trx) => {
+                    await trx
+                        .insert(users)
+                        .values({
+                            email,
+                            name,
+                            surname,
+                            passwordHash,
+                            registrationDate: new Date(),
+                            role: 'professor',
+                        })
+                })
+
+                created += 1
+            } catch (error) {
+                const reason = error instanceof Error ? error.message : 'Unknown error'
+                errors.push(`Error al crear ${email}: ${reason}`)
+                skipped += 1
+            }
+        }
+
+        return { created, skipped, errors }
+    }
+
+    async updateUser(userId: number, update: { name?: string; surname?: string; email?: string; biography?: string | null }) {
+        const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1)
+
+        if (!user) {
+            throw new HttpError(404, { error: 'User not found' })
+        }
+
+        if (update.email && update.email !== user.email) {
+            const [existing] = await db
+                .select()
+                .from(users)
+                .where(eq(users.email, update.email))
+                .limit(1)
+
+            if (existing) {
+                throw new HttpError(409, { error: 'Email already in use' })
+            }
+        }
+
+        const updateData: Record<string, any> = {}
+        if (update.name !== undefined) updateData.name = update.name
+        if (update.surname !== undefined) updateData.surname = update.surname
+        if (update.email !== undefined) updateData.email = update.email
+        if (update.biography !== undefined) updateData.biography = update.biography
+
+        await db
+            .update(users)
+            .set(updateData)
+            .where(eq(users.id, userId))
+
+        const [updatedUser] = await db
+            .select({
+                id: users.id,
+                name: users.name,
+                surname: users.surname,
+                email: users.email,
+                biography: users.biography,
+                role: users.role,
+                registrationDate: users.registrationDate,
+            })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1)
+
+        return { user: updatedUser }
+    }
+
+    async deleteUser(userId: number) {
+        const [user] = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1)
+
+        if (!user) {
+            throw new HttpError(404, { error: 'User not found' })
+        }
+
+        await db.transaction(async (trx) => {
+            await trx
+                .delete(users)
+                .where(eq(users.id, userId))
+        })
+
+        return { message: 'User deleted successfully' }
+    }
+
+    async listUsers() {
+        const usersList = await db
+            .select({
+                id: users.id,
+                name: users.name,
+                surname: users.surname,
+                email: users.email,
+                role: users.role,
+                registrationDate: users.registrationDate,
+                biography: users.biography,
+            })
+            .from(users)
+            .orderBy(desc(users.registrationDate))
+
+        return { users: usersList }
+    }
 }

@@ -213,9 +213,9 @@ export class ProjectApplicationService {
 
         for (const proposal of rawProposals) {
             const proposalTagIds = await this.getProjectTagIds(proposal.id)
-            const hasSharedInterests = proposalTagIds.some((tagId) => currentUserInterestTagIds.has(tagId))
+            const sharedTagsCount = proposalTagIds.filter((tagId) => currentUserInterestTagIds.has(tagId)).length
 
-            if (!hasSharedInterests) {
+            if (sharedTagsCount === 0) {
                 continue
             }
 
@@ -233,9 +233,23 @@ export class ProjectApplicationService {
                 ...proposal,
                 liked: false,
                 matchStatus: null,
+                sharedTagsCount,
                 tags: await this.getProjectTagNames(proposal.id),
             })
         }
+
+        proposals.sort((a, b) => {
+            const sharedA = Number(a.sharedTagsCount ?? 0)
+            const sharedB = Number(b.sharedTagsCount ?? 0)
+
+            if (sharedA !== sharedB) {
+                return sharedB - sharedA
+            }
+
+            const dateA = new Date(String(a.publicationDate)).getTime()
+            const dateB = new Date(String(b.publicationDate)).getTime()
+            return dateB - dateA
+        })
 
         return { viewerRole: currentUser.role, proposals }
     }
@@ -280,7 +294,11 @@ export class ProjectApplicationService {
                 .limit(1)
             : []
 
-        const interestedRows = proposal.studentId
+        const isOwner = currentUser.role === 'student'
+            ? proposal.studentId === currentUser.id
+            : proposal.tutorId === currentUser.id
+
+        const interestedRows = isOwner
             ? await db
                 .select({
                     id: users.id,
@@ -291,12 +309,11 @@ export class ProjectApplicationService {
                 })
                 .from(matches)
                 .innerJoin(users, eq(users.id, matches.userId))
-                .where(eq(matches.projectId, projectId))
+                .where(and(
+                    eq(matches.projectId, projectId),
+                    inArray(matches.status, ['pending', 'accepted'])
+                ))
             : []
-
-        const isOwner = currentUser.role === 'student'
-            ? proposal.studentId === currentUser.id
-            : proposal.tutorId === currentUser.id
 
         const [acceptedMatch] = await db
             .select({ projectId: matches.projectId })
@@ -457,6 +474,19 @@ export class ProjectApplicationService {
         }
 
         await db.transaction(async (trx) => {
+            const [alreadyAccepted] = await trx
+                .select({ projectId: matches.projectId })
+                .from(matches)
+                .where(and(
+                    eq(matches.projectId, projectId),
+                    eq(matches.status, 'accepted')
+                ))
+                .limit(1)
+
+            if (alreadyAccepted) {
+                throw new HttpError(409, { error: 'This proposal already has an accepted match' })
+            }
+
             const [existingInteraction] = await trx
                 .select({ status: matches.status })
                 .from(matches)
@@ -477,49 +507,6 @@ export class ProjectApplicationService {
                     .set({ status: 'pending' })
                     .where(and(eq(matches.projectId, projectId), eq(matches.userId, currentUser.id)))
             }
-
-            const myOwnProjects = await trx
-                .select({ id: projects.id })
-                .from(projects)
-                .where(currentUser.role === 'student' ? eq(projects.studentId, currentUser.id) : eq(projects.tutorId, currentUser.id))
-
-            const myOwnProjectIds = myOwnProjects.map((ownProject) => ownProject.id)
-
-            if (myOwnProjectIds.length === 0) {
-                return
-            }
-
-            const [reciprocalInterest] = await trx
-                .select({ projectId: matches.projectId })
-                .from(matches)
-                .where(and(
-                    inArray(matches.projectId, myOwnProjectIds),
-                    eq(matches.userId, ownerId),
-                    inArray(matches.status, ['pending', 'accepted'])
-                ))
-                .limit(1)
-
-            if (reciprocalInterest) {
-                await trx
-                    .update(matches)
-                    .set({ status: 'accepted' })
-                    .where(and(eq(matches.projectId, projectId), eq(matches.userId, currentUser.id)))
-
-                await trx
-                    .update(matches)
-                    .set({ status: 'accepted' })
-                    .where(and(eq(matches.projectId, reciprocalInterest.projectId), eq(matches.userId, ownerId)))
-
-                await trx
-                    .update(projects)
-                    .set({ status: 'in_progress' })
-                    .where(eq(projects.id, projectId))
-
-                await trx
-                    .update(projects)
-                    .set({ status: 'in_progress' })
-                    .where(eq(projects.id, reciprocalInterest.projectId))
-            }
         })
 
         const [updatedInteraction] = await db
@@ -531,7 +518,98 @@ export class ProjectApplicationService {
         return {
             liked: true,
             matchStatus: updatedInteraction?.status ?? 'pending',
-            matched: updatedInteraction?.status === 'accepted',
+            matched: false,
+        }
+    }
+
+    async acceptProposalMatch(userEmail: string, projectId: number, interestedUserId: number) {
+        const currentUser = await this.getUserWithRole(userEmail)
+
+        if (!currentUser) {
+            throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
+        }
+
+        const [proposal] = await db
+            .select({
+                id: projects.id,
+                status: projects.status,
+                studentId: projects.studentId,
+                tutorId: projects.tutorId,
+            })
+            .from(projects)
+            .where(eq(projects.id, projectId))
+            .limit(1)
+
+        if (!proposal) {
+            throw new HttpError(404, { error: 'Proposal not found' })
+        }
+
+        const isOwner = currentUser.role === 'student'
+            ? proposal.studentId === currentUser.id
+            : proposal.tutorId === currentUser.id
+
+        if (!isOwner) {
+            throw new HttpError(403, { error: 'Only the owner can accept a match' })
+        }
+
+        if (proposal.status !== 'proposed') {
+            throw new HttpError(409, { error: 'Proposal is not available for new matches' })
+        }
+
+        await db.transaction(async (trx) => {
+            const [alreadyAccepted] = await trx
+                .select({ userId: matches.userId })
+                .from(matches)
+                .where(and(
+                    eq(matches.projectId, projectId),
+                    eq(matches.status, 'accepted')
+                ))
+                .limit(1)
+
+            if (alreadyAccepted) {
+                throw new HttpError(409, { error: 'This proposal already has an accepted match' })
+            }
+
+            const [candidateLike] = await trx
+                .select({ userId: matches.userId })
+                .from(matches)
+                .where(and(
+                    eq(matches.projectId, projectId),
+                    eq(matches.userId, interestedUserId),
+                    eq(matches.status, 'pending')
+                ))
+                .limit(1)
+
+            if (!candidateLike) {
+                throw new HttpError(404, { error: 'Pending like not found for this user' })
+            }
+
+            await trx
+                .update(matches)
+                .set({ status: 'rejected' })
+                .where(and(
+                    eq(matches.projectId, projectId),
+                    eq(matches.status, 'pending')
+                ))
+
+            await trx
+                .update(matches)
+                .set({ status: 'accepted' })
+                .where(and(
+                    eq(matches.projectId, projectId),
+                    eq(matches.userId, interestedUserId)
+                ))
+
+            await trx
+                .update(projects)
+                .set({ status: 'in_progress' })
+                .where(eq(projects.id, projectId))
+        })
+
+        return {
+            accepted: true,
+            projectId,
+            userId: interestedUserId,
         }
     }
 
@@ -661,5 +739,35 @@ export class ProjectApplicationService {
         }
 
         return { message: 'Tag deleted' }
+    }
+
+    async updateAdminTag(tagId: number, name: string) {
+        const normalizedName = name.trim()
+
+        if (!normalizedName) {
+            throw new HttpError(400, { error: 'Tag name cannot be empty' })
+        }
+
+        const [existing] = await db
+            .select({ id: tags.id })
+            .from(tags)
+            .where(eq(tags.name, normalizedName))
+            .limit(1)
+
+        if (existing && existing.id !== tagId) {
+            throw new HttpError(409, { error: 'A tag with this name already exists' })
+        }
+
+        const [updated] = await db
+            .update(tags)
+            .set({ name: normalizedName })
+            .where(eq(tags.id, tagId))
+            .returning({ id: tags.id, name: tags.name })
+
+        if (!updated) {
+            throw new HttpError(404, { error: 'Tag not found' })
+        }
+
+        return { tag: updated }
     }
 }

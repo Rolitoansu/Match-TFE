@@ -16,6 +16,8 @@ router.post('/auth/refresh', proxy(AUTH_SERVICE_URL, {
 router.post('/auth/logout', proxy(AUTH_SERVICE_URL, {
     proxyReqPathResolver: () => '/admin/logout'
 }))
+
+// Tags endpoints
 router.get('/tags', authMiddleware, proxy(PROJECT_SERVICE_URL, {
     proxyReqPathResolver: () => '/admin/tags'
 }))
@@ -25,10 +27,32 @@ router.post('/tags', authMiddleware, proxy(PROJECT_SERVICE_URL, {
 router.post('/tags/import', authMiddleware, proxy(PROJECT_SERVICE_URL, {
     proxyReqPathResolver: () => '/admin/tags/import'
 }))
+router.patch('/tags/:id', authMiddleware, proxy(PROJECT_SERVICE_URL, {
+    proxyReqPathResolver: (req) => `/admin/tags/${req.params.id}`
+}))
 router.delete('/tags/:id', authMiddleware, proxy(PROJECT_SERVICE_URL, {
     proxyReqPathResolver: (req) => `/admin/tags/${req.params.id}`
 }))
 
-router.post('/students/import', authMiddleware, proxy(USER_SERVICE_URL))
+// Students endpoints
+router.post('/students/import', authMiddleware, proxy(USER_SERVICE_URL, {
+    proxyReqPathResolver: () => '/admin/students/import'
+}))
+
+// Professors endpoints
+router.post('/professors/import', authMiddleware, proxy(USER_SERVICE_URL, {
+    proxyReqPathResolver: () => '/admin/professors/import'
+}))
+
+// Users endpoints (CRUD)
+router.get('/users', authMiddleware, proxy(USER_SERVICE_URL, {
+    proxyReqPathResolver: () => '/admin/users'
+}))
+router.patch('/users/:id', authMiddleware, proxy(USER_SERVICE_URL, {
+    proxyReqPathResolver: (req) => `/admin/users/${req.params.id}`
+}))
+router.delete('/users/:id', authMiddleware, proxy(USER_SERVICE_URL, {
+    proxyReqPathResolver: (req) => `/admin/users/${req.params.id}`
+}))
 
 export default router

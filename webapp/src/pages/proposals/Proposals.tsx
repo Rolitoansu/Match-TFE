@@ -106,7 +106,7 @@ export default function Proposals() {
         
         <button 
           onClick={() => navigate('/proposals/new')}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
         >
           <Plus size={20} />
           Nueva Propuesta
@@ -220,12 +220,6 @@ export default function Proposals() {
                       {proposal.interestCount}
                     </p>
                     <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Interesados</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-foreground">
-                      {proposal.interestedUsers?.filter((person) => person.matchStatus === 'accepted').length ?? 0}
-                    </p>
-                    <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Matches</p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-bold text-foreground">{STATUS_LABEL[proposal.status]}</p>

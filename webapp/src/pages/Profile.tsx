@@ -185,7 +185,7 @@ export default function Profile() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Mi Panel de Control</h1>
             <p className="text-muted-foreground mt-1 text-sm">Gestiona tu perfil y tus propuestas de TFG</p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
+            <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
                 onClick={() => navigate('/proposals/new')}>
             <Plus size={18} />
             Nueva Propuesta
@@ -270,7 +270,7 @@ export default function Profile() {
                                     </button>
                                     <button
                                         type="button"
-                                        className="rounded-lg bg-primary px-3 py-1.5 font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
+                                        className="rounded-lg bg-primary px-3 py-1.5 font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
                                         onClick={saveAboutMe}
                                         disabled={savingAboutMe}
                                     >
@@ -418,7 +418,7 @@ export default function Profile() {
                                 </button>
                                 <button
                                     type="button"
-                                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
+                                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
                                     onClick={saveInterests}
                                     disabled={savingInterests}
                                 >

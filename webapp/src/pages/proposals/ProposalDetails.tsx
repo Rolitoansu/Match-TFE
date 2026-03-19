@@ -44,6 +44,8 @@ export default function ProposalDetails() {
   const [proposal, setProposal] = useState<ProposalDetailsData | null>(null)
   const [renewing, setRenewing] = useState(false)
   const [renewFeedback, setRenewFeedback] = useState<string | null>(null)
+  const [acceptingUserId, setAcceptingUserId] = useState<number | null>(null)
+  const [matchFeedback, setMatchFeedback] = useState<string | null>(null)
 
   useEffect(() => {
     if (!renewFeedback) return
@@ -85,6 +87,29 @@ export default function ProposalDetails() {
     }
   }
 
+  async function handleAcceptMatch(interestedUserId: number) {
+    if (!proposal) return
+
+    setMatchFeedback(null)
+    setAcceptingUserId(interestedUserId)
+
+    try {
+      await api.post(`/project/proposals/${id}/match/${interestedUserId}`)
+
+      const { data: refreshedData } = await api.get(`/project/proposals/${id}`)
+      if (refreshedData?.proposal) {
+        setProposal(refreshedData.proposal)
+      }
+
+      setMatchFeedback('Match aceptado correctamente')
+    } catch (error) {
+      console.error('Error accepting match:', error)
+      setMatchFeedback('No se pudo aceptar el match. Intenta de nuevo.')
+    } finally {
+      setAcceptingUserId(null)
+    }
+  }
+
   useEffect(() => {
     async function fetchProposal() {
       try {
@@ -100,6 +125,7 @@ export default function ProposalDetails() {
   }, [])
 
   const canRenew = Boolean(proposal?.isOwner || (proposal?.user?.id && user?.id && proposal.user.id === user.id))
+  const hasAcceptedMatch = proposal?.interestedUsers.some((person) => person.matchStatus === 'accepted') ?? false
 
   return proposal && (
     <div className="max-w-6xl mx-auto p-6 lg:p-10 pb-32">
@@ -191,7 +217,7 @@ export default function ProposalDetails() {
                   {renewFeedback}
                 </p>
               )}
-              <button className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/20 hover:opacity-90 transition-all" disabled>
+              <button className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:opacity-90 transition-all" disabled>
                 <MessageSquare size={20} />
                 Contacto por correo
               </button>
@@ -224,9 +250,33 @@ export default function ProposalDetails() {
                             : 'Match confirmado'
                           : 'Like recibido · pendiente de match'}
                       </p>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/users/${person.id}`)}
+                          className="rounded-lg border border-blue-300 px-2.5 py-1 text-[11px] font-semibold text-blue-800 hover:bg-blue-50"
+                        >
+                          Ver perfil
+                        </button>
+                        {proposal.isOwner && proposal.status === 'proposed' && person.matchStatus === 'pending' && (
+                          <button
+                            type="button"
+                            onClick={() => handleAcceptMatch(person.id)}
+                            disabled={acceptingUserId !== null || hasAcceptedMatch}
+                            className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                          >
+                            {acceptingUserId === person.id ? 'Aceptando...' : 'Aceptar match'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
+                {matchFeedback && (
+                  <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+                    {matchFeedback}
+                  </p>
+                )}
               </div>
             </div>
           </div>
