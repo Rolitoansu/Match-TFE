@@ -80,8 +80,6 @@ export default function UserProfile() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-        {/* Sidebar */}
         <div className="lg:col-span-4 space-y-6">
           <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
             <div className="flex flex-col items-center text-center">
@@ -128,8 +126,6 @@ export default function UserProfile() {
             )}
           </div>
         </div>
-
-        {/* Proposals */}
         <div className="lg:col-span-8 space-y-4">
           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
             <FileText size={16} /> Propuestas de TFG

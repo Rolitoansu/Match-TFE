@@ -5,7 +5,9 @@
     "scripts": {
         "build": "tsc",
         "start": "node dist/gatewayservice.js",
-        "dev": "tsx watch gatewayservice.ts"
+        "dev": "tsx watch gatewayservice.ts",
+        "test": "vitest run",
+        "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
         "cors": "^2.8.6",
@@ -17,7 +19,9 @@
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.6",
         "@types/express-http-proxy": "^1.6.7",
+        "@vitest/coverage-v8": "^4.0.18",
         "tsx": "^4.0.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.0.0",
+        "vitest": "^4.0.18"
     }
 }

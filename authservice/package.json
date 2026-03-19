@@ -5,7 +5,9 @@
 	"scripts": {
 		"build": "tsc",
 		"start": "node dist/authservice.js",
-		"dev": "tsx watch authservice.ts"
+		"dev": "tsx watch authservice.ts",
+		"test": "vitest run",
+		"test:coverage": "vitest run --coverage"
 	},
 	"dependencies": {
 		"@match-tfe/db": "workspace:*",
@@ -24,7 +26,9 @@
 		"@types/express": "^5.0.6",
 		"@types/jsonwebtoken": "^9.0.10",
 		"@types/pg": "^8.16.0",
+		"@vitest/coverage-v8": "^4.0.18",
 		"tsx": "^4.0.0",
-		"typescript": "^5.0.0"
+		"typescript": "^5.0.0",
+		"vitest": "^4.0.18"
 	}
 }

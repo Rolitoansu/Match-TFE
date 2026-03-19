@@ -67,8 +67,6 @@ export default function ProposalDetails() {
       if (data?.publicationDate) {
         setProposal(prev => prev ? { ...prev, publicationDate: data.publicationDate } : prev)
       }
-
-      // Refresh from backend so the UI always reflects persisted values.
       const { data: refreshedData } = await api.get(`/project/proposals/${id}`)
       if (refreshedData?.proposal) {
         setProposal(refreshedData.proposal)
