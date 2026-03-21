@@ -1,50 +1,23 @@
 import { ArrowLeft, User, Hash, FileText, Calendar } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import api from '../api/axios'
+import { useNavigate } from 'react-router-dom'
+import api from '../../api/axios'
+import type { PublicProfile } from './types'
+import { ROLE_LABEL, STATUS_COLOR, STATUS_LABEL } from './types'
 
-interface PublicProfile {
-  id: number
-  name: string
-  surname: string
-  biography: string | null
-  role: 'student' | 'professor'
-  registrationDate: string
-  interests: string[]
-  proposals: Array<{
-    id: number
-    title: string
-    description: string
-    status: 'proposed' | 'in_progress' | 'completed'
-    publicationDate: string
-  }>
+interface PublicProfilePageProps {
+  id: string
 }
 
-const STATUS_LABEL = {
-  proposed: 'Abierta',
-  in_progress: 'En curso',
-  completed: 'Finalizada',
-} as const
-
-const STATUS_COLOR = {
-  proposed: 'bg-blue-100 text-blue-700',
-  in_progress: 'bg-amber-100 text-amber-700',
-  completed: 'bg-emerald-100 text-emerald-700',
-} as const
-
-const ROLE_LABEL = {
-  student: 'Estudiante',
-  professor: 'Profesor/a',
-} as const
-
-export default function UserProfile() {
-  const { id } = useParams()
+export default function PublicProfilePage({ id }: PublicProfilePageProps) {
   const navigate = useNavigate()
   const [profile, setProfile] = useState<PublicProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    async function fetchProfile() {
+    async function fetchPublicProfile() {
+      setLoading(true)
+
       try {
         const { data } = await api.get(`/user/${id}`)
         setProfile(data.user)
@@ -55,8 +28,9 @@ export default function UserProfile() {
         setLoading(false)
       }
     }
-    fetchProfile()
-  }, [id])
+
+    fetchPublicProfile()
+  }, [id, navigate])
 
   if (loading) {
     return (
@@ -66,7 +40,9 @@ export default function UserProfile() {
     )
   }
 
-  if (!profile) return null
+  if (!profile) {
+    return null
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-6 lg:p-10 pb-32">
@@ -99,7 +75,7 @@ export default function UserProfile() {
             {profile.biography && (
               <div className="mt-8">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">
-                  Sobre mí
+                  Sobre mi
                 </h3>
                 <p className="text-sm leading-relaxed text-foreground/80 italic">
                   "{profile.biography}"
@@ -126,6 +102,7 @@ export default function UserProfile() {
             )}
           </div>
         </div>
+
         <div className="lg:col-span-8 space-y-4">
           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
             <FileText size={16} /> Propuestas de TFG

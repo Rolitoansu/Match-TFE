@@ -15,7 +15,6 @@ const NewProposal = lazy(() => import('./pages/proposals/NewProposal'))
 const ProposalDetails = lazy(() => import('./pages/proposals/ProposalDetails'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
-const UserProfile = lazy(() => import('./pages/UserProfile'))
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin'))
 const AdminLayout = lazy(() => import('./pages/AdminLayout'))
@@ -40,7 +39,7 @@ function App() {
                 <Route path="proposals" element={<Proposals />} />
                 <Route path="proposals/new" element={<NewProposal />} />
                 <Route path="proposals/details/:id" element={<ProposalDetails />} />
-                <Route path="users/:id" element={<UserProfile />} />
+                <Route path="users/:id" element={<Profile />} />
               </Route>
           </Route>
         </Route>
