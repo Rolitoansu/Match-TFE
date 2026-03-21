@@ -183,7 +183,7 @@ export default function Proposals() {
                       <Clock size={14} /> {new Date(proposal.publicationDate).toLocaleString()}
                     </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <CheckCircle2 size={14} /> {proposal.interestCount > 0 ? 'Hay interesados' : 'Sin interesados'}
+                      <CheckCircle2 size={14} /> {proposal.status === 'in_progress' ? 'Asignado' : proposal.interestCount > 0 ? 'Hay interesados' : 'Sin interesados'}
                     </span>
                   </div>
 
@@ -217,9 +217,11 @@ export default function Proposals() {
                   <div className="text-center">
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5 justify-center">
                       <Users size={16} className="text-primary" />
-                      {proposal.interestCount}
+                      {proposal.status === 'in_progress' ? 'Asignado' : proposal.interestCount}
                     </p>
-                    <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Interesados</p>
+                    <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">
+                      {proposal.status === 'in_progress' ? 'Estado' : 'Interesados'}
+                    </p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-bold text-foreground">{STATUS_LABEL[proposal.status]}</p>

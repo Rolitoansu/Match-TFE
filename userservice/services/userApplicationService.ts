@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import db from '@match-tfe/db'
-import { projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
-import { desc, eq, inArray } from 'drizzle-orm'
+import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
+import { and, desc, eq, inArray, or } from 'drizzle-orm'
 
 export class HttpError extends Error {
     constructor(
@@ -232,12 +232,23 @@ export class UserApplicationService {
         }
     }
 
-    async getPublicProfile(userId: number) {
+    async getPublicProfile(userId: number, requesterEmail: string) {
+        const [requester] = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.email, requesterEmail))
+            .limit(1)
+
+        if (!requester) {
+            throw new HttpError(404, { error: 'Authenticated user not found' })
+        }
+
         const [profile] = await db
             .select({
                 id: users.id,
                 name: users.name,
                 surname: users.surname,
+                email: users.email,
                 biography: users.biography,
                 role: users.role,
                 registrationDate: users.registrationDate,
@@ -272,9 +283,36 @@ export class UserApplicationService {
             )
             .orderBy(desc(projects.publicationDate))
 
+        const isOwnProfile = requester.id === profile.id
+        let canSeeEmail = isOwnProfile
+
+        if (!canSeeEmail) {
+            const [acceptedBetweenUsers] = await db
+                .select({ projectId: matches.projectId })
+                .from(matches)
+                .innerJoin(projects, eq(projects.id, matches.projectId))
+                .where(and(
+                    eq(matches.status, 'accepted'),
+                    or(
+                        and(
+                            eq(matches.userId, requester.id),
+                            or(eq(projects.studentId, profile.id), eq(projects.tutorId, profile.id))
+                        ),
+                        and(
+                            eq(matches.userId, profile.id),
+                            or(eq(projects.studentId, requester.id), eq(projects.tutorId, requester.id))
+                        )
+                    )
+                ))
+                .limit(1)
+
+            canSeeEmail = Boolean(acceptedBetweenUsers)
+        }
+
         return {
             user: {
                 ...profile,
+                email: canSeeEmail ? profile.email : null,
                 interests: interestRows.map((row) => row.name),
                 proposals: proposalRows,
             },

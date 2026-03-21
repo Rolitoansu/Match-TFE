@@ -220,18 +220,16 @@ export default function ProposalDetails() {
                 Contacto por correo
               </button>
               
-              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-3">
-                <p className="text-[10px] text-blue-800 font-bold leading-relaxed uppercase text-center">
-                  Si hay match, se muestran correos y podéis poneros en contacto.
-                </p>
-
-                <div className="flex items-center justify-between text-xs font-semibold text-blue-900">
-                  <span className="inline-flex items-center gap-1"><Users size={13} /> Likes recibidos</span>
-                  <span>{proposal.interestedUsers.length}</span>
+              <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-blue-900">
+                  <span className="inline-flex items-center gap-1">
+                    <Users size={13} /> {proposal.status === 'in_progress' ? 'Estado' : 'Likes recibidos'}
+                  </span>
+                  <span>{proposal.status === 'in_progress' ? 'Asignado' : proposal.interestedUsers.length}</span>
                 </div>
 
                 <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
-                  {proposal.interestedUsers.length === 0 && (
+                  {proposal.status !== 'in_progress' && proposal.interestedUsers.length === 0 && (
                     <p className="text-xs text-blue-800/80 text-center py-2">Todavía nadie ha dado like a este TFG.</p>
                   )}
 

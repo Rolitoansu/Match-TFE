@@ -87,6 +87,24 @@ export default function Explore() {
 
       setCurrentIndex((prev) => prev + 1)
     } catch (likeError) {
+      const status = (likeError as { response?: { status?: number } }).response?.status
+
+      if (status === 409 || status === 404) {
+        setProposals((previous) => previous.map((proposal, index) => {
+          if (index !== currentIndex) {
+            return proposal
+          }
+
+          return {
+            ...proposal,
+            liked: true,
+            matchStatus: 'rejected',
+          }
+        }))
+        setCurrentIndex((prev) => prev + 1)
+        return
+      }
+
       console.error(likeError)
       setError('No se pudo registrar tu interés. Inténtalo de nuevo.')
     } finally {

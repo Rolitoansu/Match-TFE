@@ -230,10 +230,12 @@ describe('UserApplicationService', () => {
   })
 
   it('throws 404 when getPublicProfile user is missing', async () => {
-    vi.mocked(db.select).mockReturnValueOnce(createLimitChain([]) as any)
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 99 }]) as any)
+      .mockReturnValueOnce(createLimitChain([]) as any)
     const service = new UserApplicationService('secret')
 
-    await expect(service.getPublicProfile(8)).rejects.toMatchObject({
+    await expect(service.getPublicProfile(8, 'viewer@example.com')).rejects.toMatchObject({
       status: 404,
       payload: { error: 'User not found' },
     })
@@ -241,25 +243,28 @@ describe('UserApplicationService', () => {
 
   it('returns public profile for student role', async () => {
     vi.mocked(db.select)
-      .mockReturnValueOnce(createLimitChain([{ id: 2, name: 'A', surname: 'B', biography: null, role: 'student', registrationDate: new Date() }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 2 }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 2, name: 'A', surname: 'B', email: 'a@example.com', biography: null, role: 'student', registrationDate: new Date() }]) as any)
       .mockReturnValueOnce(createJoinWhereChain([{ name: 'IA' }]) as any)
       .mockReturnValueOnce(createOrderChain([{ id: 11, title: 'T', description: 'D', status: 'proposed', publicationDate: new Date() }]) as any)
 
     const service = new UserApplicationService('secret')
-    const result = await service.getPublicProfile(2)
+    const result = await service.getPublicProfile(2, 'a@example.com')
 
+    expect(result.user.email).toBe('a@example.com')
     expect(result.user.interests).toEqual(['IA'])
     expect(result.user.proposals).toHaveLength(1)
   })
 
   it('returns public profile for professor role', async () => {
     vi.mocked(db.select)
-      .mockReturnValueOnce(createLimitChain([{ id: 3, name: 'P', surname: 'Q', biography: null, role: 'professor', registrationDate: new Date() }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 3 }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 3, name: 'P', surname: 'Q', email: 'p@example.com', biography: null, role: 'professor', registrationDate: new Date() }]) as any)
       .mockReturnValueOnce(createJoinWhereChain([]) as any)
       .mockReturnValueOnce(createOrderChain([]) as any)
 
     const service = new UserApplicationService('secret')
-    const result = await service.getPublicProfile(3)
+    const result = await service.getPublicProfile(3, 'p@example.com')
 
     expect(result.user.role).toBe('professor')
   })

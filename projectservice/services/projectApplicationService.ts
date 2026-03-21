@@ -212,6 +212,16 @@ export class ProjectApplicationService {
         const proposals: Array<Record<string, unknown>> = []
 
         for (const proposal of rawProposals) {
+            const [hasAcceptedMatch] = await db
+                .select({ projectId: matches.projectId })
+                .from(matches)
+                .where(and(eq(matches.projectId, proposal.id), eq(matches.status, 'accepted')))
+                .limit(1)
+
+            if (hasAcceptedMatch) {
+                continue
+            }
+
             const proposalTagIds = await this.getProjectTagIds(proposal.id)
             const sharedTagsCount = proposalTagIds.filter((tagId) => currentUserInterestTagIds.has(tagId)).length
 

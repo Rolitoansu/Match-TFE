@@ -97,9 +97,14 @@ app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
 
 app.get('/:id', validate(userIdParamsSchema, 'params'), async (req, res) => {
     const userId = Number(req.params.id)
+    const requesterEmail = req.headers['x-user-email'] as string
+
+    if (!requesterEmail) {
+        return res.status(401).json({ error: 'Missing authenticated user email' })
+    }
 
     try {
-        const result = await userService.getPublicProfile(userId)
+        const result = await userService.getPublicProfile(userId, requesterEmail)
         return res.json(result)
     } catch (error) {
         if (error instanceof HttpError) {

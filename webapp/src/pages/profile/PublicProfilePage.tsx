@@ -1,4 +1,4 @@
-import { ArrowLeft, User, Hash, FileText, Calendar } from 'lucide-react'
+import { ArrowLeft, User, Hash, FileText, Calendar, Mail } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
@@ -65,6 +65,13 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
 
               <h2 className="text-2xl font-bold">{profile.name} {profile.surname}</h2>
               <p className="text-primary font-semibold text-sm mt-1">{ROLE_LABEL[profile.role]}</p>
+
+              {profile.email && (
+                <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1.5">
+                  <Mail size={12} />
+                  {profile.email}
+                </p>
+              )}
 
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
                 <Calendar size={12} />

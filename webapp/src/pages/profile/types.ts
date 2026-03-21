@@ -22,6 +22,7 @@ export interface PublicProfile {
   id: number
   name: string
   surname: string
+  email: string | null
   biography: string | null
   role: 'student' | 'professor'
   registrationDate: string
