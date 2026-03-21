@@ -23,6 +23,16 @@ DB_PORT=<port>                  # Database port
 DB_USER=<admin_user>            # Admin name for the database instance
 DB_PASSWORD=<admin_password>    # Password for the database
 DB_NAME=<database_name>         # Name of the database       
+
+# Notification Service (SMTP)
+SMTP_HOST=<smtp_host>
+SMTP_PORT=<smtp_port>
+SMTP_USER=<smtp_user>
+SMTP_PASS=<smtp_password>
+SMTP_FROM=<optional_sender_email>
+NOTIFICATION_TIMEZONE=<optional_timezone>          # default: Europe/Madrid
+PENDING_MATCHES_CRON=<optional_cron_expression>    # default: 0 9 * * 1 (lunes 09:00)
+PENDING_MATCHES_SUBJECT=<optional_email_subject>
 ```
 
 ### 2. Launching the System
@@ -37,3 +47,21 @@ or just
 docker compose up
 ```
 The `-d` flag runs the containers in detached mode (background). If you need to see the real-time logs, you can use `docker compose logs -f`.
+
+### Notification API
+
+The gateway now exposes an endpoint to send emails to students:
+
+```bash
+POST /notifications/students/email
+```
+
+Body example:
+
+```json
+{
+	"subject": "Recordatorio TFG",
+	"message": "Esta semana revisamos vuestro avance.",
+	"studentIds": [3, 4]
+}
+```

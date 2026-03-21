@@ -115,6 +115,37 @@ services:
       - match_network
     env_file:
       - .env
+  notificationservice:
+    container_name: notificationservice-matchtfe
+    build:
+      context: .
+      dockerfile: ./notificationservice/Dockerfile
+      target: development
+    develop:
+      watch:
+        - action: rebuild
+          path: ./notificationservice/package.json
+
+        - action: rebuild
+          path: ./database/package.json
+
+        - action: sync
+          path: ./notificationservice
+          target: /usr/src/notificationservice
+          ignore:
+            - node_modules
+
+        - action: sync
+          path: ./database
+          target: /usr/src/database
+          ignore:
+            - node_modules
+    depends_on:
+      - postgres
+    networks:
+      - match_network
+    env_file:
+      - .env
   gatewayservice:
     container_name: gatewayservice-matchtfe
     build:
@@ -136,6 +167,7 @@ services:
     depends_on:
       - authservice
       - projectservice
+      - notificationservice
       - postgres
     networks:
       - match_network

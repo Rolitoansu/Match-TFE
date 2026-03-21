@@ -3,5 +3,6 @@ packages:
   - 'authservice'
   - 'userservice'
   - 'projectservice'
+  - 'notificationservice'
   - 'gatewayservice'
   - 'database'
