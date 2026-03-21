@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer'
 import db from '@match-tfe/db'
-import { matches, projects, users } from '@match-tfe/db/schema'
-import { and, eq, inArray, isNotNull, or } from 'drizzle-orm'
+import { matches, notifications, projects, users } from '@match-tfe/db/schema'
+import { and, desc, eq, inArray, isNotNull, or } from 'drizzle-orm'
 
 export class HttpError extends Error {
   constructor(
@@ -20,7 +20,163 @@ type SendStudentsEmailInput = {
   studentEmails?: string[]
 }
 
+type CreateUserNotificationInput = {
+  userId: number
+  type: string
+  content: string
+}
+
 export class NotificationApplicationService {
+  async listUserNotifications(userEmail: string) {
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, userEmail))
+      .limit(1)
+
+    if (!user) {
+      throw new HttpError(404, { error: 'Authenticated user not found' })
+    }
+
+    const rows = await db
+      .select({
+        id: notifications.id,
+        type: notifications.type,
+        content: notifications.content,
+        read: notifications.read,
+        timestamp: notifications.timestamp,
+      })
+      .from(notifications)
+      .where(eq(notifications.userId, user.id))
+      .orderBy(desc(notifications.timestamp))
+      .limit(50)
+
+    return {
+      notifications: rows,
+      unreadCount: rows.filter((notification) => !notification.read).length,
+    }
+  }
+
+  async createUserNotification(input: CreateUserNotificationInput) {
+    const [recipient] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, input.userId))
+      .limit(1)
+
+    if (!recipient) {
+      throw new HttpError(404, { error: 'Notification recipient not found' })
+    }
+
+    const [created] = await db
+      .insert(notifications)
+      .values({
+        type: input.type,
+        content: input.content,
+        userId: input.userId,
+      })
+      .returning({
+        id: notifications.id,
+        type: notifications.type,
+        content: notifications.content,
+        read: notifications.read,
+        timestamp: notifications.timestamp,
+      })
+
+    return {
+      notification: created,
+      message: 'Notification created successfully',
+    }
+  }
+
+  async markNotificationAsRead(userEmail: string, notificationId: number) {
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, userEmail))
+      .limit(1)
+
+    if (!user) {
+      throw new HttpError(404, { error: 'Authenticated user not found' })
+    }
+
+    const [updated] = await db
+      .update(notifications)
+      .set({ read: true })
+      .where(and(
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, user.id)
+      ))
+      .returning({
+        id: notifications.id,
+        type: notifications.type,
+        content: notifications.content,
+        read: notifications.read,
+        timestamp: notifications.timestamp,
+      })
+
+    if (!updated) {
+      throw new HttpError(404, { error: 'Notification not found' })
+    }
+
+    return {
+      notification: updated,
+      message: 'Notification marked as read',
+    }
+  }
+
+  async clearUserNotifications(userEmail: string) {
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, userEmail))
+      .limit(1)
+
+    if (!user) {
+      throw new HttpError(404, { error: 'Authenticated user not found' })
+    }
+
+    const deletedRows = await db
+      .delete(notifications)
+      .where(eq(notifications.userId, user.id))
+      .returning({ id: notifications.id })
+
+    return {
+      deleted: deletedRows.length,
+      message: 'Notifications cleared successfully',
+    }
+  }
+
+  async deleteNotification(userEmail: string, notificationId: number) {
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, userEmail))
+      .limit(1)
+
+    if (!user) {
+      throw new HttpError(404, { error: 'Authenticated user not found' })
+    }
+
+    const [deleted] = await db
+      .delete(notifications)
+      .where(and(
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, user.id)
+      ))
+      .returning({ id: notifications.id })
+
+    if (!deleted) {
+      throw new HttpError(404, { error: 'Notification not found' })
+    }
+
+    return {
+      deleted: true,
+      notificationId,
+      message: 'Notification deleted successfully',
+    }
+  }
+
   async sendPendingMatchesReminderEmails() {
     const pendingForStudentProposals = await db
       .select({ studentId: projects.studentId })

@@ -4,6 +4,8 @@ import db from '@match-tfe/db'
 import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
 import { and, desc, eq, inArray, or } from 'drizzle-orm'
 
+const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notificationservice:5004'
+
 export class HttpError extends Error {
     constructor(
         public readonly status: number,
@@ -27,6 +29,22 @@ type UpdateProfileInput = {
 
 export class UserApplicationService {
     constructor(private readonly jwtSecret: string) {}
+
+    private async sendNotification(userId: number, type: string, content: string) {
+        if (process.env.NODE_ENV === 'test') {
+            return
+        }
+
+        try {
+            await fetch(`${NOTIFICATION_SERVICE_URL}/users`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ userId, type, content }),
+            })
+        } catch (error) {
+            console.warn('[userservice] notification dispatch failed:', error)
+        }
+    }
 
     async registerStudent(input: RegisterStudentInput) {
         const [existingUser] = await db
@@ -65,6 +83,12 @@ export class UserApplicationService {
 
         const refreshToken = jwt.sign({ email: input.email }, this.jwtSecret, { expiresIn: '30d' })
         const accessToken = jwt.sign({ email: input.email }, this.jwtSecret, { expiresIn: '15m' })
+
+        await this.sendNotification(
+            createdUserId,
+            'welcome_profile_setup',
+            'Bienvenido a Match-TFE. Edita tus intereses en el perfil para mejorar tus matches.'
+        )
 
         return {
             refreshToken,

@@ -9,6 +9,21 @@ html {
     scrollbar-gutter: stable;
 }
 
+button,
+[role='button'],
+a[href],
+summary {
+    cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled='true'] {
+    cursor: not-allowed;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;

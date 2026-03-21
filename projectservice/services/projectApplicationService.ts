@@ -1,6 +1,8 @@
 import db from '@match-tfe/db'
 import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
-import { and, desc, eq, inArray, isNotNull, ne } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, ne, or } from 'drizzle-orm'
+
+const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notificationservice:5004'
 
 export class HttpError extends Error {
     constructor(
@@ -25,6 +27,126 @@ type CreateProposalInput = {
 }
 
 export class ProjectApplicationService {
+    private async getAcceptedMatchContext(userId: number) {
+        const [acceptedAsInterestedUser] = await db
+            .select({ projectId: matches.projectId })
+            .from(matches)
+            .where(and(
+                eq(matches.userId, userId),
+                eq(matches.status, 'accepted')
+            ))
+            .limit(1)
+
+        if (acceptedAsInterestedUser) {
+            const [project] = await db
+                .select({
+                    id: projects.id,
+                    title: projects.title,
+                    description: projects.description,
+                    publicationDate: projects.publicationDate,
+                    status: projects.status,
+                    studentId: projects.studentId,
+                    tutorId: projects.tutorId,
+                })
+                .from(projects)
+                .where(eq(projects.id, acceptedAsInterestedUser.projectId))
+                .limit(1)
+
+            if (!project) {
+                return null
+            }
+
+            const counterpartUserId = project.studentId ?? project.tutorId
+
+            if (!counterpartUserId) {
+                return null
+            }
+
+            const [counterpart] = await db
+                .select({
+                    id: users.id,
+                    name: users.name,
+                    surname: users.surname,
+                    email: users.email,
+                })
+                .from(users)
+                .where(eq(users.id, counterpartUserId))
+                .limit(1)
+
+            if (!counterpart) {
+                return null
+            }
+
+            return { project, counterpart }
+        }
+
+        const [acceptedAsOwner] = await db
+            .select({ projectId: projects.id, interestedUserId: matches.userId })
+            .from(projects)
+            .innerJoin(matches, eq(matches.projectId, projects.id))
+            .where(and(
+                eq(matches.status, 'accepted'),
+                or(
+                    eq(projects.studentId, userId),
+                    eq(projects.tutorId, userId)
+                )
+            ))
+            .limit(1)
+
+        if (!acceptedAsOwner) {
+            return null
+        }
+
+        const [project] = await db
+            .select({
+                id: projects.id,
+                title: projects.title,
+                description: projects.description,
+                publicationDate: projects.publicationDate,
+                status: projects.status,
+            })
+            .from(projects)
+            .where(eq(projects.id, acceptedAsOwner.projectId))
+            .limit(1)
+
+        if (!project) {
+            return null
+        }
+
+        const [counterpart] = await db
+            .select({
+                id: users.id,
+                name: users.name,
+                surname: users.surname,
+                email: users.email,
+            })
+            .from(users)
+            .where(eq(users.id, acceptedAsOwner.interestedUserId))
+            .limit(1)
+
+        if (!counterpart) {
+            return null
+        }
+
+        return { project, counterpart }
+    }
+
+    private async sendNotification(userId: number, type: string, content: string) {
+        if (process.env.NODE_ENV === 'test') {
+            return
+        }
+
+        try {
+            await fetch(`${NOTIFICATION_SERVICE_URL}/users`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ userId, type, content }),
+            })
+        } catch (error) {
+            console.warn('[projectservice] notification dispatch failed:', error)
+        }
+    }
+
     private async getUserWithRole(userEmail: string): Promise<CurrentUser | null> {
         const [user] = await db
             .select({
@@ -171,6 +293,29 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
         }
 
+        const acceptedMatchContext = await this.getAcceptedMatchContext(currentUser.id)
+
+        if (acceptedMatchContext) {
+            const tagsForMatchedProposal = await this.getProjectTagNames(acceptedMatchContext.project.id)
+
+            return {
+                viewerRole: currentUser.role,
+                proposals: [],
+                matchedProposal: {
+                    id: acceptedMatchContext.project.id,
+                    title: acceptedMatchContext.project.title,
+                    description: acceptedMatchContext.project.description,
+                    publicationDate: acceptedMatchContext.project.publicationDate,
+                    status: acceptedMatchContext.project.status,
+                    tags: tagsForMatchedProposal,
+                    counterpartId: acceptedMatchContext.counterpart.id,
+                    counterpartName: acceptedMatchContext.counterpart.name,
+                    counterpartSurname: acceptedMatchContext.counterpart.surname,
+                    counterpartEmail: acceptedMatchContext.counterpart.email,
+                },
+            }
+        }
+
         const currentUserInterestRows = await db
             .select({ tagId: userTags.tagId })
             .from(userTags)
@@ -179,7 +324,7 @@ export class ProjectApplicationService {
         const currentUserInterestTagIds = new Set(currentUserInterestRows.map((row) => row.tagId))
 
         if (currentUserInterestTagIds.size === 0) {
-            return { viewerRole: currentUser.role, proposals: [] }
+            return { viewerRole: currentUser.role, proposals: [], matchedProposal: null }
         }
 
         const isStudent = currentUser.role === 'student'
@@ -261,7 +406,7 @@ export class ProjectApplicationService {
             return dateB - dateA
         })
 
-        return { viewerRole: currentUser.role, proposals }
+        return { viewerRole: currentUser.role, proposals, matchedProposal: null }
     }
 
     async getProposalById(userEmail: string, projectId: number) {
@@ -335,12 +480,22 @@ export class ProjectApplicationService {
             ))
             .limit(1)
 
+        const [viewerMatch] = await db
+            .select({ status: matches.status })
+            .from(matches)
+            .where(and(
+                eq(matches.projectId, projectId),
+                eq(matches.userId, currentUser.id)
+            ))
+            .limit(1)
+
         const canSeeOwnerEmail = isOwner || Boolean(acceptedMatch)
 
         return {
             proposal: {
                 ...proposal,
                 isOwner,
+                viewerMatchStatus: viewerMatch?.status ?? null,
                 tags: proposalTags.map((tag) => tag.name),
                 user: proposalUser
                     ? {
@@ -447,11 +602,135 @@ export class ProjectApplicationService {
         return { publicationDate: renewedAt, renewedAt, expiresAt }
     }
 
+    async completeProposal(userEmail: string, projectId: number) {
+        const currentUser = await this.getUserWithRole(userEmail)
+
+        if (!currentUser) {
+            throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
+        }
+
+        const [proposal] = await db
+            .select({ id: projects.id, status: projects.status, studentId: projects.studentId, tutorId: projects.tutorId })
+            .from(projects)
+            .where(eq(projects.id, projectId))
+            .limit(1)
+
+        if (!proposal) {
+            throw new HttpError(404, { error: 'Proposal not found' })
+        }
+
+        const isOwner = currentUser.role === 'student'
+            ? proposal.studentId === currentUser.id
+            : proposal.tutorId === currentUser.id
+
+        if (!isOwner) {
+            throw new HttpError(403, { error: 'Only the owner can mark the proposal as completed' })
+        }
+
+        if (proposal.status !== 'in_progress') {
+            throw new HttpError(409, { error: 'Only proposals in progress can be completed' })
+        }
+
+        const [acceptedMatch] = await db
+            .select({ userId: matches.userId })
+            .from(matches)
+            .where(and(
+                eq(matches.projectId, projectId),
+                eq(matches.status, 'accepted')
+            ))
+            .limit(1)
+
+        if (!acceptedMatch) {
+            throw new HttpError(409, { error: 'Proposal has no accepted match to complete' })
+        }
+
+        await db
+            .update(projects)
+            .set({ status: 'completed' })
+            .where(eq(projects.id, projectId))
+
+        return {
+            completed: true,
+            projectId,
+            status: 'completed' as const,
+        }
+    }
+
+    async cancelProposalExecution(userEmail: string, projectId: number) {
+        const currentUser = await this.getUserWithRole(userEmail)
+
+        if (!currentUser) {
+            throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
+        }
+
+        const [proposal] = await db
+            .select({ id: projects.id, status: projects.status, studentId: projects.studentId, tutorId: projects.tutorId })
+            .from(projects)
+            .where(eq(projects.id, projectId))
+            .limit(1)
+
+        if (!proposal) {
+            throw new HttpError(404, { error: 'Proposal not found' })
+        }
+
+        if (proposal.status !== 'in_progress') {
+            throw new HttpError(409, { error: 'Only proposals in progress can be cancelled' })
+        }
+
+        const [acceptedMatch] = await db
+            .select({ userId: matches.userId })
+            .from(matches)
+            .where(and(
+                eq(matches.projectId, projectId),
+                eq(matches.status, 'accepted')
+            ))
+            .limit(1)
+
+        if (!acceptedMatch) {
+            throw new HttpError(409, { error: 'Proposal has no accepted match to cancel' })
+        }
+
+        const isOwner = currentUser.role === 'student'
+            ? proposal.studentId === currentUser.id
+            : proposal.tutorId === currentUser.id
+        const isAcceptedUser = acceptedMatch.userId === currentUser.id
+
+        if (!isOwner && !isAcceptedUser) {
+            throw new HttpError(403, { error: 'Only the owner or matched user can cancel the proposal execution' })
+        }
+
+        await db.transaction(async (trx) => {
+            await trx
+                .update(projects)
+                .set({ status: 'proposed' })
+                .where(eq(projects.id, projectId))
+
+            await trx
+                .delete(matches)
+                .where(and(
+                    eq(matches.projectId, projectId),
+                    eq(matches.userId, acceptedMatch.userId)
+                ))
+        })
+
+        return {
+            cancelled: true,
+            projectId,
+            status: 'proposed' as const,
+        }
+    }
+
     async likeProposal(userEmail: string, projectId: number) {
         const currentUser = await this.getUserWithRole(userEmail)
 
         if (!currentUser) {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
+        }
+
+        const existingAcceptedMatch = await this.getAcceptedMatchContext(currentUser.id)
+
+        if (existingAcceptedMatch) {
+            throw new HttpError(409, { error: 'You already have an accepted match' })
         }
 
         const [proposal] = await db
@@ -542,6 +821,7 @@ export class ProjectApplicationService {
         const [proposal] = await db
             .select({
                 id: projects.id,
+                title: projects.title,
                 status: projects.status,
                 studentId: projects.studentId,
                 tutorId: projects.tutorId,
@@ -567,6 +847,58 @@ export class ProjectApplicationService {
         }
 
         await db.transaction(async (trx) => {
+            const [ownerAcceptedAsInterestedUser] = await trx
+                .select({ projectId: matches.projectId })
+                .from(matches)
+                .where(and(
+                    eq(matches.userId, currentUser.id),
+                    eq(matches.status, 'accepted')
+                ))
+                .limit(1)
+
+            const [ownerAcceptedAsOwner] = await trx
+                .select({ projectId: projects.id })
+                .from(projects)
+                .innerJoin(matches, eq(matches.projectId, projects.id))
+                .where(and(
+                    eq(matches.status, 'accepted'),
+                    or(
+                        eq(projects.studentId, currentUser.id),
+                        eq(projects.tutorId, currentUser.id)
+                    )
+                ))
+                .limit(1)
+
+            if (ownerAcceptedAsInterestedUser || ownerAcceptedAsOwner) {
+                throw new HttpError(409, { error: 'You already have an accepted match' })
+            }
+
+            const [candidateAcceptedAsInterestedUser] = await trx
+                .select({ projectId: matches.projectId })
+                .from(matches)
+                .where(and(
+                    eq(matches.userId, interestedUserId),
+                    eq(matches.status, 'accepted')
+                ))
+                .limit(1)
+
+            const [candidateAcceptedAsOwner] = await trx
+                .select({ projectId: projects.id })
+                .from(projects)
+                .innerJoin(matches, eq(matches.projectId, projects.id))
+                .where(and(
+                    eq(matches.status, 'accepted'),
+                    or(
+                        eq(projects.studentId, interestedUserId),
+                        eq(projects.tutorId, interestedUserId)
+                    )
+                ))
+                .limit(1)
+
+            if (candidateAcceptedAsInterestedUser || candidateAcceptedAsOwner) {
+                throw new HttpError(409, { error: 'Selected user already has an accepted match' })
+            }
+
             const [alreadyAccepted] = await trx
                 .select({ userId: matches.userId })
                 .from(matches)
@@ -615,6 +947,12 @@ export class ProjectApplicationService {
                 .set({ status: 'in_progress' })
                 .where(eq(projects.id, projectId))
         })
+
+        await this.sendNotification(
+            interestedUserId,
+            'match_available',
+            `Tienes un match disponible en la propuesta "${proposal.title}".`
+        )
 
         return {
             accepted: true,

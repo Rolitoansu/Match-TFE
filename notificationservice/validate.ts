@@ -21,3 +21,13 @@ export const sendStudentsEmailSchema = z.object({
 }).refine((data) => (data.studentIds?.length ?? 0) > 0 || (data.studentEmails?.length ?? 0) > 0, {
   message: 'At least one recipient list must be provided',
 })
+
+export const createUserNotificationSchema = z.object({
+  userId: z.number('Expected userId').int().positive(),
+  type: z.string('Expected type').trim().min(2, 'Type is too short').max(50, 'Type is too long'),
+  content: z.string('Expected content').trim().min(5, 'Content is too short').max(2000, 'Content is too long'),
+})
+
+export const notificationIdParamsSchema = z.object({
+  id: z.coerce.number('Expected notification id').int().positive(),
+})

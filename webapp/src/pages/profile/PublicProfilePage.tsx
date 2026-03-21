@@ -67,10 +67,19 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
               <p className="text-primary font-semibold text-sm mt-1">{ROLE_LABEL[profile.role]}</p>
 
               {profile.email && (
-                <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1.5">
-                  <Mail size={12} />
-                  {profile.email}
-                </p>
+                <div className="mt-2 flex flex-col items-center gap-2">
+                  <p className="text-xs text-primary font-medium flex items-center gap-1.5">
+                    <Mail size={12} />
+                    {profile.email}
+                  </p>
+                  <a
+                    href={`mailto:${profile.email}`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90"
+                  >
+                    <Mail size={12} />
+                    Enviar correo
+                  </a>
+                </div>
               )}
 
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
@@ -112,7 +121,7 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
 
         <div className="lg:col-span-8 space-y-4">
           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-            <FileText size={16} /> Propuestas de TFG
+            <FileText size={16} /> Propuestas de TFE
           </h3>
 
           {profile.proposals.length === 0 ? (

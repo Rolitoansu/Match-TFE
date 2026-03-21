@@ -3,7 +3,9 @@ import {
   Heart,
   X,
   Briefcase,
-  Sparkles
+  Sparkles,
+  FileText,
+  User
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import api from '../api/axios'
@@ -29,6 +31,18 @@ interface ExploreProposal {
 interface ExploreResponse {
   viewerRole: 'student' | 'professor'
   proposals: ExploreProposal[]
+  matchedProposal: {
+    id: number
+    title: string
+    description: string | null
+    publicationDate: string
+    status: 'proposed' | 'in_progress' | 'completed'
+    tags: string[]
+    counterpartId: number
+    counterpartName: string
+    counterpartSurname: string
+    counterpartEmail: string
+  } | null
 }
 
 export default function Explore() {
@@ -36,6 +50,7 @@ export default function Explore() {
   const [proposals, setProposals] = useState<ExploreProposal[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [viewerRole, setViewerRole] = useState<'student' | 'professor' | null>(null)
+  const [matchedProposal, setMatchedProposal] = useState<ExploreResponse['matchedProposal']>(null)
   const [loading, setLoading] = useState(true)
   const [loadingLike, setLoadingLike] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,6 +62,7 @@ export default function Explore() {
         const { data } = await api.get<ExploreResponse>('/project/explore')
         setViewerRole(data.viewerRole)
         setProposals(data.proposals)
+        setMatchedProposal(data.matchedProposal)
         setCurrentIndex(0)
       } catch (fetchError) {
         console.error(fetchError)
@@ -63,6 +79,56 @@ export default function Explore() {
 
   const profileTypeLabel = viewerRole === 'student' ? 'Profesor' : 'Estudiante'
   const targetRolePluralLabel = viewerRole === 'student' ? 'profesores' : 'estudiantes'
+  const matchedCounterpartLabel = viewerRole === 'student' ? 'Tutor/a' : 'Estudiante'
+
+  if (matchedProposal) {
+    return (
+      <div className="flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-xl overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-gray-200/50 p-8">
+          <h2 className="text-xl font-black text-foreground">Tu TFE en curso</h2>
+
+          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
+            <p className="text-[11px] font-black uppercase tracking-wider text-emerald-700">Resumen</p>
+            <h3 className="text-lg font-bold text-foreground">{matchedProposal.title}</h3>
+            <p className="text-sm text-foreground/80">
+              {matchedProposal.description || 'Sin descripción adicional.'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {matchedCounterpartLabel}: {matchedProposal.counterpartName} {matchedProposal.counterpartSurname}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {matchedProposal.tags.length > 0 ? matchedProposal.tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-foreground border border-border/60">
+                  {tag}
+                </span>
+              )) : (
+                <span className="text-xs text-muted-foreground">Sin etiquetas</span>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(`/proposals/details/${matchedProposal.id}`)}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-xs font-bold text-foreground hover:bg-secondary transition-colors"
+            >
+              <FileText size={14} />
+              Ver detalles del TFE
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`/users/${matchedProposal.counterpartId}`)}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:opacity-90 transition-opacity"
+            >
+              <User size={14} />
+              Ver perfil de {matchedCounterpartLabel.toLowerCase()}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   async function likeCurrentProposal() {
     if (!currentProposal || loadingLike) {
@@ -157,7 +223,7 @@ export default function Explore() {
         <div className="w-full max-w-md rounded-4xl border border-border bg-card p-10 text-center shadow-2xl shadow-gray-200/50">
           <Sparkles className="mx-auto mb-3 text-primary" size={24} />
           <h2 className="text-lg font-bold text-foreground">No hay más propuestas por ahora</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Vuelve más tarde para descubrir nuevos TFGs de {targetRolePluralLabel}.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Vuelve más tarde para descubrir nuevos TFEs de {targetRolePluralLabel}.</p>
           <p className="mt-2 text-xs text-muted-foreground">
             Si quieres que aparezcan más resultados, actualiza tus intereses en tu perfil.
           </p>
@@ -192,7 +258,7 @@ export default function Explore() {
 
         <div className="p-8">
           <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-2">
-            <Briefcase size={14} /> TFG Publicado
+            <Briefcase size={14} /> TFE Publicado
           </h3>
           <p className="mt-2 text-lg font-bold text-foreground leading-tight">{currentProposal.title}</p>
           <p className="mt-3 text-sm leading-relaxed text-foreground/80">

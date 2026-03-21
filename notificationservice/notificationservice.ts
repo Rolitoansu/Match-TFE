@@ -1,6 +1,6 @@
 import express from 'express'
 import cron from 'node-cron'
-import { validate, sendStudentsEmailSchema } from './validate'
+import { createUserNotificationSchema, notificationIdParamsSchema, validate, sendStudentsEmailSchema } from './validate'
 import { HttpError, NotificationApplicationService } from './services/notificationApplicationService'
 
 const PORT = process.env.PORT || 5004
@@ -49,6 +49,107 @@ app.post('/students/email', validate(sendStudentsEmailSchema), async (req, res) 
 
     console.error(error)
     return res.status(500).json({ error: 'Error sending notification emails' })
+  }
+})
+
+app.get('/', async (req, res) => {
+  const requesterEmail = req.headers['x-user-email'] as string
+
+  if (!requesterEmail) {
+    return res.status(401).json({ error: 'Missing authenticated user email' })
+  }
+
+  try {
+    const result = await notificationService.listUserNotifications(requesterEmail)
+    return res.json(result)
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return res.status(error.status).json(error.payload)
+    }
+
+    console.error(error)
+    return res.status(500).json({ error: 'Error listing notifications' })
+  }
+})
+
+app.post('/users', validate(createUserNotificationSchema), async (req, res) => {
+  try {
+    const result = await notificationService.createUserNotification({
+      userId: req.body.userId,
+      type: req.body.type,
+      content: req.body.content,
+    })
+
+    return res.status(201).json(result)
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return res.status(error.status).json(error.payload)
+    }
+
+    console.error(error)
+    return res.status(500).json({ error: 'Error creating notification' })
+  }
+})
+
+app.patch('/:id/read', validate(notificationIdParamsSchema, 'params'), async (req, res) => {
+  const requesterEmail = req.headers['x-user-email'] as string
+
+  if (!requesterEmail) {
+    return res.status(401).json({ error: 'Missing authenticated user email' })
+  }
+
+  try {
+    const notificationId = Number(req.params.id)
+    const result = await notificationService.markNotificationAsRead(requesterEmail, notificationId)
+    return res.json(result)
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return res.status(error.status).json(error.payload)
+    }
+
+    console.error(error)
+    return res.status(500).json({ error: 'Error marking notification as read' })
+  }
+})
+
+app.delete('/:id', validate(notificationIdParamsSchema, 'params'), async (req, res) => {
+  const requesterEmail = req.headers['x-user-email'] as string
+
+  if (!requesterEmail) {
+    return res.status(401).json({ error: 'Missing authenticated user email' })
+  }
+
+  try {
+    const notificationId = Number(req.params.id)
+    const result = await notificationService.deleteNotification(requesterEmail, notificationId)
+    return res.json(result)
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return res.status(error.status).json(error.payload)
+    }
+
+    console.error(error)
+    return res.status(500).json({ error: 'Error deleting notification' })
+  }
+})
+
+app.delete('/', async (req, res) => {
+  const requesterEmail = req.headers['x-user-email'] as string
+
+  if (!requesterEmail) {
+    return res.status(401).json({ error: 'Missing authenticated user email' })
+  }
+
+  try {
+    const result = await notificationService.clearUserNotifications(requesterEmail)
+    return res.json(result)
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return res.status(error.status).json(error.payload)
+    }
+
+    console.error(error)
+    return res.status(500).json({ error: 'Error clearing notifications' })
   }
 })
 

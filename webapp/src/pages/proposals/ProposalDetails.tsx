@@ -13,6 +13,7 @@ interface ProposalDetailsData {
   description: string
   publicationDate: string
   isOwner: boolean
+  viewerMatchStatus: 'pending' | 'accepted' | 'rejected' | null
   status: 'proposed' | 'in_progress' | 'completed'
   tags: string[]
   user: {
@@ -46,6 +47,7 @@ export default function ProposalDetails() {
   const [renewFeedback, setRenewFeedback] = useState<string | null>(null)
   const [acceptingUserId, setAcceptingUserId] = useState<number | null>(null)
   const [matchFeedback, setMatchFeedback] = useState<string | null>(null)
+  const [cancellingExecution, setCancellingExecution] = useState(false)
 
   useEffect(() => {
     if (!renewFeedback) return
@@ -108,6 +110,35 @@ export default function ProposalDetails() {
     }
   }
 
+  async function handleCancelExecution() {
+    if (!proposal) return
+
+    const shouldCancel = confirm('¿Seguro que quieres cancelar la realización de este TFE? Esta acción dejará el TFE de nuevo en estado abierto.')
+
+    if (!shouldCancel) {
+      return
+    }
+
+    setMatchFeedback(null)
+    setCancellingExecution(true)
+
+    try {
+      await api.patch(`/project/proposals/${id}/cancel`)
+
+      const { data: refreshedData } = await api.get(`/project/proposals/${id}`)
+      if (refreshedData?.proposal) {
+        setProposal(refreshedData.proposal)
+      }
+
+      setMatchFeedback('Realización del TFE cancelada correctamente')
+    } catch (error) {
+      console.error('Error cancelling proposal execution:', error)
+      setMatchFeedback('No se pudo cancelar la realización del TFE. Intenta de nuevo.')
+    } finally {
+      setCancellingExecution(false)
+    }
+  }
+
   useEffect(() => {
     async function fetchProposal() {
       try {
@@ -124,6 +155,8 @@ export default function ProposalDetails() {
 
   const canRenew = Boolean(proposal?.isOwner || (proposal?.user?.id && user?.id && proposal.user.id === user.id))
   const hasAcceptedMatch = proposal?.interestedUsers.some((person) => person.matchStatus === 'accepted') ?? false
+  const canContactProposalOwner = Boolean(!proposal?.isOwner && proposal?.user?.email)
+  const canCancelExecution = proposal?.status === 'in_progress' && (proposal.isOwner || proposal.viewerMatchStatus === 'accepted')
 
   return proposal && (
     <div className="max-w-6xl mx-auto p-6 lg:p-10 pb-32">
@@ -187,12 +220,10 @@ export default function ProposalDetails() {
                 ) : (
                   <h4 className="text-xl font-bold">Autor no disponible</h4>
                 )}
-                {proposal.user?.email ? (
+                {proposal.user?.email && (
                   <p className="text-sm text-primary font-medium flex items-center justify-center gap-1.5 mt-1">
                     <Mail size={14} /> {proposal.user.email}
                   </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-1">El correo se habilita cuando hay match.</p>
                 )}
               </div>
             </div>
@@ -207,7 +238,7 @@ export default function ProposalDetails() {
                   className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-emerald-700 text-emerald-50 font-black shadow-sm transition-colors hover:bg-emerald-800 disabled:opacity-60"
                 >
                   <RefreshCw size={18} className={renewing ? 'animate-spin' : ''} />
-                  {renewing ? 'Renovando…' : 'Renovar TFG (1 año)'}
+                  {renewing ? 'Renovando…' : 'Renovar TFE (1 año)'}
                 </button>
               )}
               {renewFeedback && (
@@ -215,10 +246,25 @@ export default function ProposalDetails() {
                   {renewFeedback}
                 </p>
               )}
-              <button className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:opacity-90 transition-all" disabled>
-                <MessageSquare size={20} />
-                Contacto por correo
-              </button>
+              {canContactProposalOwner && proposal.user?.email && (
+                <a
+                  href={`mailto:${proposal.user.email}`}
+                  className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
+                >
+                  <MessageSquare size={20} />
+                  Contacto por correo
+                </a>
+              )}
+              {canCancelExecution && (
+                <button
+                  type="button"
+                  onClick={handleCancelExecution}
+                  disabled={cancellingExecution}
+                  className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border border-amber-300 bg-amber-50 text-amber-800 font-black transition-colors hover:bg-amber-100 disabled:opacity-60"
+                >
+                  {cancellingExecution ? 'Cancelando...' : 'Cancelar realización del TFE'}
+                </button>
+              )}
               
               <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-2">
                 <div className="flex items-center justify-between text-[11px] font-semibold text-blue-900">
@@ -230,7 +276,7 @@ export default function ProposalDetails() {
 
                 <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                   {proposal.status !== 'in_progress' && proposal.interestedUsers.length === 0 && (
-                    <p className="text-xs text-blue-800/80 text-center py-2">Todavía nadie ha dado like a este TFG.</p>
+                    <p className="text-xs text-blue-800/80 text-center py-2">Todavía nadie ha dado like a este TFE.</p>
                   )}
 
                   {proposal.interestedUsers.map((person) => (
@@ -254,6 +300,14 @@ export default function ProposalDetails() {
                         >
                           Ver perfil
                         </button>
+                        {proposal.isOwner && person.matchStatus === 'accepted' && person.email && (
+                          <a
+                            href={`mailto:${person.email}`}
+                            className="rounded-lg border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50"
+                          >
+                            Enviar correo
+                          </a>
+                        )}
                         {proposal.isOwner && proposal.status === 'proposed' && person.matchStatus === 'pending' && (
                           <button
                             type="button"

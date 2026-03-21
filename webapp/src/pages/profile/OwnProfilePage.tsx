@@ -179,7 +179,7 @@ export default function OwnProfilePage() {
       <div className="flex justify-between items-end mb-10 px-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Mi Panel de Control</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Gestiona tu perfil y tus propuestas de TFG</p>
+          <p className="text-muted-foreground mt-1 text-sm">Gestiona tu perfil y tus propuestas de TFE</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
           onClick={() => navigate('/proposals/new')}>
@@ -217,7 +217,7 @@ export default function OwnProfilePage() {
               </div>
               <div>
                 <p className="text-lg font-bold">{proposals?.length ?? 0}</p>
-                <p className="text-[10px] uppercase font-bold text-muted-foreground">TFGs</p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">TFEs</p>
               </div>
 
             </div>
@@ -247,7 +247,7 @@ export default function OwnProfilePage() {
                       maxLength={2000}
                       rows={4}
                       className="w-full rounded-xl border border-border bg-white p-3 text-sm leading-relaxed outline-none focus:border-primary/50"
-                      placeholder="Cuentanos brevemente sobre ti, tus intereses y objetivos de TFG."
+                      placeholder="Cuentanos brevemente sobre ti, tus intereses y objetivos de TFE."
                     />
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{aboutMe.length}/2000</span>
@@ -303,7 +303,7 @@ export default function OwnProfilePage() {
 
                 {isEditingInterests ? (
                   <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground">Anade etiquetas para personalizar que TFGs aparecen en explorar.</p>
+                    <p className="text-xs text-muted-foreground">Anade etiquetas para personalizar que TFEs aparecen en explorar.</p>
 
                     {selectedInterests.length > 0 && (
                       <div className="flex flex-wrap gap-2">
@@ -445,7 +445,7 @@ export default function OwnProfilePage() {
           <div className="flex items-center justify-between px-2 mb-2">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <FileText className="text-primary" size={20} />
-              Mis TFGs Publicados
+              Mis TFEs Publicados
             </h3>
             <div className="flex gap-2">
               <button className="p-2 text-muted-foreground hover:text-primary transition-colors"><Settings size={18} /></button>
