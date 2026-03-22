@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Tag, Plus, Trash2, Edit2, FileSpreadsheet, Save, Upload, Loader2 } from 'lucide-react'
 import adminApi from '../../api/adminAxios'
-import type { TagItem, UploadResult } from '../../utils/adminHelpers'
-import { validateCSVFile, splitCSVLine, normalizeCSVText } from '../../utils/adminHelpers'
+import type { TagItem, UploadResult } from '../../utils/adminHelpers.ts'
+import { validateCSVFile, splitCSVLine, normalizeCSVText } from '../../utils/adminHelpers.ts'
 import { useTranslation } from 'react-i18next'
 
 export function AdminTagsTab() {

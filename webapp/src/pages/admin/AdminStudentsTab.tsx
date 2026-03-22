@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
 import { Users, Upload } from 'lucide-react'
 import adminApi from '../../api/adminAxios'
-import type { UploadResult } from '../../utils/adminHelpers'
-import { validateCSVFile, splitCSVLine, normalizeCSVText } from '../../utils/adminHelpers'
+import type { UploadResult } from '../../utils/adminHelpers.ts'
+import { validateCSVFile, splitCSVLine, normalizeCSVText } from '../../utils/adminHelpers.ts'
 import { useTranslation } from 'react-i18next'
 
 interface CSVStudent {

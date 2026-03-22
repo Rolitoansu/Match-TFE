@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Users, Loader2, X, Save } from 'lucide-react'
 import adminApi from '../../api/adminAxios'
-import type { User } from '../../utils/adminHelpers'
+import type { User } from '../../utils/adminHelpers.ts'
 import { useTranslation } from 'react-i18next'
 
 export function AdminUsersTab() {
