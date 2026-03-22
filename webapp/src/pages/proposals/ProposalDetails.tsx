@@ -6,6 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import api from '../../api/axios'
 import useAuth from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 
 interface ProposalDetailsData {
   id: number
@@ -32,13 +33,8 @@ interface ProposalDetailsData {
   }>
 }
 
-const STATUS_LABEL: Record<ProposalDetailsData['status'], string> = {
-  proposed: 'Abierta',
-  in_progress: 'En curso',
-  completed: 'Finalizada',
-}
-
 export default function ProposalDetails() {
+  const { t, i18n } = useTranslation()
   const id = useParams().id
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -75,13 +71,15 @@ export default function ProposalDetails() {
       }
 
       if (data?.expiresAt) {
-        setRenewFeedback(`Caduca el ${new Date(data.expiresAt).toLocaleDateString('es-ES')}`)
+        setRenewFeedback(t('proposalDetails.feedback.renewExpiresOn', {
+          date: new Date(data.expiresAt).toLocaleDateString(i18n.resolvedLanguage),
+        }))
       } else {
-        setRenewFeedback('Caducidad renovada correctamente')
+        setRenewFeedback(t('proposalDetails.feedback.renewSuccess'))
       }
     } catch (error) {
       console.error('Error renewing proposal:', error)
-      setRenewFeedback('No se pudo renovar. Intenta de nuevo.')
+      setRenewFeedback(t('proposalDetails.feedback.renewError'))
     } finally {
       setRenewing(false)
     }
@@ -101,10 +99,10 @@ export default function ProposalDetails() {
         setProposal(refreshedData.proposal)
       }
 
-      setMatchFeedback('Match aceptado correctamente')
+      setMatchFeedback(t('proposalDetails.feedback.acceptMatchSuccess'))
     } catch (error) {
       console.error('Error accepting match:', error)
-      setMatchFeedback('No se pudo aceptar el match. Intenta de nuevo.')
+      setMatchFeedback(t('proposalDetails.feedback.acceptMatchError'))
     } finally {
       setAcceptingUserId(null)
     }
@@ -113,7 +111,7 @@ export default function ProposalDetails() {
   async function handleCancelExecution() {
     if (!proposal) return
 
-    const shouldCancel = confirm('¿Seguro que quieres cancelar la realización de este TFE? Esta acción dejará el TFE de nuevo en estado abierto.')
+    const shouldCancel = confirm(t('proposalDetails.cancel.confirm'))
 
     if (!shouldCancel) {
       return
@@ -130,10 +128,10 @@ export default function ProposalDetails() {
         setProposal(refreshedData.proposal)
       }
 
-      setMatchFeedback('Realización del TFE cancelada correctamente')
+      setMatchFeedback(t('proposalDetails.feedback.cancelSuccess'))
     } catch (error) {
       console.error('Error cancelling proposal execution:', error)
-      setMatchFeedback('No se pudo cancelar la realización del TFE. Intenta de nuevo.')
+      setMatchFeedback(t('proposalDetails.feedback.cancelError'))
     } finally {
       setCancellingExecution(false)
     }
@@ -158,11 +156,75 @@ export default function ProposalDetails() {
   const canContactProposalOwner = Boolean(!proposal?.isOwner && proposal?.user?.email)
   const canCancelExecution = proposal?.status === 'in_progress' && (proposal.isOwner || proposal.viewerMatchStatus === 'accepted')
 
+  function getStatusLabel(status: ProposalDetailsData['status']) {
+    return t(`proposalDetails.status.${status}`)
+  }
+
+  function getCounterLabel(status: ProposalDetailsData['status']) {
+    if (status === 'in_progress') {
+      return t('proposalDetails.sidebar.status')
+    }
+
+    return t('proposalDetails.sidebar.likesReceived')
+  }
+
+  function getCounterValue(status: ProposalDetailsData['status'], interestedCount: number) {
+    if (status === 'in_progress') {
+      return t('proposalDetails.sidebar.assigned')
+    }
+
+    return interestedCount
+  }
+
+  function getRenewButtonLabel() {
+    if (renewing) {
+      return t('proposalDetails.renew.renewing')
+    }
+
+    return t('proposalDetails.renew.button')
+  }
+
+  function getCancelButtonLabel() {
+    if (cancellingExecution) {
+      return t('proposalDetails.cancel.cancelling')
+    }
+
+    return t('proposalDetails.cancel.button')
+  }
+
+  function getAcceptButtonLabel(personId: number) {
+    if (acceptingUserId === personId) {
+      return t('proposalDetails.interested.accepting')
+    }
+
+    return t('proposalDetails.interested.accept')
+  }
+
+  function getInterestedStatusText(person: ProposalDetailsData['interestedUsers'][number]) {
+    if (person.matchStatus === 'accepted') {
+      if (person.email) {
+        return t('proposalDetails.interested.matchConfirmedWithEmail', { email: person.email })
+      }
+
+      return t('proposalDetails.interested.matchConfirmed')
+    }
+
+    return t('proposalDetails.interested.likePending')
+  }
+
+  function renderProposalIcon(status: ProposalDetailsData['status']) {
+    if (status === 'in_progress') {
+      return <UserCheck size={40} />
+    }
+
+    return <GraduationCap size={40} />
+  }
+
   return proposal && (
     <div className="max-w-6xl mx-auto p-6 lg:p-10 pb-32">
       <div className="flex justify-between items-center mb-8">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-semibold">
-          <ArrowLeft size={20} /> Volver
+          <ArrowLeft size={20} /> {t('proposalDetails.back')}
         </button>
       </div>
 
@@ -172,7 +234,7 @@ export default function ProposalDetails() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter bg-blue-100 text-blue-700">
-                {STATUS_LABEL[proposal.status]}
+                {getStatusLabel(proposal.status)}
               </span>
               <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">{new Date(proposal.publicationDate).toLocaleString()}</span>
             </div>
@@ -184,7 +246,7 @@ export default function ProposalDetails() {
 
           <section className="space-y-4">
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-              <BookOpen size={16} /> Descripción del Proyecto
+              <BookOpen size={16} /> {t('proposalDetails.sections.projectDescription')}
             </h3>
             <p className="text-foreground/80 leading-relaxed text-lg">
               {proposal.description}
@@ -205,10 +267,10 @@ export default function ProposalDetails() {
             
             <div className="space-y-4 text-center">
               <div className="mx-auto h-20 w-20 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">
-                {proposal.status === 'in_progress' ? <UserCheck size={40} /> : <GraduationCap size={40} />}
+                {renderProposalIcon(proposal.status)}
               </div>
               <div>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">Publicado por</p>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest italic">{t('proposalDetails.publishedBy')}</p>
                 {proposal.user ? (
                   <button
                     type="button"
@@ -218,7 +280,7 @@ export default function ProposalDetails() {
                     {proposal.user.name} {proposal.user.surname}
                   </button>
                 ) : (
-                  <h4 className="text-xl font-bold">Autor no disponible</h4>
+                  <h4 className="text-xl font-bold">{t('proposalDetails.authorUnavailable')}</h4>
                 )}
                 {proposal.user?.email && (
                   <p className="text-sm text-primary font-medium flex items-center justify-center gap-1.5 mt-1">
@@ -238,7 +300,7 @@ export default function ProposalDetails() {
                   className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-emerald-700 text-emerald-50 font-black shadow-sm transition-colors hover:bg-emerald-800 disabled:opacity-60"
                 >
                   <RefreshCw size={18} className={renewing ? 'animate-spin' : ''} />
-                  {renewing ? 'Renovando…' : 'Renovar TFE (1 año)'}
+                  {getRenewButtonLabel()}
                 </button>
               )}
               {renewFeedback && (
@@ -252,7 +314,7 @@ export default function ProposalDetails() {
                   className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
                 >
                   <MessageSquare size={20} />
-                  Contacto por correo
+                  {t('proposalDetails.contactByEmail')}
                 </a>
               )}
               {canCancelExecution && (
@@ -262,21 +324,21 @@ export default function ProposalDetails() {
                   disabled={cancellingExecution}
                   className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border border-amber-300 bg-amber-50 text-amber-800 font-black transition-colors hover:bg-amber-100 disabled:opacity-60"
                 >
-                  {cancellingExecution ? 'Cancelando...' : 'Cancelar realización del TFE'}
+                  {getCancelButtonLabel()}
                 </button>
               )}
               
               <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-2">
                 <div className="flex items-center justify-between text-[11px] font-semibold text-blue-900">
                   <span className="inline-flex items-center gap-1">
-                    <Users size={13} /> {proposal.status === 'in_progress' ? 'Estado' : 'Likes recibidos'}
+                    <Users size={13} /> {getCounterLabel(proposal.status)}
                   </span>
-                  <span>{proposal.status === 'in_progress' ? 'Asignado' : proposal.interestedUsers.length}</span>
+                  <span>{getCounterValue(proposal.status, proposal.interestedUsers.length)}</span>
                 </div>
 
                 <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                   {proposal.status !== 'in_progress' && proposal.interestedUsers.length === 0 && (
-                    <p className="text-xs text-blue-800/80 text-center py-2">Todavía nadie ha dado like a este TFE.</p>
+                    <p className="text-xs text-blue-800/80 text-center py-2">{t('proposalDetails.sidebar.noLikesYet')}</p>
                   )}
 
                   {proposal.interestedUsers.map((person) => (
@@ -286,11 +348,7 @@ export default function ProposalDetails() {
                         {person.name} {person.surname}
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-1">
-                        {person.matchStatus === 'accepted'
-                          ? person.email
-                            ? `Match confirmado · ${person.email}`
-                            : 'Match confirmado'
-                          : 'Like recibido · pendiente de match'}
+                        {getInterestedStatusText(person)}
                       </p>
                       <div className="mt-2 flex gap-2">
                         <button
@@ -298,14 +356,14 @@ export default function ProposalDetails() {
                           onClick={() => navigate(`/users/${person.id}`)}
                           className="rounded-lg border border-blue-300 px-2.5 py-1 text-[11px] font-semibold text-blue-800 hover:bg-blue-50"
                         >
-                          Ver perfil
+                          {t('proposalDetails.interested.viewProfile')}
                         </button>
                         {proposal.isOwner && person.matchStatus === 'accepted' && person.email && (
                           <a
                             href={`mailto:${person.email}`}
                             className="rounded-lg border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50"
                           >
-                            Enviar correo
+                            {t('proposalDetails.interested.sendEmail')}
                           </a>
                         )}
                         {proposal.isOwner && proposal.status === 'proposed' && person.matchStatus === 'pending' && (
@@ -315,7 +373,7 @@ export default function ProposalDetails() {
                             disabled={acceptingUserId !== null || hasAcceptedMatch}
                             className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                           >
-                            {acceptingUserId === person.id ? 'Aceptando...' : 'Aceptar match'}
+                            {getAcceptButtonLabel(person.id)}
                           </button>
                         )}
                       </div>

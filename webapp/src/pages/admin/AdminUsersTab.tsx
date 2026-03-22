@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { Users, Loader2, X, Save } from 'lucide-react'
 import adminApi from '../../api/adminAxios'
 import type { User } from '../../utils/adminHelpers'
+import { useTranslation } from 'react-i18next'
 
 export function AdminUsersTab() {
+  const { t, i18n } = useTranslation()
   const [users, setUsers] = useState<User[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [userSearch, setUserSearch] = useState('')
@@ -35,12 +37,12 @@ export function AdminUsersTab() {
       setEditingUserId(null)
       setEditingUser(null)
     } catch {
-      alert('Error al actualizar el usuario')
+      alert(t('admin.users.alerts.updateError'))
     }
   }
 
   async function deleteUser(userId: number, email: string) {
-    if (!confirm(`¿Eliminar el usuario ${email}?`)) return
+    if (!confirm(t('admin.users.confirm.deleteOne', { email }))) return
     try {
       await adminApi.delete(`/admin/users/${userId}`)
       setUsers(prev => prev.filter(u => u.id !== userId))
@@ -50,13 +52,13 @@ export function AdminUsersTab() {
         return updated
       })
     } catch {
-      alert('Error al eliminar el usuario')
+      alert(t('admin.users.alerts.deleteError'))
     }
   }
 
   async function deleteSelectedUsers() {
     if (selectedUsers.size === 0) return
-    if (!confirm(`¿Eliminar ${selectedUsers.size} usuario${selectedUsers.size !== 1 ? 's' : ''}?`)) return
+    if (!confirm(t('admin.users.confirm.deleteMany', { count: selectedUsers.size }))) return
 
     try {
       for (const id of selectedUsers) {
@@ -65,7 +67,7 @@ export function AdminUsersTab() {
       setUsers(prev => prev.filter(u => !selectedUsers.has(u.id)))
       setSelectedUsers(new Set())
     } catch {
-      alert('Error al eliminar usuarios')
+      alert(t('admin.users.alerts.deleteManyError'))
     }
   }
 
@@ -81,7 +83,7 @@ export function AdminUsersTab() {
     <div className="rounded-2xl border border-border bg-card p-8">
       <h2 className="mb-6 flex items-center gap-2 text-lg font-bold">
         <Users className="text-primary" size={20} />
-        Gestionar Usuarios
+        {t('admin.users.title')}
       </h2>
 
       <div className="mb-6 flex gap-4">
@@ -89,7 +91,7 @@ export function AdminUsersTab() {
           type="text"
           value={userSearch}
           onChange={(e) => setUserSearch(e.target.value)}
-          placeholder="Buscar por email, nombre..."
+          placeholder={t('admin.users.searchPlaceholder')}
           className="flex-1 rounded-xl border border-input bg-background px-4 py-2 text-sm transition-smooth"
         />
         <select
@@ -97,9 +99,9 @@ export function AdminUsersTab() {
           onChange={(e) => setUserFilter(e.target.value as any)}
           className="rounded-xl border border-input bg-background px-4 py-2 text-sm transition-smooth"
         >
-          <option value="all">Todos</option>
-          <option value="student">Estudiantes</option>
-          <option value="professor">Profesores</option>
+          <option value="all">{t('admin.users.filters.all')}</option>
+          <option value="student">{t('admin.users.filters.students')}</option>
+          <option value="professor">{t('admin.users.filters.professors')}</option>
         </select>
       </div>
 
@@ -109,19 +111,19 @@ export function AdminUsersTab() {
         <>
           {selectedUsers.size > 0 && (
             <div className="mb-4 flex items-center justify-between rounded-lg bg-red-50 p-3 border border-red-200 animate-slideInDown">
-              <span className="text-sm font-semibold text-red-700">{selectedUsers.size} usuario{selectedUsers.size !== 1 ? 's' : ''} seleccionado{selectedUsers.size !== 1 ? 's' : ''}</span>
+                <span className="text-sm font-semibold text-red-700">{t('admin.users.selectedCount', { count: selectedUsers.size })}</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedUsers(new Set())}
                   className="rounded px-3 py-1 bg-red-200 text-red-800 text-xs hover:bg-red-300 transition-smooth"
                 >
-                  Deseleccionar
+                    {t('admin.users.actions.unselect')}
                 </button>
                 <button
                   onClick={deleteSelectedUsers}
                   className="rounded px-3 py-1 bg-red-500 text-white text-xs hover:opacity-90 transition-smooth"
                 >
-                  Eliminar seleccionados
+                    {t('admin.users.actions.deleteSelected')}
                 </button>
               </div>
             </div>
@@ -145,9 +147,9 @@ export function AdminUsersTab() {
                     />
                   </th>
                   <th className="px-4 py-3 text-left font-bold">Email</th>
-                  <th className="px-4 py-3 text-left font-bold">Nombre</th>
-                  <th className="px-4 py-3 text-left font-bold">Tipo</th>
-                  <th className="px-4 py-3 text-left font-bold">Acciones</th>
+                  <th className="px-4 py-3 text-left font-bold">{t('admin.users.table.name')}</th>
+                  <th className="px-4 py-3 text-left font-bold">{t('admin.users.table.type')}</th>
+                  <th className="px-4 py-3 text-left font-bold">{t('admin.users.table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -179,7 +181,7 @@ export function AdminUsersTab() {
                           ? 'bg-blue-100 text-blue-800' 
                           : 'bg-purple-100 text-purple-800'
                       }`}>
-                        {user.role === 'student' ? 'Estudiante' : 'Profesor'}
+                          {user.role === 'student' ? t('admin.users.roles.student') : t('admin.users.roles.professor')}
                       </span>
                     </td>
                     <td className="px-4 py-3 flex gap-2">
@@ -190,13 +192,13 @@ export function AdminUsersTab() {
                         }}
                         className="rounded px-3 py-1 bg-blue-500 text-white text-xs hover:opacity-90 transition-smooth"
                       >
-                        Editar
+                        {t('admin.users.actions.edit')}
                       </button>
                       <button
                         onClick={() => deleteUser(user.id, user.email)}
                         className="rounded px-3 py-1 bg-red-500 text-white text-xs hover:opacity-90 transition-smooth"
                       >
-                        Eliminar
+                        {t('admin.users.actions.delete')}
                       </button>
                     </td>
                   </tr>
@@ -206,14 +208,14 @@ export function AdminUsersTab() {
           </div>
         </>
       ) : (
-        <p className="text-center text-muted-foreground py-8">No hay usuarios</p>
+        <p className="text-center text-muted-foreground py-8">{t('admin.users.empty')}</p>
       )}
 
       {editingUserId && editingUser && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 animate-fadeIn">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto animate-slideInScale">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold">Editar Usuario</h3>
+              <h3 className="text-xl font-bold">{t('admin.users.modal.title')}</h3>
               <button
                 onClick={() => {
                   setEditingUserId(null)
@@ -237,7 +239,7 @@ export function AdminUsersTab() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2 text-foreground">Nombre</label>
+                <label className="block text-sm font-semibold mb-2 text-foreground">{t('admin.users.fields.name')}</label>
                 <input
                   type="text"
                   value={editingUser.name || ''}
@@ -247,7 +249,7 @@ export function AdminUsersTab() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2 text-foreground">Apellido</label>
+                <label className="block text-sm font-semibold mb-2 text-foreground">{t('admin.users.fields.surname')}</label>
                 <input
                   type="text"
                   value={editingUser.surname || ''}
@@ -257,20 +259,20 @@ export function AdminUsersTab() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-2 text-foreground">Biografía</label>
+                <label className="block text-sm font-semibold mb-2 text-foreground">{t('admin.users.fields.biography')}</label>
                 <textarea
                   value={editingUser.biography || ''}
                   onChange={(e) => setEditingUser({ ...editingUser, biography: e.target.value })}
                   className="w-full rounded-lg border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth resize-none"
                   rows={4}
-                  placeholder="Añade una biografía (opcional)"
+                  placeholder={t('admin.users.fields.biographyPlaceholder')}
                 />
               </div>
 
               <div className="pt-2 pb-4">
                 <div className="text-xs text-muted-foreground">
-                  <p><strong>Tipo de usuario:</strong> {editingUser.role === 'student' ? 'Estudiante' : 'Profesor'}</p>
-                  <p><strong>Registrado:</strong> {new Date(editingUser.registrationDate || '').toLocaleDateString('es-ES')}</p>
+                  <p><strong>{t('admin.users.fields.userType')} </strong>{editingUser.role === 'student' ? t('admin.users.roles.student') : t('admin.users.roles.professor')}</p>
+                  <p><strong>{t('admin.users.fields.registered')} </strong>{new Date(editingUser.registrationDate || '').toLocaleDateString(i18n.resolvedLanguage?.startsWith('es') ? 'es-ES' : 'en-US')}</p>
                 </div>
               </div>
             </div>
@@ -288,7 +290,7 @@ export function AdminUsersTab() {
                 className="flex-1 rounded-lg bg-primary text-white font-semibold py-2.5 hover:opacity-90 transition-smooth flex items-center justify-center gap-2"
               >
                 <Save size={16} />
-                Guardar cambios
+                {t('admin.users.actions.saveChanges')}
               </button>
               <button
                 onClick={() => {
@@ -297,7 +299,7 @@ export function AdminUsersTab() {
                 }}
                 className="flex-1 rounded-lg border border-input bg-background font-semibold py-2.5 hover:bg-muted transition-smooth"
               >
-                Cancelar
+                {t('admin.users.actions.cancel')}
               </button>
             </div>
           </div>

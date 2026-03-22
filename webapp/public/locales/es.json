@@ -1,2 +1,433 @@
 {
+	"common": {
+		"loading": "Cargando..."
+	},
+	"header": {
+		"nav": {
+			"explore": "Explorar",
+			"proposals": "Propuestas",
+			"profile": "Perfil"
+		},
+		"language": {
+			"label": "Seleccionar idioma",
+			"es": "Español",
+			"en": "Inglés"
+		},
+		"notifications": {
+			"title": "Notificaciones",
+			"clear": "Limpiar",
+			"clearing": "Limpiando...",
+			"empty": "No tienes notificaciones por ahora.",
+			"delete": "Eliminar notificación"
+		},
+		"logout": "Cerrar sesión"
+	},
+	"landing": {
+		"subtitle": "Encuentra tu Trabajo de Fin de Grado ideal",
+		"featureMatch": "Matching basado en intereses comunes",
+		"featureConnect": "Conecta profesores y estudiantes",
+		"loginWithMicrosoft": "Iniciar sesión con Microsoft 365",
+		"university": "Universidad de Oviedo - Escuela de Ingeniería Informática"
+	},
+	"login": {
+		"title": "Bienvenido de nuevo",
+		"subtitle": "Introduce tus credenciales para acceder a Match-TFE",
+		"emailLabel": "Correo electrónico",
+		"passwordLabel": "Contraseña",
+		"submit": "Iniciar sesión",
+		"errorInvalidCredentials": "Credenciales incorrectas o error en el servidor",
+		"noAccount": "¿No tienes cuenta?",
+		"registerLink": "Regístrate"
+	},
+	"register": {
+		"title": "Crear cuenta",
+		"subtitle": "Únete a Match-TFE para empezar tu proyecto",
+		"nameLabel": "Nombre",
+		"surnameLabel": "Apellidos",
+		"emailLabel": "Correo electrónico",
+		"emailPlaceholder": "usuario@uniovi.es",
+		"passwordLabel": "Contraseña",
+		"repeatPasswordLabel": "Repetir contraseña",
+		"submit": "Crear cuenta",
+		"errorPasswordsMismatch": "Las contraseñas no coinciden",
+		"errorCreateAccount": "Hubo un error al crear la cuenta. Inténtalo de nuevo.",
+		"hasAccount": "¿Ya tienes cuenta?",
+		"loginLink": "Inicia sesión"
+	},
+	"proposalDetails": {
+		"back": "Volver",
+		"publishedBy": "Publicado por",
+		"authorUnavailable": "Autor no disponible",
+		"contactByEmail": "Contacto por correo",
+		"status": {
+			"proposed": "Abierta",
+			"in_progress": "En curso",
+			"completed": "Finalizada"
+		},
+		"sections": {
+			"projectDescription": "Descripción del Proyecto"
+		},
+		"renew": {
+			"button": "Renovar TFE (1 año)",
+			"renewing": "Renovando..."
+		},
+		"cancel": {
+			"button": "Cancelar realización del TFE",
+			"cancelling": "Cancelando...",
+			"confirm": "¿Seguro que quieres cancelar la realización de este TFE? Esta acción dejará el TFE de nuevo en estado abierto."
+		},
+		"sidebar": {
+			"status": "Estado",
+			"likesReceived": "Likes recibidos",
+			"assigned": "Asignado",
+			"noLikesYet": "Todavía nadie ha dado like a este TFE."
+		},
+		"interested": {
+			"matchConfirmed": "Match confirmado",
+			"matchConfirmedWithEmail": "Match confirmado · {{email}}",
+			"likePending": "Like recibido · pendiente de match",
+			"viewProfile": "Ver perfil",
+			"sendEmail": "Enviar correo",
+			"accept": "Aceptar match",
+			"accepting": "Aceptando..."
+		},
+		"feedback": {
+			"renewExpiresOn": "Caduca el {{date}}",
+			"renewSuccess": "Caducidad renovada correctamente",
+			"renewError": "No se pudo renovar. Intenta de nuevo.",
+			"acceptMatchSuccess": "Match aceptado correctamente",
+			"acceptMatchError": "No se pudo aceptar el match. Intenta de nuevo.",
+			"cancelSuccess": "Realización del TFE cancelada correctamente",
+			"cancelError": "No se pudo cancelar la realización del TFE. Intenta de nuevo."
+		}
+	},
+	"admin": {
+		"layout": {
+			"signOut": "Cerrar sesión"
+		},
+		"login": {
+			"title": "Administración",
+			"subtitle": "Acceso restringido al panel de administración",
+			"emailLabel": "Correo electrónico",
+			"passwordLabel": "Contraseña",
+			"submit": "Iniciar sesión",
+			"invalidCredentials": "Credenciales incorrectas"
+		},
+		"page": {
+			"title": "Panel de Administración",
+			"tabs": {
+				"tags": "Etiquetas",
+				"students": "Estudiantes",
+				"professors": "Profesores",
+				"users": "Gestionar usuarios"
+			}
+		},
+		"students": {
+			"title": "Importar Estudiantes",
+			"upload": {
+				"csvFormatLabel": "Formato CSV:",
+				"csvFormatValue": "correo, nombre, apellido",
+				"dragOrClick": "Arrastra o haz clic para seleccionar",
+				"maxSize": "Máximo 2 MB",
+				"toImport": "{{count}} estudiantes a importar",
+				"importing": "Importando...",
+				"importButton": "Importar Estudiantes",
+				"csvNeedsRows": "El CSV debe incluir cabecera y al menos una fila",
+				"missingColumns": "Fila {{row}}: faltan columnas",
+				"invalidEmail": "Fila {{row}}: correo inválido",
+				"noValidRows": "No hay filas válidas",
+				"invalidRows": "Hay {{count}} filas inválidas",
+				"completed": "Importación completada",
+				"error": "Error al importar",
+				"summary": "{{created}} creados · {{skipped}} omitidos"
+			}
+		},
+		"professors": {
+			"title": "Importar Profesores",
+			"upload": {
+				"csvFormatLabel": "Formato CSV:",
+				"csvFormatValue": "correo, nombre, apellido",
+				"dragOrClick": "Arrastra o haz clic para seleccionar",
+				"maxSize": "Máximo 2 MB",
+				"toImport": "{{count}} profesores a importar",
+				"importing": "Importando...",
+				"importButton": "Importar Profesores",
+				"csvNeedsRows": "El CSV debe incluir cabecera y al menos una fila",
+				"missingColumns": "Fila {{row}}: faltan columnas",
+				"invalidEmail": "Fila {{row}}: correo inválido",
+				"noValidRows": "No hay filas válidas",
+				"invalidRows": "Hay {{count}} filas inválidas",
+				"completed": "Importación completada",
+				"error": "Error al importar",
+				"summary": "{{created}} creados · {{skipped}} omitidos"
+			}
+		},
+		"tags": {
+			"alerts": {
+				"exists": "Esta etiqueta ya existe",
+				"createError": "Error al crear la etiqueta",
+				"updateError": "Error al actualizar la etiqueta",
+				"deleteError": "Error al eliminar la etiqueta",
+				"deleteManyError": "Error al eliminar etiquetas"
+			},
+			"confirm": {
+				"deleteOne": "¿Eliminar la etiqueta \"{{name}}\"?",
+				"deleteMany": "¿Eliminar {{count}} etiquetas?"
+			},
+			"create": {
+				"title": "Crear Etiqueta",
+				"placeholder": "Nombre de la etiqueta",
+				"submit": "Crear"
+			},
+			"list": {
+				"title": "Etiquetas",
+				"searchPlaceholder": "Buscar...",
+				"selectedCount": "{{count}} etiquetas seleccionadas",
+				"empty": "No hay etiquetas"
+			},
+			"actions": {
+				"unselect": "Deseleccionar",
+				"deleteSelected": "Eliminar seleccionadas"
+			},
+			"upload": {
+				"title": "Importar Etiquetas (CSV)",
+				"dragOrClick": "Arrastra o haz clic para seleccionar",
+				"format": "Formato: nombre",
+				"toImport": "{{count}} etiquetas a importar",
+				"importing": "Importando...",
+				"importButton": "Importar Etiquetas",
+				"csvNeedsRows": "El CSV debe incluir cabecera y al menos una fila",
+				"invalidName": "Fila {{row}}: nombre inválido",
+				"noValidRows": "No hay filas válidas",
+				"invalidRows": "Hay {{count}} filas inválidas",
+				"completed": "Importación completada",
+				"error": "Error al importar"
+			}
+		},
+		"users": {
+			"title": "Gestionar Usuarios",
+			"searchPlaceholder": "Buscar por email, nombre...",
+			"selectedCount": "{{count}} usuarios seleccionados",
+			"empty": "No hay usuarios",
+			"filters": {
+				"all": "Todos",
+				"students": "Estudiantes",
+				"professors": "Profesores"
+			},
+			"table": {
+				"name": "Nombre",
+				"type": "Tipo",
+				"actions": "Acciones"
+			},
+			"roles": {
+				"student": "Estudiante",
+				"professor": "Profesor"
+			},
+			"actions": {
+				"edit": "Editar",
+				"delete": "Eliminar",
+				"deleteSelected": "Eliminar seleccionados",
+				"unselect": "Deseleccionar",
+				"saveChanges": "Guardar cambios",
+				"cancel": "Cancelar"
+			},
+			"alerts": {
+				"updateError": "Error al actualizar el usuario",
+				"deleteError": "Error al eliminar el usuario",
+				"deleteManyError": "Error al eliminar usuarios"
+			},
+			"confirm": {
+				"deleteOne": "Eliminar el usuario {{email}}?",
+				"deleteMany": "Eliminar {{count}} usuarios?"
+			},
+			"modal": {
+				"title": "Editar Usuario"
+			},
+			"fields": {
+				"name": "Nombre",
+				"surname": "Apellido",
+				"biography": "Biografía",
+				"biographyPlaceholder": "Añade una biografía (opcional)",
+				"userType": "Tipo de usuario:",
+				"registered": "Registrado:"
+			}
+		}
+	},
+	"chat": {
+		"title": "Mensajes",
+		"online": "En línea",
+		"discussingTopic": "Discutiendo: Análisis de sentimientos...",
+		"messagePlaceholder": "Escribe un mensaje..."
+	},
+	"explore": {
+		"loading": "Cargando propuestas para ti...",
+		"errors": {
+			"load": "No se pudieron cargar propuestas para explorar ahora mismo.",
+			"like": "No se pudo registrar tu interés. Inténtalo de nuevo.",
+			"pass": "No se pudo registrar el descarte. Inténtalo de nuevo."
+		},
+		"roles": {
+			"professor": "Profesor",
+			"student": "Estudiante",
+			"professorsPlural": "profesores",
+			"studentsPlural": "estudiantes",
+			"supervisor": "Tutor/a"
+		},
+		"common": {
+			"noDescription": "Sin descripción adicional.",
+			"noTags": "Sin etiquetas"
+		},
+		"matched": {
+			"title": "Tu TFE en curso",
+			"summary": "Resumen",
+			"viewDetails": "Ver detalles del TFE",
+			"viewProfile": "Ver perfil de {{role}}"
+		},
+		"empty": {
+			"title": "No hay más propuestas por ahora",
+			"subtitle": "Vuelve más tarde para descubrir nuevos TFEs de {{rolePlural}}.",
+			"hint": "Si quieres que aparezcan más resultados, actualiza tus intereses en tu perfil.",
+			"goProfile": "Ir a mi perfil"
+		},
+		"card": {
+			"publishedProject": "TFE Publicado",
+			"tags": "Etiquetas"
+		},
+		"actions": {
+			"pass": "Pasar",
+			"like": "Me gusta",
+			"interestSent": "Interés enviado",
+			"matched": "Match hecho"
+		},
+		"status": {
+			"pending": "Interés registrado. Esperando respuesta de la otra parte.",
+			"accepted": "Es un match. Ya podéis contactar por correo.",
+			"rejected": "La propuesta no está disponible para match actualmente."
+		}
+	},
+	"newProposal": {
+		"backToProposals": "Volver a propuestas",
+		"title": "Crear Nueva Propuesta",
+		"subtitle": "Define tu idea de TFG para que los {{rolePlural}} interesados puedan encontrarte.",
+		"publish": "Publicar Propuesta",
+		"roles": {
+			"professorsPlural": "profesores",
+			"studentsPlural": "estudiantes"
+		},
+		"fields": {
+			"projectTitle": "Título del Proyecto",
+			"projectTitlePlaceholder": "Ej: Desarrollo de una herramienta de análisis para...",
+			"descriptionAndObjectives": "Descripción y Objetivos",
+			"descriptionPlaceholder": "Explica brevemente de qué trata el proyecto, las tecnologías a usar y qué esperas del alumno...",
+			"relatedTags": "Tecnologías e Intereses vinculados",
+			"searchTagsPlaceholder": "Buscar y añadir tecnologías..."
+		},
+		"errors": {
+			"titleRequired": "El título es obligatorio.",
+			"descriptionRequired": "La descripción es obligatoria.",
+			"typeRequired": "El tipo de trabajo es obligatorio."
+		},
+		"suggestions": {
+			"results": "Resultados",
+			"available": "Disponibles",
+			"noMatch": "No hay tecnologías que coincidan con \"{{search}}\".",
+			"allAdded": "Ya has añadido todas las tecnologías disponibles."
+		},
+		"settings": {
+			"title": "Configuración",
+			"projectType": "Tipo de Trabajo",
+			"selectType": "-- Seleccionar tipo --",
+			"softwareDevelopment": "Desarrollo de Software",
+			"research": "Investigación"
+		}
+	},
+	"ownProfile": {
+		"title": "Mi Panel de Control",
+		"subtitle": "Gestiona tu perfil y tus propuestas de TFE",
+		"newProposal": "Nueva Propuesta",
+		"roles": {
+			"professor": "Profesor/a",
+			"student": "Estudiante"
+		},
+		"common": {
+			"cancel": "Cancelar",
+			"save": "Guardar",
+			"saving": "Guardando..."
+		},
+		"feedback": {
+			"aboutUpdated": "Tu perfil se ha actualizado correctamente.",
+			"aboutUpdateError": "No se pudo actualizar tu biografía. Inténtalo de nuevo.",
+			"interestsUpdated": "Intereses actualizados correctamente.",
+			"interestsUpdateError": "No se pudieron actualizar los intereses. Inténtalo de nuevo."
+		},
+		"about": {
+			"title": "Sobre mí",
+			"placeholder": "Cuéntanos brevemente sobre ti, tus intereses y objetivos de TFE.",
+			"empty": "Todavía no has escrito información sobre ti."
+		},
+		"interests": {
+			"title": "Intereses",
+			"helper": "Añade etiquetas para personalizar qué TFEs aparecen en explorar.",
+			"searchPlaceholder": "Buscar y añadir intereses...",
+			"results": "Resultados",
+			"available": "Disponibles",
+			"noMatch": "No hay etiquetas que coincidan con \"{{search}}\".",
+			"allAdded": "Ya has añadido todas las etiquetas disponibles.",
+			"save": "Guardar intereses",
+			"empty": "Todavía no has definido intereses."
+		},
+		"published": {
+			"title": "Mis TFEs Publicados",
+			"empty": "Aún no has publicado ninguna propuesta",
+			"createFirst": "Crear mi primera propuesta"
+		}
+	},
+	"proposals": {
+		"title": "Gestión de Propuestas",
+		"subtitle": "Consulta los TFGs publicados por {{rolePlural}} y revisa su estado.",
+		"newProposal": "Nueva Propuesta",
+		"searchPlaceholder": "Buscar por título o tecnología...",
+		"onlyInterested": "Mostrar solo propuestas con interesados",
+		"interestRegistered": "Interés registrado",
+		"viewDetails": "Ver Detalles",
+		"emptyFiltered": "No hay propuestas que coincidan con los filtros seleccionados.",
+		"more": "más",
+		"tabs": {
+			"all": "Todas",
+			"open": "Abiertas",
+			"inProgress": "En curso",
+			"completed": "Finalizadas"
+		},
+		"status": {
+			"open": "Abierta",
+			"inProgress": "En curso",
+			"completed": "Finalizada"
+		},
+		"roles": {
+			"professorsPlural": "profesores",
+			"studentsPlural": "alumnos"
+		},
+		"assignment": {
+			"assigned": "Asignado",
+			"hasInterested": "Hay interesados",
+			"noInterested": "Sin interesados"
+		},
+		"fields": {
+			"status": "Estado",
+			"interested": "Interesados"
+		},
+		"badges": {
+			"match": "match",
+			"like": "like"
+		}
+	},
+	"publicProfile": {
+		"back": "Volver",
+		"sendEmail": "Enviar correo",
+		"memberSince": "Miembro desde",
+		"about": "Sobre mí",
+		"interests": "Intereses",
+		"proposalsTitle": "Propuestas de TFE",
+		"noProposals": "Este usuario no tiene propuestas publicadas."
+	}
 }

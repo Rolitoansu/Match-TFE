@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 import useAuth from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 
 interface TFEProposalInfo {
   title: string
@@ -26,6 +27,7 @@ interface TFEErrors {
 }
 
 export default function NewProposal() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [proposalInfo, setProposalInfo] = useState<TFEProposalInfo>({ title: '', description: '', type: 0 })
@@ -36,7 +38,9 @@ export default function NewProposal() {
   const [tagInputFocused, setTagInputFocused] = useState(false)
   const tagInputRef = useRef<HTMLInputElement>(null)
   const suggestionRef = useRef<HTMLDivElement>(null)
-  const targetRolePluralLabel = user?.role === 'student' ? 'profesores' : 'estudiantes'
+  const targetRolePluralLabel = user?.role === 'student'
+    ? t('newProposal.roles.professorsPlural')
+    : t('newProposal.roles.studentsPlural')
 
   useEffect(() => {
     api.get('/project/tags')
@@ -119,7 +123,7 @@ export default function NewProposal() {
       await api.post('/project/proposals', data)     
       navigate(-1)
     } catch (error) {
-      console.error('Error al enviar:', error)
+      console.error('Error submitting proposal:', error)
     }
   }
 
@@ -130,12 +134,12 @@ export default function NewProposal() {
         className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group"
       >
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-        <span className="text-sm font-semibold">Volver a propuestas</span>
+        <span className="text-sm font-semibold">{t('newProposal.backToProposals')}</span>
       </button>
       <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Crear Nueva Propuesta</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('newProposal.title')}</h1>
         <p className="text-muted-foreground mt-2">
-          Define tu idea de TFG para que los {targetRolePluralLabel} interesados puedan encontrarte.
+          {t('newProposal.subtitle', { rolePlural: targetRolePluralLabel })}
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -143,38 +147,38 @@ export default function NewProposal() {
           <div className="bg-white border border-border rounded-3xl p-8 shadow-sm space-y-6">
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
-                Título del Proyecto
+                {t('newProposal.fields.projectTitle')}
               </label>
               <input
                 type="text" 
-                placeholder="Ej: Desarrollo de una herramienta de análisis para..."
+                placeholder={t('newProposal.fields.projectTitlePlaceholder')}
                 className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-transparent focus:border-primary/50 focus:bg-white focus:ring-4 focus:ring-primary/5 outline-none transition-all text-lg font-semibold"
                 value={proposalInfo.title} 
                 onChange={(e) => updateTitle(e.target.value)} 
                 required
               />
               <div className="text-xs font-medium text-red-600 mt-1">
-                {errors.titleError === 'blank' && 'El título es obligatorio.'}
+                {errors.titleError === 'blank' && t('newProposal.errors.titleRequired')}
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
-                Descripción y Objetivos
+                {t('newProposal.fields.descriptionAndObjectives')}
               </label>
               <textarea
                 rows={6}
-                placeholder="Explica brevemente de qué trata el proyecto, las tecnologías a usar y qué esperas del alumno..."
+                placeholder={t('newProposal.fields.descriptionPlaceholder')}
                 className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-transparent focus:border-primary/50 focus:bg-white focus:ring-4 focus:ring-primary/5 outline-none transition-all text-sm leading-relaxed"
                 value={proposalInfo.description}
                 onChange={(e) => updateDescription(e.target.value)}
               ></textarea>
               <div className="text-xs font-medium text-red-600 mt-1">
-                {errors.descriptionError === 'blank' && 'La descripción es obligatoria.'}
+                {errors.descriptionError === 'blank' && t('newProposal.errors.descriptionRequired')}
               </div>
             </div>
             <div className="space-y-3">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-1">
-                <Hash size={12} /> Tecnologías e Intereses vinculados
+                <Hash size={12} /> {t('newProposal.fields.relatedTags')}
               </label>
               {(proposalInfo.tags ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -193,7 +197,7 @@ export default function NewProposal() {
                 <input
                   ref={tagInputRef}
                   type="text"
-                  placeholder="Buscar y añadir tecnologías..."
+                  placeholder={t('newProposal.fields.searchTagsPlaceholder')}
                   className={`w-full pl-10 pr-9 py-3 rounded-xl bg-slate-50 border transition-all text-sm outline-none ${
                     tagInputFocused
                       ? 'border-primary/50 bg-white ring-4 ring-primary/5'
@@ -225,7 +229,7 @@ export default function NewProposal() {
                     >
                       <div className="px-4 py-2 border-b border-border/50 flex items-center justify-between">
                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                          {searching ? 'Resultados' : 'Disponibles'}
+                          {searching ? t('newProposal.suggestions.results') : t('newProposal.suggestions.available')}
                         </span>
                         {filtered.length > 0 && (
                           <span className="text-[10px] font-semibold text-muted-foreground bg-slate-100 rounded-full px-2 py-0.5">
@@ -253,8 +257,8 @@ export default function NewProposal() {
                         <div className="px-4 py-4 text-center">
                           <p className="text-sm text-muted-foreground">
                             {searching
-                              ? `No hay tecnologías que coincidan con «${debouncedSearch}».`
-                              : 'Ya has añadido todas las tecnologías disponibles.'}
+                              ? t('newProposal.suggestions.noMatch', { search: debouncedSearch })
+                              : t('newProposal.suggestions.allAdded')}
                           </p>
                         </div>
                       )}
@@ -268,7 +272,7 @@ export default function NewProposal() {
             <button className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all"
               onClick={submitProposal}
             >
-              Publicar Propuesta
+              {t('newProposal.publish')}
               <Send size={18} />
             </button>
           </div>
@@ -277,22 +281,22 @@ export default function NewProposal() {
           <div className="bg-slate-50 border border-border rounded-3xl p-6 space-y-6">
             <h3 className="font-bold text-sm flex items-center gap-2 text-foreground">
               <Settings size={18} className="text-primary" />
-              Configuración
+              {t('newProposal.settings.title')}
             </h3>
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                <BookOpen size={12} /> Tipo de Trabajo
+                <BookOpen size={12} /> {t('newProposal.settings.projectType')}
               </label>
               <select className="w-full p-3 rounded-xl border border-border bg-white text-sm font-medium outline-none focus:border-primary"
                 value={proposalInfo.type}
                 onChange={(e) => updateType(Number(e.target.value))}
               >
-                <option value="0">-- Seleccionar tipo --</option>
-                <option value="1">Desarrollo de Software</option>
-                <option value="2">Investigación</option>
+                <option value="0">{t('newProposal.settings.selectType')}</option>
+                <option value="1">{t('newProposal.settings.softwareDevelopment')}</option>
+                <option value="2">{t('newProposal.settings.research')}</option>
               </select>
               <div className="text-xs font-medium text-red-600 mt-1">
-                {errors.typeError === 'blank' && 'El tipo de trabajo es obligatorio.'}
+                {errors.typeError === 'blank' && t('newProposal.errors.typeRequired')}
               </div>
             </div>
           </div>

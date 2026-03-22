@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Loader2 } from 'lucide-react'
 import useAdminAuth from '../hooks/useAdminAuth'
+import { useTranslation } from 'react-i18next'
 
 export default function AdminLogin() {
+    const { t } = useTranslation()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -19,7 +21,7 @@ export default function AdminLogin() {
             await login(email, password)
             navigate('/admin')
         } catch {
-            setError('Credenciales incorrectas')
+            setError(t('admin.login.invalidCredentials'))
         } finally {
             setIsLoading(false)
         }
@@ -33,16 +35,16 @@ export default function AdminLogin() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <Shield className="h-6 w-6" />
                     </div>
-                    <h2 className="text-2xl font-bold text-foreground">Administración</h2>
+                    <h2 className="text-2xl font-bold text-foreground">{t('admin.login.title')}</h2>
                     <p className="text-sm text-muted-foreground text-center">
-                        Acceso restringido al panel de administración
+                        {t('admin.login.subtitle')}
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-foreground ml-1">
-                            Correo electrónico
+                            {t('admin.login.emailLabel')}
                         </label>
                         <input
                             type="email"
@@ -55,7 +57,7 @@ export default function AdminLogin() {
 
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-foreground ml-1">
-                            Contraseña
+                            {t('admin.login.passwordLabel')}
                         </label>
                         <input
                             type="password"
@@ -80,7 +82,7 @@ export default function AdminLogin() {
                         {isLoading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
-                            'Iniciar Sesión'
+                            t('admin.login.submit')
                         )}
                     </button>
                 </form>

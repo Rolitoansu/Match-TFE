@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 import useAuth from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 
 interface Proposal {
   id: number
@@ -35,12 +36,6 @@ interface Proposal {
 
 type StatusTab = 'all' | 'open' | 'in_progress' | 'completed'
 
-const STATUS_LABEL: Record<Proposal['status'], string> = {
-  proposed: 'Abierta',
-  in_progress: 'En curso',
-  completed: 'Finalizada',
-}
-
 const STATUS_STYLE: Record<Proposal['status'], string> = {
   proposed: 'bg-green-50 text-green-600',
   in_progress: 'bg-blue-50 text-blue-600',
@@ -48,13 +43,16 @@ const STATUS_STYLE: Record<Proposal['status'], string> = {
 }
 
 export default function Proposals() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [proposals, setProposals] = useState<Proposal[]>([])
   const [search, setSearch] = useState('')
   const [selectedTab, setSelectedTab] = useState<StatusTab>('all')
   const [onlyInterested, setOnlyInterested] = useState(false)
-  const oppositeRolePluralLabel = user?.role === 'student' ? 'profesores' : 'alumnos'
+  const oppositeRolePluralLabel = user?.role === 'student'
+    ? t('proposals.roles.professorsPlural')
+    : t('proposals.roles.studentsPlural')
   
   useEffect(() => {
     async function fetchProposals() {
@@ -62,7 +60,7 @@ export default function Proposals() {
         const { data: { proposals } } = await api.get('/project/proposals')
         setProposals(proposals)
       } catch (error) {
-        console.error('Error al obtener propuestas:', error)
+        console.error('Error fetching proposals:', error)
       }
     }
 
@@ -90,18 +88,24 @@ export default function Proposals() {
   }, [proposals, search, selectedTab, onlyInterested])
 
   const tabs: Array<{ id: StatusTab; label: string }> = [
-    { id: 'all', label: 'Todas' },
-    { id: 'open', label: 'Abiertas' },
-    { id: 'in_progress', label: 'En curso' },
-    { id: 'completed', label: 'Finalizadas' },
+    { id: 'all', label: t('proposals.tabs.all') },
+    { id: 'open', label: t('proposals.tabs.open') },
+    { id: 'in_progress', label: t('proposals.tabs.inProgress') },
+    { id: 'completed', label: t('proposals.tabs.completed') },
   ]
+
+  const statusLabel: Record<Proposal['status'], string> = {
+    proposed: t('proposals.status.open'),
+    in_progress: t('proposals.status.inProgress'),
+    completed: t('proposals.status.completed'),
+  }
 
   return (
     <div className="max-w-300 mx-auto p-6 lg:p-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Gestión de Propuestas</h1>
-          <p className="text-muted-foreground mt-1">Consulta los TFGs publicados por {oppositeRolePluralLabel} y revisa su estado.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('proposals.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('proposals.subtitle', { rolePlural: oppositeRolePluralLabel })}</p>
         </div>
         
         <button 
@@ -109,7 +113,7 @@ export default function Proposals() {
           className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
         >
           <Plus size={20} />
-          Nueva Propuesta
+          {t('proposals.newProposal')}
         </button>
       </div>
 
@@ -118,7 +122,7 @@ export default function Proposals() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <input 
             type="text" 
-            placeholder="Buscar por título o tecnología..."
+            placeholder={t('proposals.searchPlaceholder')}
             className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-border focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -134,7 +138,7 @@ export default function Proposals() {
             checked={onlyInterested}
             onChange={(event) => setOnlyInterested(event.target.checked)}
           />
-          Mostrar solo propuestas con interesados
+          {t('proposals.onlyInterested')}
         </label>
       </div>
 
@@ -173,7 +177,7 @@ export default function Proposals() {
                       {proposal.title}
                     </h3>
                     {proposal.likedByCurrentUser && (
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600" title="Interes registrado">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600" title={t('proposals.interestRegistered')}>
                         <Heart size={13} fill="currentColor" />
                       </span>
                     )}
@@ -183,7 +187,7 @@ export default function Proposals() {
                       <Clock size={14} /> {new Date(proposal.publicationDate).toLocaleString()}
                     </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <CheckCircle2 size={14} /> {proposal.status === 'in_progress' ? 'Asignado' : proposal.interestCount > 0 ? 'Hay interesados' : 'Sin interesados'}
+                      <CheckCircle2 size={14} /> {proposal.status === 'in_progress' ? t('proposals.assignment.assigned') : proposal.interestCount > 0 ? t('proposals.assignment.hasInterested') : t('proposals.assignment.noInterested')}
                     </span>
                   </div>
 
@@ -199,12 +203,12 @@ export default function Proposals() {
                           }`}
                         >
                           {person.name} {person.surname}
-                          {person.matchStatus === 'accepted' ? ' (match)' : ' (like)'}
+                          {person.matchStatus === 'accepted' ? ` (${t('proposals.badges.match')})` : ` (${t('proposals.badges.like')})`}
                         </span>
                       ))}
                       {proposal.interestedUsers.length > 3 && (
                         <span className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                          +{proposal.interestedUsers.length - 3} más
+                          +{proposal.interestedUsers.length - 3} {t('proposals.more')}
                         </span>
                       )}
                     </div>
@@ -217,22 +221,22 @@ export default function Proposals() {
                   <div className="text-center">
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5 justify-center">
                       <Users size={16} className="text-primary" />
-                      {proposal.status === 'in_progress' ? 'Asignado' : proposal.interestCount}
+                      {proposal.status === 'in_progress' ? t('proposals.assignment.assigned') : proposal.interestCount}
                     </p>
                     <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">
-                      {proposal.status === 'in_progress' ? 'Estado' : 'Interesados'}
+                      {proposal.status === 'in_progress' ? t('proposals.fields.status') : t('proposals.fields.interested')}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-foreground">{STATUS_LABEL[proposal.status]}</p>
-                    <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Estado</p>
+                    <p className="text-sm font-bold text-foreground">{statusLabel[proposal.status]}</p>
+                    <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">{t('proposals.fields.status')}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-xl text-xs font-bold hover:bg-primary hover:text-white transition-all"
                     onClick={() => navigate(`/proposals/details/${proposal.id}`)}>
-                    Ver Detalles
+                    {t('proposals.viewDetails')}
                     <ArrowUpRight size={14} />
                   </button>
                   <button className="p-2 text-muted-foreground hover:bg-slate-100 rounded-lg transition-colors">
@@ -247,7 +251,7 @@ export default function Proposals() {
 
         {filteredProposals.length === 0 && (
           <div className="bg-white border border-border rounded-3xl p-8 text-center text-sm text-muted-foreground">
-            No hay propuestas que coincidan con los filtros seleccionados.
+            {t('proposals.emptyFiltered')}
           </div>
         )}
       </div>

@@ -1,7 +1,10 @@
 import { Button } from '@mui/material'
 import { GraduationCap, Users, Sparkles } from "lucide-react"
+import { useTranslation } from 'react-i18next'
 
 export default function LandingPage() {
+  const { t } = useTranslation()
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
       <div className="flex w-full max-w-sm flex-col items-center gap-8">
@@ -13,7 +16,7 @@ export default function LandingPage() {
             Match-TFE
           </h1>
           <p className="text-center text-sm text-primary-foreground/80">
-            Encuentra tu Trabajo de Fin de Grado ideal
+            {t('landing.subtitle')}
           </p>
         </div>
 
@@ -21,13 +24,13 @@ export default function LandingPage() {
           <div className="flex items-center gap-3 rounded-xl bg-primary-foreground/10 px-4 py-3">
             <Sparkles className="h-5 w-5 shrink-0 text-primary-foreground" />
             <p className="text-sm text-primary-foreground">
-              Matching basado en intereses comunes
+              {t('landing.featureMatch')}
             </p>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-primary-foreground/10 px-4 py-3">
             <Users className="h-5 w-5 shrink-0 text-primary-foreground" />
             <p className="text-sm text-primary-foreground">
-              Conecta profesores y estudiantes
+              {t('landing.featureConnect')}
             </p>
           </div>
 
@@ -38,10 +41,10 @@ export default function LandingPage() {
             className="w-full rounded-full bg-card text-primary shadow-lg hover:bg-card/90 font-semibold text-base h-12"
             href='/login'
           >
-            Iniciar sesion con Microsoft 365
+            {t('landing.loginWithMicrosoft')}
           </Button>
           <p className="text-center text-xs text-primary-foreground/60">
-            Universidad de Oviedo - Escuela de Ingenieria Informatica
+            {t('landing.university')}
           </p>
         </div>
       </div>

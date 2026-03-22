@@ -1,8 +1,10 @@
 import { Shield, LogOut } from 'lucide-react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import useAdminAuth from '../hooks/useAdminAuth'
+import { useTranslation } from 'react-i18next'
 
 export default function AdminLayout() {
+    const { t } = useTranslation()
     const { admin, logout } = useAdminAuth()
     const navigate = useNavigate()
 
@@ -30,7 +32,7 @@ export default function AdminLayout() {
                         <span className="mr-2 text-sm text-muted-foreground">{admin?.email}</span>
                         <button
                             type="button"
-                            title="Cerrar sesión"
+                            title={t('admin.layout.signOut')}
                             onClick={handleLogout}
                             className="flex h-11 w-11 items-center justify-center rounded-full border border-black/5 bg-slate-100/85 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500"
                         >

@@ -5,16 +5,19 @@ import {
   Flame,
   LogOut,
   User,
+  Languages,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { clearNotifications, deleteNotification, fetchNotifications, markNotificationAsRead, type NotificationItem } from '../api/notifications'
 import useAuth from '../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 
 export const Header = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { logout, user } = useAuth()
+  const { t, i18n } = useTranslation()
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -25,21 +28,23 @@ export const Header = () => {
 
   const items = [
     {
-      name: 'Explorar',
+      name: t('header.nav.explore'),
       route: '/home',
       icon: Flame,
     },
     {
-      name: 'Propuestas',
+      name: t('header.nav.proposals'),
       route: '/proposals',
       icon: FileText,
     },
     {
-      name: 'Perfil',
+      name: t('header.nav.profile'),
       route: '/profile',
       icon: User,
     },
   ]
+
+  const currentLanguage = i18n.resolvedLanguage?.startsWith('es') ? 'es' : 'en'
 
   useEffect(() => {
     if (!user) {
@@ -212,11 +217,26 @@ export const Header = () => {
         </nav>
 
         <div className="relative flex items-center justify-end gap-2" ref={notificationPanelRef}>
+          <label className="relative">
+            <span className="sr-only">Language</span>
+            <Languages className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <select
+              value={currentLanguage}
+              onChange={(event) => {
+                void i18n.changeLanguage(event.target.value)
+              }}
+              className="h-11 rounded-full border border-black/5 bg-slate-100/85 pl-9 pr-8 text-xs font-bold uppercase tracking-[0.08em] text-slate-600 transition-colors hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+              aria-label="Language"
+            >
+              <option value="es">Espanol</option>
+              <option value="en">English</option>
+            </select>
+          </label>
           <button
             type="button"
             onClick={() => void toggleNotifications()}
             className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/5 bg-slate-100/85 text-slate-500 transition-colors hover:bg-white hover:text-foreground"
-            title="Notificaciones"
+            title={t('header.notifications.title')}
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
@@ -228,24 +248,24 @@ export const Header = () => {
           {isNotificationsOpen && (
             <div className="absolute right-0 top-14 z-40 w-80 rounded-2xl border border-black/10 bg-white p-3 shadow-xl shadow-slate-300/60">
               <div className="mb-2 flex items-center justify-between px-1">
-                <p className="text-sm font-semibold text-foreground">Notificaciones</p>
+                <p className="text-sm font-semibold text-foreground">{t('header.notifications.title')}</p>
                 <button
                   type="button"
                   onClick={() => void handleClearNotifications()}
                   disabled={clearingNotifications || notifications.length === 0}
                   className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-foreground disabled:opacity-50"
                 >
-                  {clearingNotifications ? 'Limpiando...' : 'Limpiar'}
+                  {clearingNotifications ? t('header.notifications.clearing') : t('header.notifications.clear')}
                 </button>
               </div>
 
               <div className="max-h-80 space-y-1 overflow-y-auto">
                 {loadingNotifications && (
-                  <p className="px-2 py-3 text-sm text-slate-500">Cargando...</p>
+                  <p className="px-2 py-3 text-sm text-slate-500">{t('common.loading')}</p>
                 )}
 
                 {!loadingNotifications && notifications.length === 0 && (
-                  <p className="px-2 py-3 text-sm text-slate-500">No tienes notificaciones por ahora.</p>
+                  <p className="px-2 py-3 text-sm text-slate-500">{t('header.notifications.empty')}</p>
                 )}
 
                 {!loadingNotifications && notifications.map((notification) => (
@@ -265,7 +285,7 @@ export const Header = () => {
                     >
                       <p className="text-sm leading-snug">{notification.content}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        {new Date(notification.timestamp).toLocaleString('es-ES', {
+                        {new Date(notification.timestamp).toLocaleString(currentLanguage === 'es' ? 'es-ES' : 'en-US', {
                           dateStyle: 'short',
                           timeStyle: 'short',
                         })}
@@ -273,7 +293,7 @@ export const Header = () => {
                     </button>
                     <button
                       type="button"
-                      title="Eliminar notificación"
+                      title={t('header.notifications.delete')}
                       onClick={() => void handleDeleteNotification(notification)}
                       disabled={deletingNotificationId === notification.id}
                       className="mt-0.5 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white/80 hover:text-slate-700 disabled:opacity-50"
@@ -287,7 +307,7 @@ export const Header = () => {
           )}
           <button
             type="button"
-            title="Cerrar sesión"
+            title={t('header.logout')}
             onClick={() => logout().then(() => navigate('/login'))}
             className="flex h-11 w-11 items-center justify-center rounded-full border border-black/5 bg-slate-100/85 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-500"
           >

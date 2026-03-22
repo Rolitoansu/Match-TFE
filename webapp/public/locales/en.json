@@ -1,2 +1,433 @@
 {
+	"common": {
+		"loading": "Loading..."
+	},
+	"header": {
+		"nav": {
+			"explore": "Explore",
+			"proposals": "Proposals",
+			"profile": "Profile"
+		},
+		"language": {
+			"label": "Select language",
+			"es": "Spanish",
+			"en": "English"
+		},
+		"notifications": {
+			"title": "Notifications",
+			"clear": "Clear",
+			"clearing": "Clearing...",
+			"empty": "You have no notifications yet.",
+			"delete": "Delete notification"
+		},
+		"logout": "Sign out"
+	},
+	"landing": {
+		"subtitle": "Find your ideal Final Degree Project",
+		"featureMatch": "Matching based on shared interests",
+		"featureConnect": "Connect professors and students",
+		"loginWithMicrosoft": "Sign in with Microsoft 365",
+		"university": "University of Oviedo - School of Computer Engineering"
+	},
+	"login": {
+		"title": "Welcome back",
+		"subtitle": "Enter your credentials to access Match-TFE",
+		"emailLabel": "Email",
+		"passwordLabel": "Password",
+		"submit": "Sign in",
+		"errorInvalidCredentials": "Invalid credentials or server error",
+		"noAccount": "Don't have an account?",
+		"registerLink": "Sign up"
+	},
+	"register": {
+		"title": "Create account",
+		"subtitle": "Join Match-TFE to start your project",
+		"nameLabel": "First name",
+		"surnameLabel": "Last name",
+		"emailLabel": "Email",
+		"emailPlaceholder": "user@uniovi.es",
+		"passwordLabel": "Password",
+		"repeatPasswordLabel": "Repeat password",
+		"submit": "Create account",
+		"errorPasswordsMismatch": "Passwords do not match",
+		"errorCreateAccount": "There was an error creating your account. Please try again.",
+		"hasAccount": "Already have an account?",
+		"loginLink": "Sign in"
+	},
+	"proposalDetails": {
+		"back": "Back",
+		"publishedBy": "Published by",
+		"authorUnavailable": "Author unavailable",
+		"contactByEmail": "Contact by email",
+		"status": {
+			"proposed": "Open",
+			"in_progress": "In progress",
+			"completed": "Completed"
+		},
+		"sections": {
+			"projectDescription": "Project Description"
+		},
+		"renew": {
+			"button": "Renew Thesis (1 year)",
+			"renewing": "Renewing..."
+		},
+		"cancel": {
+			"button": "Cancel thesis assignment",
+			"cancelling": "Cancelling...",
+			"confirm": "Are you sure you want to cancel this thesis assignment? This will set the thesis back to open status."
+		},
+		"sidebar": {
+			"status": "Status",
+			"likesReceived": "Likes received",
+			"assigned": "Assigned",
+			"noLikesYet": "No one has liked this thesis yet."
+		},
+		"interested": {
+			"matchConfirmed": "Match confirmed",
+			"matchConfirmedWithEmail": "Match confirmed · {{email}}",
+			"likePending": "Like received · pending match",
+			"viewProfile": "View profile",
+			"sendEmail": "Send email",
+			"accept": "Accept match",
+			"accepting": "Accepting..."
+		},
+		"feedback": {
+			"renewExpiresOn": "Expires on {{date}}",
+			"renewSuccess": "Expiration renewed successfully",
+			"renewError": "Could not renew. Please try again.",
+			"acceptMatchSuccess": "Match accepted successfully",
+			"acceptMatchError": "Could not accept match. Please try again.",
+			"cancelSuccess": "Thesis assignment cancelled successfully",
+			"cancelError": "Could not cancel thesis assignment. Please try again."
+		}
+	},
+	"admin": {
+		"layout": {
+			"signOut": "Sign out"
+		},
+		"login": {
+			"title": "Administration",
+			"subtitle": "Restricted access to the administration panel",
+			"emailLabel": "Email",
+			"passwordLabel": "Password",
+			"submit": "Sign in",
+			"invalidCredentials": "Invalid credentials"
+		},
+		"page": {
+			"title": "Administration Panel",
+			"tabs": {
+				"tags": "Tags",
+				"students": "Students",
+				"professors": "Professors",
+				"users": "Manage users"
+			}
+		},
+		"students": {
+			"title": "Import Students",
+			"upload": {
+				"csvFormatLabel": "CSV format:",
+				"csvFormatValue": "email, first name, last name",
+				"dragOrClick": "Drag or click to select",
+				"maxSize": "Max 2 MB",
+				"toImport": "{{count}} students to import",
+				"importing": "Importing...",
+				"importButton": "Import Students",
+				"csvNeedsRows": "CSV must include header and at least one row",
+				"missingColumns": "Row {{row}}: missing columns",
+				"invalidEmail": "Row {{row}}: invalid email",
+				"noValidRows": "No valid rows found",
+				"invalidRows": "{{count}} invalid rows found",
+				"completed": "Import completed",
+				"error": "Import error",
+				"summary": "{{created}} created · {{skipped}} skipped"
+			}
+		},
+		"professors": {
+			"title": "Import Professors",
+			"upload": {
+				"csvFormatLabel": "CSV format:",
+				"csvFormatValue": "email, first name, last name",
+				"dragOrClick": "Drag or click to select",
+				"maxSize": "Max 2 MB",
+				"toImport": "{{count}} professors to import",
+				"importing": "Importing...",
+				"importButton": "Import Professors",
+				"csvNeedsRows": "CSV must include header and at least one row",
+				"missingColumns": "Row {{row}}: missing columns",
+				"invalidEmail": "Row {{row}}: invalid email",
+				"noValidRows": "No valid rows found",
+				"invalidRows": "{{count}} invalid rows found",
+				"completed": "Import completed",
+				"error": "Import error",
+				"summary": "{{created}} created · {{skipped}} skipped"
+			}
+		},
+		"tags": {
+			"alerts": {
+				"exists": "This tag already exists",
+				"createError": "Error creating tag",
+				"updateError": "Error updating tag",
+				"deleteError": "Error deleting tag",
+				"deleteManyError": "Error deleting tags"
+			},
+			"confirm": {
+				"deleteOne": "Delete tag \"{{name}}\"?",
+				"deleteMany": "Delete {{count}} tags?"
+			},
+			"create": {
+				"title": "Create Tag",
+				"placeholder": "Tag name",
+				"submit": "Create"
+			},
+			"list": {
+				"title": "Tags",
+				"searchPlaceholder": "Search...",
+				"selectedCount": "{{count}} tags selected",
+				"empty": "No tags found"
+			},
+			"actions": {
+				"unselect": "Unselect",
+				"deleteSelected": "Delete selected"
+			},
+			"upload": {
+				"title": "Import Tags (CSV)",
+				"dragOrClick": "Drag or click to select",
+				"format": "Format: name",
+				"toImport": "{{count}} tags to import",
+				"importing": "Importing...",
+				"importButton": "Import Tags",
+				"csvNeedsRows": "CSV must include header and at least one row",
+				"invalidName": "Row {{row}}: invalid name",
+				"noValidRows": "No valid rows found",
+				"invalidRows": "{{count}} invalid rows found",
+				"completed": "Import completed",
+				"error": "Import error"
+			}
+		},
+		"users": {
+			"title": "Manage Users",
+			"searchPlaceholder": "Search by email, name...",
+			"selectedCount": "{{count}} users selected",
+			"empty": "No users found",
+			"filters": {
+				"all": "All",
+				"students": "Students",
+				"professors": "Professors"
+			},
+			"table": {
+				"name": "Name",
+				"type": "Type",
+				"actions": "Actions"
+			},
+			"roles": {
+				"student": "Student",
+				"professor": "Professor"
+			},
+			"actions": {
+				"edit": "Edit",
+				"delete": "Delete",
+				"deleteSelected": "Delete selected",
+				"unselect": "Unselect",
+				"saveChanges": "Save changes",
+				"cancel": "Cancel"
+			},
+			"alerts": {
+				"updateError": "Error updating user",
+				"deleteError": "Error deleting user",
+				"deleteManyError": "Error deleting users"
+			},
+			"confirm": {
+				"deleteOne": "Delete user {{email}}?",
+				"deleteMany": "Delete {{count}} users?"
+			},
+			"modal": {
+				"title": "Edit User"
+			},
+			"fields": {
+				"name": "Name",
+				"surname": "Surname",
+				"biography": "Biography",
+				"biographyPlaceholder": "Add a biography (optional)",
+				"userType": "User type:",
+				"registered": "Registered:"
+			}
+		}
+	},
+	"chat": {
+		"title": "Messages",
+		"online": "Online",
+		"discussingTopic": "Discussing: Sentiment analysis...",
+		"messagePlaceholder": "Write a message..."
+	},
+	"explore": {
+		"loading": "Loading proposals for you...",
+		"errors": {
+			"load": "Could not load proposals to explore right now.",
+			"like": "Could not save your interest. Please try again.",
+			"pass": "Could not save the pass action. Please try again."
+		},
+		"roles": {
+			"professor": "Professor",
+			"student": "Student",
+			"professorsPlural": "professors",
+			"studentsPlural": "students",
+			"supervisor": "Supervisor"
+		},
+		"common": {
+			"noDescription": "No additional description.",
+			"noTags": "No tags"
+		},
+		"matched": {
+			"title": "Your ongoing project",
+			"summary": "Summary",
+			"viewDetails": "View project details",
+			"viewProfile": "View {{role}} profile"
+		},
+		"empty": {
+			"title": "No more proposals for now",
+			"subtitle": "Come back later to discover new projects from {{rolePlural}}.",
+			"hint": "To get more results, update your interests in your profile.",
+			"goProfile": "Go to my profile"
+		},
+		"card": {
+			"publishedProject": "Published Project",
+			"tags": "Tags"
+		},
+		"actions": {
+			"pass": "Pass",
+			"like": "Like",
+			"interestSent": "Interest sent",
+			"matched": "Matched"
+		},
+		"status": {
+			"pending": "Interest registered. Waiting for the other party response.",
+			"accepted": "It's a match. You can now contact by email.",
+			"rejected": "This proposal is not currently available for match."
+		}
+	},
+	"newProposal": {
+		"backToProposals": "Back to proposals",
+		"title": "Create New Proposal",
+		"subtitle": "Describe your project idea so interested {{rolePlural}} can find you.",
+		"publish": "Publish Proposal",
+		"roles": {
+			"professorsPlural": "professors",
+			"studentsPlural": "students"
+		},
+		"fields": {
+			"projectTitle": "Project Title",
+			"projectTitlePlaceholder": "Ex: Development of an analysis tool for...",
+			"descriptionAndObjectives": "Description and Objectives",
+			"descriptionPlaceholder": "Briefly explain what the project is about, technologies to use, and expectations for the student...",
+			"relatedTags": "Related Technologies and Interests",
+			"searchTagsPlaceholder": "Search and add technologies..."
+		},
+		"errors": {
+			"titleRequired": "Title is required.",
+			"descriptionRequired": "Description is required.",
+			"typeRequired": "Project type is required."
+		},
+		"suggestions": {
+			"results": "Results",
+			"available": "Available",
+			"noMatch": "No technologies match \"{{search}}\".",
+			"allAdded": "You have already added all available technologies."
+		},
+		"settings": {
+			"title": "Settings",
+			"projectType": "Project Type",
+			"selectType": "-- Select type --",
+			"softwareDevelopment": "Software Development",
+			"research": "Research"
+		}
+	},
+	"ownProfile": {
+		"title": "My Dashboard",
+		"subtitle": "Manage your profile and your project proposals",
+		"newProposal": "New Proposal",
+		"roles": {
+			"professor": "Professor",
+			"student": "Student"
+		},
+		"common": {
+			"cancel": "Cancel",
+			"save": "Save",
+			"saving": "Saving..."
+		},
+		"feedback": {
+			"aboutUpdated": "Your profile has been updated successfully.",
+			"aboutUpdateError": "Could not update your biography. Please try again.",
+			"interestsUpdated": "Interests updated successfully.",
+			"interestsUpdateError": "Could not update interests. Please try again."
+		},
+		"about": {
+			"title": "About me",
+			"placeholder": "Tell us briefly about yourself, your interests, and project goals.",
+			"empty": "You have not written information about yourself yet."
+		},
+		"interests": {
+			"title": "Interests",
+			"helper": "Add tags to personalize which proposals appear in Explore.",
+			"searchPlaceholder": "Search and add interests...",
+			"results": "Results",
+			"available": "Available",
+			"noMatch": "No tags match \"{{search}}\".",
+			"allAdded": "You have already added all available tags.",
+			"save": "Save interests",
+			"empty": "You have not defined interests yet."
+		},
+		"published": {
+			"title": "My Published Projects",
+			"empty": "You have not published any proposal yet",
+			"createFirst": "Create my first proposal"
+		}
+	},
+	"proposals": {
+		"title": "Proposal Management",
+		"subtitle": "Review projects published by {{rolePlural}} and check their status.",
+		"newProposal": "New Proposal",
+		"searchPlaceholder": "Search by title or technology...",
+		"onlyInterested": "Show only proposals with interested users",
+		"interestRegistered": "Interest registered",
+		"viewDetails": "View Details",
+		"emptyFiltered": "No proposals match the selected filters.",
+		"more": "more",
+		"tabs": {
+			"all": "All",
+			"open": "Open",
+			"inProgress": "In progress",
+			"completed": "Completed"
+		},
+		"status": {
+			"open": "Open",
+			"inProgress": "In progress",
+			"completed": "Completed"
+		},
+		"roles": {
+			"professorsPlural": "professors",
+			"studentsPlural": "students"
+		},
+		"assignment": {
+			"assigned": "Assigned",
+			"hasInterested": "Interested users",
+			"noInterested": "No interested users"
+		},
+		"fields": {
+			"status": "Status",
+			"interested": "Interested"
+		},
+		"badges": {
+			"match": "match",
+			"like": "like"
+		}
+	},
+	"publicProfile": {
+		"back": "Back",
+		"sendEmail": "Send email",
+		"memberSince": "Member since",
+		"about": "About me",
+		"interests": "Interests",
+		"proposalsTitle": "Project Proposals",
+		"noProposals": "This user has no published proposals."
+	}
 }

@@ -10,6 +10,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import api from '../api/axios'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 type MatchStatus = 'pending' | 'accepted' | 'rejected' | null
 
@@ -46,6 +47,7 @@ interface ExploreResponse {
 }
 
 export default function Explore() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [proposals, setProposals] = useState<ExploreProposal[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -66,7 +68,7 @@ export default function Explore() {
         setCurrentIndex(0)
       } catch (fetchError) {
         console.error(fetchError)
-        setError('No se pudieron cargar propuestas para explorar ahora mismo.')
+        setError(t('explore.errors.load'))
       } finally {
         setLoading(false)
       }
@@ -77,21 +79,27 @@ export default function Explore() {
 
   const currentProposal = useMemo(() => proposals[currentIndex] ?? null, [proposals, currentIndex])
 
-  const profileTypeLabel = viewerRole === 'student' ? 'Profesor' : 'Estudiante'
-  const targetRolePluralLabel = viewerRole === 'student' ? 'profesores' : 'estudiantes'
-  const matchedCounterpartLabel = viewerRole === 'student' ? 'Tutor/a' : 'Estudiante'
+  const profileTypeLabel = viewerRole === 'student'
+    ? t('explore.roles.professor')
+    : t('explore.roles.student')
+  const targetRolePluralLabel = viewerRole === 'student'
+    ? t('explore.roles.professorsPlural')
+    : t('explore.roles.studentsPlural')
+  const matchedCounterpartLabel = viewerRole === 'student'
+    ? t('explore.roles.supervisor')
+    : t('explore.roles.student')
 
   if (matchedProposal) {
     return (
       <div className="flex items-center justify-center px-4 py-6">
         <div className="w-full max-w-xl overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-gray-200/50 p-8">
-          <h2 className="text-xl font-black text-foreground">Tu TFE en curso</h2>
+          <h2 className="text-xl font-black text-foreground">{t('explore.matched.title')}</h2>
 
           <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
-            <p className="text-[11px] font-black uppercase tracking-wider text-emerald-700">Resumen</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-emerald-700">{t('explore.matched.summary')}</p>
             <h3 className="text-lg font-bold text-foreground">{matchedProposal.title}</h3>
             <p className="text-sm text-foreground/80">
-              {matchedProposal.description || 'Sin descripción adicional.'}
+              {matchedProposal.description || t('explore.common.noDescription')}
             </p>
             <p className="text-xs text-muted-foreground">
               {matchedCounterpartLabel}: {matchedProposal.counterpartName} {matchedProposal.counterpartSurname}
@@ -102,7 +110,7 @@ export default function Explore() {
                   {tag}
                 </span>
               )) : (
-                <span className="text-xs text-muted-foreground">Sin etiquetas</span>
+                <span className="text-xs text-muted-foreground">{t('explore.common.noTags')}</span>
               )}
             </div>
           </div>
@@ -114,7 +122,7 @@ export default function Explore() {
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-xs font-bold text-foreground hover:bg-secondary transition-colors"
             >
               <FileText size={14} />
-              Ver detalles del TFE
+              {t('explore.matched.viewDetails')}
             </button>
             <button
               type="button"
@@ -122,7 +130,7 @@ export default function Explore() {
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:opacity-90 transition-opacity"
             >
               <User size={14} />
-              Ver perfil de {matchedCounterpartLabel.toLowerCase()}
+              {t('explore.matched.viewProfile', { role: matchedCounterpartLabel.toLowerCase() })}
             </button>
           </div>
         </div>
@@ -172,7 +180,7 @@ export default function Explore() {
       }
 
       console.error(likeError)
-      setError('No se pudo registrar tu interés. Inténtalo de nuevo.')
+      setError(t('explore.errors.like'))
     } finally {
       setLoadingLike(false)
     }
@@ -190,7 +198,7 @@ export default function Explore() {
       })
       .catch((skipError) => {
         console.error(skipError)
-        setError('No se pudo registrar el descarte. Inténtalo de nuevo.')
+        setError(t('explore.errors.pass'))
       })
       .finally(() => {
         setLoadingLike(false)
@@ -201,7 +209,7 @@ export default function Explore() {
     return (
       <div className="flex items-center justify-center px-4 py-6">
         <div className="w-full max-w-md rounded-4xl border border-border bg-card p-10 text-center shadow-2xl shadow-gray-200/50">
-          <p className="text-sm text-muted-foreground">Cargando propuestas para ti...</p>
+          <p className="text-sm text-muted-foreground">{t('explore.loading')}</p>
         </div>
       </div>
     )
@@ -222,17 +230,17 @@ export default function Explore() {
       <div className="flex items-center justify-center px-4 py-6">
         <div className="w-full max-w-md rounded-4xl border border-border bg-card p-10 text-center shadow-2xl shadow-gray-200/50">
           <Sparkles className="mx-auto mb-3 text-primary" size={24} />
-          <h2 className="text-lg font-bold text-foreground">No hay más propuestas por ahora</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Vuelve más tarde para descubrir nuevos TFEs de {targetRolePluralLabel}.</p>
+          <h2 className="text-lg font-bold text-foreground">{t('explore.empty.title')}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{t('explore.empty.subtitle', { rolePlural: targetRolePluralLabel })}</p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Si quieres que aparezcan más resultados, actualiza tus intereses en tu perfil.
+            {t('explore.empty.hint')}
           </p>
           <button
             type="button"
             onClick={() => navigate('/profile')}
             className="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:opacity-90 transition-opacity"
           >
-            Ir a mi perfil
+            {t('explore.empty.goProfile')}
           </button>
         </div>
       </div>
@@ -258,16 +266,16 @@ export default function Explore() {
 
         <div className="p-8">
           <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-2">
-            <Briefcase size={14} /> TFE Publicado
+            <Briefcase size={14} /> {t('explore.card.publishedProject')}
           </h3>
           <p className="mt-2 text-lg font-bold text-foreground leading-tight">{currentProposal.title}</p>
           <p className="mt-3 text-sm leading-relaxed text-foreground/80">
-            {currentProposal.description || currentProposal.creatorBiography || 'Sin descripción adicional.'}
+            {currentProposal.description || currentProposal.creatorBiography || t('explore.common.noDescription')}
           </p>
 
           <div className="mt-6">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Etiquetas
+              {t('explore.card.tags')}
             </h3>
             <div className="mt-3 flex flex-wrap gap-2">
               {currentProposal.tags.length > 0 ? currentProposal.tags.map((tag) => (
@@ -278,7 +286,7 @@ export default function Explore() {
                   {tag}
                 </span>
               )) : (
-                <span className="text-xs text-muted-foreground">Sin etiquetas</span>
+                <span className="text-xs text-muted-foreground">{t('explore.common.noTags')}</span>
               )}
             </div>
           </div>
@@ -289,7 +297,7 @@ export default function Explore() {
               className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-secondary"
               disabled={loadingLike}
             >
-              <X size={16} /> Pasar
+              <X size={16} /> {t('explore.actions.pass')}
             </button>
             <button
               onClick={likeCurrentProposal}
@@ -297,7 +305,11 @@ export default function Explore() {
               disabled={loadingLike || currentProposal.liked}
             >
               <Heart size={16} />
-              {currentProposal.matchStatus === 'accepted' ? 'Match hecho' : currentProposal.liked ? 'Interés enviado' : 'Me gusta'}
+              {currentProposal.matchStatus === 'accepted'
+                ? t('explore.actions.matched')
+                : currentProposal.liked
+                  ? t('explore.actions.interestSent')
+                  : t('explore.actions.like')}
             </button>
           </div>
 
@@ -306,13 +318,13 @@ export default function Explore() {
           </p>
 
           {currentProposal.matchStatus === 'pending' && (
-            <p className="mt-3 text-center text-xs text-amber-600 font-medium">Interés registrado. Esperando respuesta de la otra parte.</p>
+              <p className="mt-3 text-center text-xs text-amber-600 font-medium">{t('explore.status.pending')}</p>
           )}
           {currentProposal.matchStatus === 'accepted' && (
-            <p className="mt-3 text-center text-xs text-emerald-600 font-medium">¡Es un match! Ya podéis contactar por correo.</p>
+              <p className="mt-3 text-center text-xs text-emerald-600 font-medium">{t('explore.status.accepted')}</p>
           )}
           {currentProposal.matchStatus === 'rejected' && (
-            <p className="mt-3 text-center text-xs text-rose-600 font-medium">La propuesta no está disponible para match actualmente.</p>
+              <p className="mt-3 text-center text-xs text-rose-600 font-medium">{t('explore.status.rejected')}</p>
           )}
         </div>
       </div>

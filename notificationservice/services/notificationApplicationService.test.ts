@@ -10,6 +10,9 @@ vi.mock('nodemailer', () => ({
 vi.mock('@match-tfe/db', () => ({
   default: {
     select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
   },
 }))
 
@@ -25,6 +28,23 @@ function createWhereChain<T>(rows: T[]) {
   return {
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockResolvedValue(rows),
+  }
+}
+
+function createJoinWhereChain<T>(rows: T[]) {
+  return {
+    from: vi.fn().mockReturnThis(),
+    innerJoin: vi.fn().mockReturnThis(),
+    where: vi.fn().mockResolvedValue(rows),
+  }
+}
+
+function createOrderLimitChain<T>(rows: T[]) {
+  return {
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue(rows),
   }
 }
 
@@ -68,5 +88,71 @@ describe('NotificationApplicationService', () => {
     expect(sendMail).toHaveBeenCalledOnce()
     expect(result.sent).toBe(1)
     expect(result.failed).toBe(0)
+  })
+
+  it('lists user notifications and calculates unread count', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1 }]) as any)
+      .mockReturnValueOnce(createOrderLimitChain([
+        { id: 10, type: 'info', content: 'A', read: false, timestamp: new Date() },
+        { id: 11, type: 'info', content: 'B', read: true, timestamp: new Date() },
+      ]) as any)
+
+    const service = new NotificationApplicationService()
+    const result = await service.listUserNotifications('student@example.com')
+
+    expect(result.notifications).toHaveLength(2)
+    expect(result.unreadCount).toBe(1)
+  })
+
+  it('marks a notification as read', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1 }]) as any)
+    vi.mocked(db.update).mockReturnValueOnce({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([
+            { id: 10, type: 'info', content: 'A', read: true, timestamp: new Date() },
+          ]),
+        }),
+      }),
+    } as any)
+
+    const service = new NotificationApplicationService()
+    const result = await service.markNotificationAsRead('student@example.com', 10)
+
+    expect(result.notification.read).toBe(true)
+    expect(result.message).toBe('Notification marked as read')
+  })
+
+  it('clears user notifications and returns deleted count', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1 }]) as any)
+    vi.mocked(db.delete).mockReturnValueOnce({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: 10 }, { id: 11 }]),
+      }),
+    } as any)
+
+    const service = new NotificationApplicationService()
+    const result = await service.clearUserNotifications('student@example.com')
+
+    expect(result.deleted).toBe(2)
+    expect(result.message).toBe('Notifications cleared successfully')
+  })
+
+  it('returns empty reminder result when no pending matches exist', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createJoinWhereChain([]) as any)
+      .mockReturnValueOnce(createJoinWhereChain([]) as any)
+
+    const service = new NotificationApplicationService()
+    const result = await service.sendPendingMatchesReminderEmails()
+
+    expect(result).toMatchObject({
+      sent: 0,
+      failed: 0,
+      recipients: [],
+    })
   })
 })

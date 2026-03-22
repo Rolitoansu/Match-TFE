@@ -3,8 +3,10 @@ import { Tag, Plus, Trash2, Edit2, FileSpreadsheet, Save, Upload, Loader2 } from
 import adminApi from '../../api/adminAxios'
 import type { TagItem, UploadResult } from '../../utils/adminHelpers'
 import { validateCSVFile, splitCSVLine, normalizeCSVText } from '../../utils/adminHelpers'
+import { useTranslation } from 'react-i18next'
 
 export function AdminTagsTab() {
+  const { t } = useTranslation()
   const [tags, setTags] = useState<TagItem[]>([])
   const [newTag, setNewTag] = useState('')
   const [tagSearch, setTagSearch] = useState('')
@@ -39,7 +41,7 @@ export function AdminTagsTab() {
     if (!trimmed) return
 
     if (tags.some(t => t.name.toLowerCase() === trimmed.toLowerCase())) {
-      alert('Esta etiqueta ya existe')
+      alert(t('admin.tags.alerts.exists'))
       return
     }
 
@@ -48,7 +50,7 @@ export function AdminTagsTab() {
       setTags(prev => [...prev, data.tag])
       setNewTag('')
     } catch {
-      alert('Error al crear la etiqueta')
+      alert(t('admin.tags.alerts.createError'))
     }
   }
 
@@ -62,12 +64,12 @@ export function AdminTagsTab() {
       setEditingTagId(null)
       setEditingTagName('')
     } catch {
-      alert('Error al actualizar la etiqueta')
+      alert(t('admin.tags.alerts.updateError'))
     }
   }
 
   async function deleteTag(id: number, name: string) {
-    if (!confirm(`¿Eliminar la etiqueta "${name}"?`)) return
+    if (!confirm(t('admin.tags.confirm.deleteOne', { name }))) return
     try {
       await adminApi.delete(`/admin/tags/${id}`)
       setTags(prev => prev.filter(t => t.id !== id))
@@ -77,13 +79,13 @@ export function AdminTagsTab() {
         return updated
       })
     } catch {
-      alert('Error al eliminar la etiqueta')
+      alert(t('admin.tags.alerts.deleteError'))
     }
   }
 
   async function deleteSelectedTags() {
     if (selectedTags.size === 0) return
-    if (!confirm(`¿Eliminar ${selectedTags.size} etiqueta${selectedTags.size !== 1 ? 's' : ''}?`)) return
+    if (!confirm(t('admin.tags.confirm.deleteMany', { count: selectedTags.size }))) return
 
     try {
       for (const id of selectedTags) {
@@ -92,7 +94,7 @@ export function AdminTagsTab() {
       setTags(prev => prev.filter(t => !selectedTags.has(t.id)))
       setSelectedTags(new Set())
     } catch {
-      alert('Error al eliminar etiquetas')
+      alert(t('admin.tags.alerts.deleteManyError'))
     }
   }
 
@@ -104,10 +106,10 @@ export function AdminTagsTab() {
     }
 
     const text = normalizeCSVText(await file.text())
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l)
+    const lines = text.split(/\r?\n/).map((l: string) => l.trim()).filter((l: string) => l)
 
     if (lines.length < 2) {
-      setUploadTagsResult({ success: false, message: 'El CSV debe incluir cabecera y al menos una fila' })
+      setUploadTagsResult({ success: false, message: t('admin.tags.upload.csvNeedsRows') })
       return
     }
 
@@ -119,7 +121,7 @@ export function AdminTagsTab() {
       const name = cols[0]
 
       if (!name || name.length > 100) {
-        invalidRows.push(`Fila ${i + 1}: nombre invalido`)
+        invalidRows.push(t('admin.tags.upload.invalidName', { row: i + 1 }))
         continue
       }
 
@@ -127,12 +129,12 @@ export function AdminTagsTab() {
     }
 
     if (parsedTags.length === 0) {
-      setUploadTagsResult({ success: false, message: 'No hay filas validas' })
+      setUploadTagsResult({ success: false, message: t('admin.tags.upload.noValidRows') })
       return
     }
 
     if (invalidRows.length > 0) {
-      setUploadTagsResult({ success: false, message: `Hay ${invalidRows.length} filas invalidas`, errors: invalidRows.slice(0, 5) })
+      setUploadTagsResult({ success: false, message: t('admin.tags.upload.invalidRows', { count: invalidRows.length }), errors: invalidRows.slice(0, 5) })
     }
 
     setCsvTags(parsedTags)
@@ -145,11 +147,11 @@ export function AdminTagsTab() {
 
     try {
       const { data } = await adminApi.post('/admin/tags/import', { tags: csvTags })
-      setUploadTagsResult({ success: true, message: 'Importación completada', created: data.created, skipped: data.skipped, errors: data.errors })
+      setUploadTagsResult({ success: true, message: t('admin.tags.upload.completed'), created: data.created, skipped: data.skipped, errors: data.errors })
       setCsvTags([])
       await fetchTags()
     } catch {
-      setUploadTagsResult({ success: false, message: 'Error al importar' })
+      setUploadTagsResult({ success: false, message: t('admin.tags.upload.error') })
     } finally {
       setUploadingTags(false)
     }
@@ -162,7 +164,7 @@ export function AdminTagsTab() {
       <div className="rounded-2xl border border-border bg-card p-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
           <Plus className="text-primary" size={20} />
-          Crear Etiqueta
+          {t('admin.tags.create.title')}
         </h2>
 
         <div className="flex gap-3">
@@ -170,7 +172,7 @@ export function AdminTagsTab() {
             type="text"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Nombre de la etiqueta"
+            placeholder={t('admin.tags.create.placeholder')}
             className="flex-1 rounded-xl border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-smooth"
             onKeyDown={(e) => e.key === 'Enter' && addTag()}
           />
@@ -178,7 +180,7 @@ export function AdminTagsTab() {
             onClick={addTag}
             className="rounded-xl bg-primary px-6 py-2 font-semibold text-white hover:opacity-90 transition-smooth"
           >
-            Crear
+            {t('admin.tags.create.submit')}
           </button>
         </div>
       </div>
@@ -187,13 +189,13 @@ export function AdminTagsTab() {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <Tag className="text-primary" size={20} />
-            Etiquetas ({filteredTags.length})
+            {t('admin.tags.list.title')} ({filteredTags.length})
           </h2>
           <input
             type="text"
             value={tagSearch}
             onChange={(e) => setTagSearch(e.target.value)}
-            placeholder="Buscar..."
+            placeholder={t('admin.tags.list.searchPlaceholder')}
             className="max-w-xs rounded-xl border border-input bg-background px-3 py-2 text-sm transition-smooth"
           />
         </div>
@@ -204,19 +206,19 @@ export function AdminTagsTab() {
           <>
             {selectedTags.size > 0 && (
               <div className="mb-4 flex items-center justify-between rounded-lg bg-red-50 p-3 border border-red-200 animate-slideInDown">
-                <span className="text-sm font-semibold text-red-700">{selectedTags.size} etiqueta{selectedTags.size !== 1 ? 's' : ''} seleccionada{selectedTags.size !== 1 ? 's' : ''}</span>
+                <span className="text-sm font-semibold text-red-700">{t('admin.tags.list.selectedCount', { count: selectedTags.size })}</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setSelectedTags(new Set())}
                     className="rounded px-3 py-1 bg-red-200 text-red-800 text-xs hover:bg-red-300 transition-smooth"
                   >
-                    Deseleccionar
+                    {t('admin.tags.actions.unselect')}
                   </button>
                   <button
                     onClick={deleteSelectedTags}
                     className="rounded px-3 py-1 bg-red-500 text-white text-xs hover:opacity-90 transition-smooth"
                   >
-                    Eliminar seleccionadas
+                    {t('admin.tags.actions.deleteSelected')}
                   </button>
                 </div>
               </div>
@@ -284,14 +286,14 @@ export function AdminTagsTab() {
             </div>
           </>
         ) : (
-          <p className="text-center text-muted-foreground py-8">No hay etiquetas</p>
+          <p className="text-center text-muted-foreground py-8">{t('admin.tags.list.empty')}</p>
         )}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
           <FileSpreadsheet className="text-primary" size={20} />
-          Importar Etiquetas (CSV)
+          {t('admin.tags.upload.title')}
         </h2>
 
         <div
@@ -316,19 +318,19 @@ export function AdminTagsTab() {
             onChange={(e) => e.target.files?.[0] && processTagsCSV(e.target.files[0])}
           />
           <Upload className="mx-auto mb-2 text-muted-foreground" size={32} />
-          <p className="font-semibold">Arrastra o haz clic para seleccionar</p>
-          <p className="text-xs text-muted-foreground">Formato: nombre</p>
+          <p className="font-semibold">{t('admin.tags.upload.dragOrClick')}</p>
+          <p className="text-xs text-muted-foreground">{t('admin.tags.upload.format')}</p>
         </div>
 
         {csvTags.length > 0 && (
           <div className="mt-4 space-y-3">
-            <p className="text-sm font-semibold">{csvTags.length} etiqueta{csvTags.length !== 1 ? 's' : ''} a importar</p>
+            <p className="text-sm font-semibold">{t('admin.tags.upload.toImport', { count: csvTags.length })}</p>
             <button
               onClick={uploadTags}
               disabled={uploadingTags}
               className="w-full rounded-2xl bg-primary px-6 py-3 font-bold text-white hover:opacity-90 disabled:opacity-50"
             >
-              {uploadingTags ? 'Importando...' : 'Importar Etiquetas'}
+              {uploadingTags ? t('admin.tags.upload.importing') : t('admin.tags.upload.importButton')}
             </button>
           </div>
         )}

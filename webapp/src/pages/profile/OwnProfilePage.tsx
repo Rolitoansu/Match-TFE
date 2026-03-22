@@ -17,8 +17,10 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 import useAuth from '../../hooks/useAuth'
 import type { ProfileData, Proposal, TagOption } from './types'
+import { useTranslation } from 'react-i18next'
 
 export default function OwnProfilePage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [proposals, setProposals] = useState<Proposal[]>([])
@@ -124,10 +126,10 @@ export default function OwnProfilePage() {
     try {
       await api.patch('/user/profile', { biography: aboutMe.trim() || null })
       setIsEditingAboutMe(false)
-      setAboutMeSuccess('Tu perfil se ha actualizado correctamente.')
+      setAboutMeSuccess(t('ownProfile.feedback.aboutUpdated'))
     } catch (error) {
       console.error('Error actualizando sobre mi:', error)
-      setAboutMeError('No se pudo actualizar tu biografia. Intentalo de nuevo.')
+      setAboutMeError(t('ownProfile.feedback.aboutUpdateError'))
     } finally {
       setSavingAboutMe(false)
     }
@@ -165,10 +167,10 @@ export default function OwnProfilePage() {
     try {
       await api.patch('/user/profile', { interests: selectedInterests })
       setIsEditingInterests(false)
-      setInterestsSuccess('Intereses actualizados correctamente.')
+      setInterestsSuccess(t('ownProfile.feedback.interestsUpdated'))
     } catch (error) {
       console.error('Error actualizando intereses:', error)
-      setInterestsError('No se pudieron actualizar los intereses. Intentalo de nuevo.')
+      setInterestsError(t('ownProfile.feedback.interestsUpdateError'))
     } finally {
       setSavingInterests(false)
     }
@@ -178,13 +180,13 @@ export default function OwnProfilePage() {
     <div className="max-w-350 mx-auto p-6 lg:p-10">
       <div className="flex justify-between items-end mb-10 px-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Mi Panel de Control</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Gestiona tu perfil y tus propuestas de TFE</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('ownProfile.title')}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t('ownProfile.subtitle')}</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
           onClick={() => navigate('/proposals/new')}>
           <Plus size={18} />
-          Nueva Propuesta
+          {t('ownProfile.newProposal')}
         </button>
       </div>
 
@@ -202,7 +204,7 @@ export default function OwnProfilePage() {
               </div>
 
               <h2 className="text-xl font-bold">{user!.name}</h2>
-              <p className="text-primary font-semibold text-xs mb-1">{user!.role === 'professor' ? 'Profesor/a' : 'Estudiante'}</p>
+              <p className="text-primary font-semibold text-xs mb-1">{user!.role === 'professor' ? t('ownProfile.roles.professor') : t('ownProfile.roles.student')}</p>
 
               <div className="flex items-center gap-2 mt-3 px-3 py-1 bg-secondary/50 rounded-full text-[11px] text-muted-foreground">
                 <Mail size={11} />
@@ -225,7 +227,7 @@ export default function OwnProfilePage() {
             <div className="mt-8 space-y-6">
               <div>
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center justify-between">
-                  Sobre mi
+                  {t('ownProfile.about.title')}
                   <button
                     type="button"
                     className="text-primary hover:opacity-80 transition-opacity"
@@ -247,7 +249,7 @@ export default function OwnProfilePage() {
                       maxLength={2000}
                       rows={4}
                       className="w-full rounded-xl border border-border bg-white p-3 text-sm leading-relaxed outline-none focus:border-primary/50"
-                      placeholder="Cuentanos brevemente sobre ti, tus intereses y objetivos de TFE."
+                      placeholder={t('ownProfile.about.placeholder')}
                     />
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{aboutMe.length}/2000</span>
@@ -262,7 +264,7 @@ export default function OwnProfilePage() {
                           }}
                           disabled={savingAboutMe}
                         >
-                          Cancelar
+                          {t('ownProfile.common.cancel')}
                         </button>
                         <button
                           type="button"
@@ -270,14 +272,14 @@ export default function OwnProfilePage() {
                           onClick={saveAboutMe}
                           disabled={savingAboutMe}
                         >
-                          {savingAboutMe ? 'Guardando...' : 'Guardar'}
+                          {savingAboutMe ? t('ownProfile.common.saving') : t('ownProfile.common.save')}
                         </button>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <p className="text-sm leading-relaxed text-foreground/80 italic">
-                    "{aboutMe || 'Todavia no has escrito informacion sobre ti.'}"
+                    "{aboutMe || t('ownProfile.about.empty')}"
                   </p>
                 )}
 
@@ -287,7 +289,7 @@ export default function OwnProfilePage() {
 
               <div>
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center justify-between">
-                  Intereses
+                  {t('ownProfile.interests.title')}
                   <button
                     type="button"
                     className="text-primary hover:opacity-80 transition-opacity"
@@ -303,7 +305,7 @@ export default function OwnProfilePage() {
 
                 {isEditingInterests ? (
                   <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground">Anade etiquetas para personalizar que TFEs aparecen en explorar.</p>
+                    <p className="text-xs text-muted-foreground">{t('ownProfile.interests.helper')}</p>
 
                     {selectedInterests.length > 0 && (
                       <div className="flex flex-wrap gap-2">
@@ -323,7 +325,7 @@ export default function OwnProfilePage() {
                       <input
                         ref={interestInputRef}
                         type="text"
-                        placeholder="Buscar y anadir intereses..."
+                        placeholder={t('ownProfile.interests.searchPlaceholder')}
                         className={`w-full pl-10 pr-9 py-3 rounded-xl bg-slate-50 border transition-all text-sm outline-none ${
                           interestInputFocused
                             ? 'border-primary/50 bg-white ring-4 ring-primary/5'
@@ -357,7 +359,7 @@ export default function OwnProfilePage() {
                           >
                             <div className="px-4 py-2 border-b border-border/50 flex items-center justify-between">
                               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                {searching ? 'Resultados' : 'Disponibles'}
+                                {searching ? t('ownProfile.interests.results') : t('ownProfile.interests.available')}
                               </span>
                               {filtered.length > 0 && (
                                 <span className="text-[10px] font-semibold text-muted-foreground bg-slate-100 rounded-full px-2 py-0.5">
@@ -389,8 +391,8 @@ export default function OwnProfilePage() {
                               <div className="px-4 py-4 text-center">
                                 <p className="text-sm text-muted-foreground">
                                   {searching
-                                    ? `No hay etiquetas que coincidan con "${debouncedInterestSearch}".`
-                                    : 'Ya has anadido todas las etiquetas disponibles.'}
+                                    ? t('ownProfile.interests.noMatch', { search: debouncedInterestSearch })
+                                    : t('ownProfile.interests.allAdded')}
                                 </p>
                               </div>
                             )}
@@ -410,7 +412,7 @@ export default function OwnProfilePage() {
                         }}
                         disabled={savingInterests}
                       >
-                        Cancelar
+                        {t('ownProfile.common.cancel')}
                       </button>
                       <button
                         type="button"
@@ -418,7 +420,7 @@ export default function OwnProfilePage() {
                         onClick={saveInterests}
                         disabled={savingInterests}
                       >
-                        {savingInterests ? 'Guardando...' : 'Guardar intereses'}
+                        {savingInterests ? t('ownProfile.common.saving') : t('ownProfile.interests.save')}
                       </button>
                     </div>
                   </div>
@@ -429,7 +431,7 @@ export default function OwnProfilePage() {
                         #{interest}
                       </span>
                     )) : (
-                      <p className="text-sm italic text-foreground/70">Todavia no has definido intereses.</p>
+                      <p className="text-sm italic text-foreground/70">{t('ownProfile.interests.empty')}</p>
                     )}
                   </div>
                 )}
@@ -445,7 +447,7 @@ export default function OwnProfilePage() {
           <div className="flex items-center justify-between px-2 mb-2">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <FileText className="text-primary" size={20} />
-              Mis TFEs Publicados
+              {t('ownProfile.published.title')}
             </h3>
             <div className="flex gap-2">
               <button className="p-2 text-muted-foreground hover:text-primary transition-colors"><Settings size={18} /></button>
@@ -502,8 +504,8 @@ export default function OwnProfilePage() {
           {proposals?.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-3xl border border-dashed border-border">
               <FileText size={48} className="text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground font-medium">Aun no has publicado ninguna propuesta</p>
-              <a className="mt-4 text-primary font-bold text-sm hover:underline" href="/proposals/new">Crear mi primera propuesta</a>
+              <p className="text-muted-foreground font-medium">{t('ownProfile.published.empty')}</p>
+              <a className="mt-4 text-primary font-bold text-sm hover:underline" href="/proposals/new">{t('ownProfile.published.createFirst')}</a>
             </div>
           )}
         </div>

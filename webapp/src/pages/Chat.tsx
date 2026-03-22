@@ -7,6 +7,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const CONVERSATIONS = [
   { id: 1, name: "Lucía García", lastMsg: "Me parece genial la idea de usar LoRaWAN", time: "12:45", online: true, role: "Alumno" },
@@ -22,6 +23,7 @@ const MOCK_MESSAGES = [
 ]
 
 export default function Chat() {
+  const { t } = useTranslation()
   const [message, setMessage] = useState('')
 
   return (
@@ -29,7 +31,7 @@ export default function Chat() {
       
       <aside className="w-full md:w-80 border-r border-border flex flex-col bg-slate-50/50">
         <div className="p-6 border-b border-border bg-white">
-          <h2 className="text-xl font-black">Mensajes</h2>
+          <h2 className="text-xl font-black">{t('chat.title')}</h2>
         </div>
         
         <div className="flex-1 overflow-y-auto">
@@ -67,7 +69,7 @@ export default function Chat() {
             </div>
             <div>
               <h3 className="font-bold text-sm leading-none">Lucía García</h3>
-              <span className="text-[10px] font-medium text-green-600 uppercase tracking-wider">En línea</span>
+              <span className="text-[10px] font-medium text-green-600 uppercase tracking-wider">{t('chat.online')}</span>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -79,7 +81,7 @@ export default function Chat() {
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
           <div className="flex justify-center mb-6">
             <div className="px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-100 flex items-center gap-2">
-              <ExternalLink size={12} /> Discutiendo: Análisis de sentimientos...
+              <ExternalLink size={12} /> {t('chat.discussingTopic')}
             </div>
           </div>
 
@@ -106,7 +108,7 @@ export default function Chat() {
               type="text" 
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Escribe un mensaje..."
+              placeholder={t('chat.messagePlaceholder')}
               className="flex-1 bg-transparent border-none outline-none text-sm py-2"
             />
             <button 

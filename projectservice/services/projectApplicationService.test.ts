@@ -298,6 +298,67 @@ describe('ProjectApplicationService', () => {
     expect(result.expiresAt).toBeInstanceOf(Date)
   })
 
+  it('completes proposal execution successfully', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'in_progress', studentId: 1, tutorId: null }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ userId: 9 }]) as any)
+    vi.mocked(db.update).mockReturnValueOnce({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+    } as any)
+
+    const service = new ProjectApplicationService()
+    const result = await service.completeProposal('s@example.com', 5)
+
+    expect(result).toMatchObject({
+      completed: true,
+      projectId: 5,
+      status: 'completed',
+    })
+  })
+
+  it('throws 409 on completeProposal when there is no accepted match', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'in_progress', studentId: 1, tutorId: null }]) as any)
+      .mockReturnValueOnce(createLimitChain([]) as any)
+
+    const service = new ProjectApplicationService()
+    await expect(service.completeProposal('s@example.com', 5)).rejects.toMatchObject({
+      status: 409,
+      payload: { error: 'Proposal has no accepted match to complete' },
+    })
+  })
+
+  it('cancels proposal execution successfully', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'in_progress', studentId: 1, tutorId: null }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ userId: 2 }]) as any)
+    vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+      const trx = {
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue(undefined),
+          }),
+        }),
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
+      }
+      await cb(trx)
+    })
+
+    const service = new ProjectApplicationService()
+    const result = await service.cancelProposalExecution('s@example.com', 5)
+
+    expect(result).toMatchObject({
+      cancelled: true,
+      projectId: 5,
+      status: 'proposed',
+    })
+  })
+
   it('throws 404 on likeProposal when user is not found', async () => {
     vi.mocked(db.select).mockReturnValueOnce(createLimitChain([]) as any)
 
@@ -507,6 +568,29 @@ describe('ProjectApplicationService', () => {
     await expect(service.acceptProposalMatch('s@example.com', 5, 2)).rejects.toMatchObject({
       status: 409,
       payload: { error: 'This proposal already has an accepted match' },
+    })
+  })
+
+  it('throws 409 on acceptProposalMatch when selected user already has an accepted match in another proposal', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'proposed', studentId: 1, tutorId: null }]) as any)
+    vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+      const trx = {
+        select: vi
+          .fn()
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([{ projectId: 99 }])),
+        update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) }),
+      }
+      await cb(trx)
+    })
+
+    const service = new ProjectApplicationService()
+    await expect(service.acceptProposalMatch('s@example.com', 5, 2)).rejects.toMatchObject({
+      status: 409,
+      payload: { error: 'Selected user already has an accepted match' },
     })
   })
 

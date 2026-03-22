@@ -4,10 +4,12 @@ import { AdminTagsTab } from './admin/AdminTagsTab'
 import { AdminStudentsTab } from './admin/AdminStudentsTab'
 import { AdminProfessorsTab } from './admin/AdminProfessorsTab'
 import { AdminUsersTab } from './admin/AdminUsersTab'
+import { useTranslation } from 'react-i18next'
 
 type Tab = 'tags' | 'students' | 'professors' | 'users'
 
 export default function Admin() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<Tab>('tags')
 
   return (
@@ -18,7 +20,7 @@ export default function Admin() {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Shield className="h-6 w-6" />
             </div>
-            <h1 className="text-3xl font-bold">Panel de Administración</h1>
+            <h1 className="text-3xl font-bold">{t('admin.page.title')}</h1>
           </div>
         </div>
 
@@ -33,10 +35,10 @@ export default function Admin() {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {tab === 'tags' && <span className="flex items-center gap-2"><Tag size={18} /> Etiquetas</span>}
-              {tab === 'students' && <span className="flex items-center gap-2"><Users size={18} /> Estudiantes</span>}
-              {tab === 'professors' && <span className="flex items-center gap-2"><BookOpen size={18} /> Profesores</span>}
-              {tab === 'users' && <span className="flex items-center gap-2"><Users size={18} /> Gestionar Usuarios</span>}
+              {tab === 'tags' && <span className="flex items-center gap-2"><Tag size={18} /> {t('admin.page.tabs.tags')}</span>}
+              {tab === 'students' && <span className="flex items-center gap-2"><Users size={18} /> {t('admin.page.tabs.students')}</span>}
+              {tab === 'professors' && <span className="flex items-center gap-2"><BookOpen size={18} /> {t('admin.page.tabs.professors')}</span>}
+              {tab === 'users' && <span className="flex items-center gap-2"><Users size={18} /> {t('admin.page.tabs.users')}</span>}
             </button>
           ))}
         </div>

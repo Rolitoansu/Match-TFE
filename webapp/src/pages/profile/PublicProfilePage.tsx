@@ -4,12 +4,14 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 import type { PublicProfile } from './types'
 import { ROLE_LABEL, STATUS_COLOR, STATUS_LABEL } from './types'
+import { useTranslation } from 'react-i18next'
 
 interface PublicProfilePageProps {
   id: string
 }
 
 export default function PublicProfilePage({ id }: PublicProfilePageProps) {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [loading, setLoading] = useState(false)
@@ -51,7 +53,7 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-semibold"
         >
-          <ArrowLeft size={20} /> Volver
+          <ArrowLeft size={20} /> {t('publicProfile.back')}
         </button>
       </div>
 
@@ -77,21 +79,21 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90"
                   >
                     <Mail size={12} />
-                    Enviar correo
+                    {t('publicProfile.sendEmail')}
                   </a>
                 </div>
               )}
 
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
                 <Calendar size={12} />
-                Miembro desde {new Date(profile.registrationDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}
+                {t('publicProfile.memberSince')} {new Date(profile.registrationDate).toLocaleDateString(i18n.resolvedLanguage?.startsWith('es') ? 'es-ES' : 'en-US', { year: 'numeric', month: 'long' })}
               </p>
             </div>
 
             {profile.biography && (
               <div className="mt-8">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">
-                  Sobre mi
+                  {t('publicProfile.about')}
                 </h3>
                 <p className="text-sm leading-relaxed text-foreground/80 italic">
                   "{profile.biography}"
@@ -102,7 +104,7 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
             {profile.interests.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                  <Hash size={10} /> Intereses
+                  <Hash size={10} /> {t('publicProfile.interests')}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {profile.interests.map((interest) => (
@@ -121,12 +123,12 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
 
         <div className="lg:col-span-8 space-y-4">
           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-            <FileText size={16} /> Propuestas de TFE
+            <FileText size={16} /> {t('publicProfile.proposalsTitle')}
           </h3>
 
           {profile.proposals.length === 0 ? (
             <div className="rounded-3xl border border-border bg-card p-10 text-center text-muted-foreground text-sm">
-              Este usuario no tiene propuestas publicadas.
+              {t('publicProfile.noProposals')}
             </div>
           ) : (
             profile.proposals.map((proposal) => (

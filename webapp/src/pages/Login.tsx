@@ -2,6 +2,7 @@ import { useState } from 'react'
 import useAuth from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import { LogIn, Loader2 } from "lucide-react"
+import { useTranslation } from 'react-i18next'
 
 interface LoginProps {
     email: string
@@ -9,6 +10,7 @@ interface LoginProps {
 }
 
 export default function Login() {
+    const { t } = useTranslation()
     const [loginData, setLoginData] = useState<LoginProps>({ email: '', password: '' })
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
@@ -23,7 +25,7 @@ export default function Login() {
             await login(loginData.email, loginData.password)
             navigate('/home')
         } catch (err) {
-            setError('Credenciales incorrectas o error en el servidor')
+            setError(t('login.errorInvalidCredentials'))
         } finally {
             setIsLoading(false)
         }
@@ -37,16 +39,16 @@ export default function Login() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <LogIn className="h-6 w-6" />
                     </div>
-                    <h2 className="text-2xl font-bold text-foreground">Bienvenido de nuevo</h2>
+                    <h2 className="text-2xl font-bold text-foreground">{t('login.title')}</h2>
                     <p className="text-sm text-muted-foreground text-center">
-                        Introduce tus credenciales para acceder a Match-TFE
+                        {t('login.subtitle')}
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-foreground ml-1">
-                            Correo electrónico
+                            {t('login.emailLabel')}
                         </label>
                         <input 
                             type="email" 
@@ -59,7 +61,7 @@ export default function Login() {
 
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-foreground ml-1">
-                            Contraseña
+                            {t('login.passwordLabel')}
                         </label>
                         <input 
                             type="password"
@@ -84,13 +86,13 @@ export default function Login() {
                         {isLoading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
-                            "Iniciar Sesión"
+                            t('login.submit')
                         )}
                     </button>
                 </form>
 
                 <p className="mt-6 text-center text-xs text-muted-foreground">
-                    ¿No tienes cuenta? <a href="/register" className="underline underline-offset-4 hover:text-primary">Regístrate</a>
+                    {t('login.noAccount')} <a href="/register" className="underline underline-offset-4 hover:text-primary">{t('login.registerLink')}</a>
                 </p>
             </div>
         </div>

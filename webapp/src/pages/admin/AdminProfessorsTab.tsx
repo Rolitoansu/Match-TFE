@@ -3,6 +3,7 @@ import { BookOpen, Upload } from 'lucide-react'
 import adminApi from '../../api/adminAxios'
 import type { UploadResult } from '../../utils/adminHelpers'
 import { validateCSVFile, splitCSVLine, normalizeCSVText } from '../../utils/adminHelpers'
+import { useTranslation } from 'react-i18next'
 
 interface CSVProfessor {
   email: string
@@ -11,6 +12,7 @@ interface CSVProfessor {
 }
 
 export function AdminProfessorsTab() {
+  const { t } = useTranslation()
   const [csvProfessors, setCsvProfessors] = useState<CSVProfessor[]>([])
   const [uploadingProfessors, setUploadingProfessors] = useState(false)
   const [uploadProfResult, setUploadProfResult] = useState<UploadResult | null>(null)
@@ -25,10 +27,10 @@ export function AdminProfessorsTab() {
     }
 
     const text = normalizeCSVText(await file.text())
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l)
+    const lines = text.split(/\r?\n/).map((l: string) => l.trim()).filter((l: string) => l)
 
     if (lines.length < 2) {
-      setUploadProfResult({ success: false, message: 'El CSV debe incluir cabecera y al menos una fila' })
+      setUploadProfResult({ success: false, message: t('admin.professors.upload.csvNeedsRows') })
       return
     }
 
@@ -43,12 +45,12 @@ export function AdminProfessorsTab() {
       const surname = cols[2] ?? ''
 
       if (cols.length < 3 || !email || !name || !surname) {
-        invalidRows.push(`Fila ${i + 1}: faltan columnas`)
+        invalidRows.push(t('admin.professors.upload.missingColumns', { row: i + 1 }))
         continue
       }
 
       if (!emailRegex.test(email)) {
-        invalidRows.push(`Fila ${i + 1}: correo invalido`)
+        invalidRows.push(t('admin.professors.upload.invalidEmail', { row: i + 1 }))
         continue
       }
 
@@ -56,12 +58,12 @@ export function AdminProfessorsTab() {
     }
 
     if (professors.length === 0) {
-      setUploadProfResult({ success: false, message: 'No hay filas validas' })
+      setUploadProfResult({ success: false, message: t('admin.professors.upload.noValidRows') })
       return
     }
 
     if (invalidRows.length > 0) {
-      setUploadProfResult({ success: false, message: `Hay ${invalidRows.length} filas invalidas`, errors: invalidRows.slice(0, 5) })
+      setUploadProfResult({ success: false, message: t('admin.professors.upload.invalidRows', { count: invalidRows.length }), errors: invalidRows.slice(0, 5) })
     }
 
     setCsvProfessors(professors)
@@ -74,10 +76,10 @@ export function AdminProfessorsTab() {
 
     try {
       const { data } = await adminApi.post('/admin/professors/import', { professors: csvProfessors })
-      setUploadProfResult({ success: true, message: 'Importación completada', created: data.created, skipped: data.skipped, errors: data.errors })
+      setUploadProfResult({ success: true, message: t('admin.professors.upload.completed'), created: data.created, skipped: data.skipped, errors: data.errors })
       setCsvProfessors([])
     } catch {
-      setUploadProfResult({ success: false, message: 'Error al importar' })
+      setUploadProfResult({ success: false, message: t('admin.professors.upload.error') })
     } finally {
       setUploadingProfessors(false)
     }
@@ -87,11 +89,11 @@ export function AdminProfessorsTab() {
     <div className="rounded-2xl border border-border bg-card p-8">
       <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
         <BookOpen className="text-primary" size={20} />
-        Importar Profesores
+        {t('admin.professors.title')}
       </h2>
 
       <p className="mb-6 text-sm text-muted-foreground">
-        Formato CSV: <strong>correo, nombre, apellido</strong>
+        {t('admin.professors.upload.csvFormatLabel')} <strong>{t('admin.professors.upload.csvFormatValue')}</strong>
       </p>
 
       <div
@@ -116,19 +118,19 @@ export function AdminProfessorsTab() {
           onChange={(e) => e.target.files?.[0] && processProfessorCSV(e.target.files[0])}
         />
         <Upload className="mx-auto mb-3 text-muted-foreground" size={40} />
-        <p className="font-semibold">Arrastra o haz clic para seleccionar</p>
-        <p className="text-xs text-muted-foreground">Máximo 2 MB</p>
+        <p className="font-semibold">{t('admin.professors.upload.dragOrClick')}</p>
+        <p className="text-xs text-muted-foreground">{t('admin.professors.upload.maxSize')}</p>
       </div>
 
       {csvProfessors.length > 0 && (
         <div className="mt-6 space-y-3 animate-slideInDown">
-          <p className="text-sm font-semibold">{csvProfessors.length} profesor{csvProfessors.length !== 1 ? 'es' : ''} a importar</p>
+          <p className="text-sm font-semibold">{t('admin.professors.upload.toImport', { count: csvProfessors.length })}</p>
           <button
             onClick={uploadProfessors}
             disabled={uploadingProfessors}
             className="w-full rounded-2xl bg-primary px-6 py-3 font-bold text-white hover:opacity-90 disabled:opacity-50 transition-smooth"
           >
-            {uploadingProfessors ? 'Importando...' : 'Importar Profesores'}
+            {uploadingProfessors ? t('admin.professors.upload.importing') : t('admin.professors.upload.importButton')}
           </button>
         </div>
       )}
@@ -139,7 +141,7 @@ export function AdminProfessorsTab() {
         }`}>
           <p className="font-bold text-sm">{uploadProfResult.message}</p>
           {uploadProfResult.created && (
-            <p className="text-xs mt-1">{uploadProfResult.created} creado{uploadProfResult.created !== 1 ? 's' : ''} · {uploadProfResult.skipped} omitido{uploadProfResult.skipped !== 1 ? 's' : ''}</p>
+            <p className="text-xs mt-1">{t('admin.professors.upload.summary', { created: uploadProfResult.created, skipped: uploadProfResult.skipped })}</p>
           )}
           {uploadProfResult.errors?.length && (
             <ul className="mt-2 text-xs space-y-1 ml-4">
