@@ -18,6 +18,7 @@ interface ExploreProposal {
   id: number
   title: string
   description: string | null
+  type: number
   publicationDate: string
   status: string
   creatorId: number
@@ -36,6 +37,7 @@ interface ExploreResponse {
     id: number
     title: string
     description: string | null
+    type: number
     publicationDate: string
     status: 'proposed' | 'in_progress' | 'completed'
     tags: string[]
@@ -88,6 +90,14 @@ export default function Explore() {
   const matchedCounterpartLabel = viewerRole === 'student'
     ? t('explore.roles.supervisor')
     : t('explore.roles.student')
+  const tfgTypeLabelById: Record<number, string> = {
+    1: t('tfgTypes.research'),
+    2: t('tfgTypes.hardwareSoftwareDevelopment'),
+    3: t('tfgTypes.professionalExperience'),
+    4: t('tfgTypes.qualitySecuritySystemsDesignAndImplementation'),
+    5: t('tfgTypes.specificHardwareSoftwareImplementation'),
+    6: t('tfgTypes.otherWorks'),
+  }
 
   if (matchedProposal) {
     return (
@@ -98,6 +108,9 @@ export default function Explore() {
           <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
             <p className="text-[11px] font-black uppercase tracking-wider text-emerald-700">{t('explore.matched.summary')}</p>
             <h3 className="text-lg font-bold text-foreground">{matchedProposal.title}</h3>
+            <p className="text-xs font-semibold text-muted-foreground">
+              {t('explore.card.tfgType')}: {tfgTypeLabelById[matchedProposal.type] ?? t('tfgTypes.otherWorks')}
+            </p>
             <p className="text-sm text-foreground/80">
               {matchedProposal.description || t('explore.common.noDescription')}
             </p>
@@ -269,6 +282,9 @@ export default function Explore() {
             <Briefcase size={14} /> {t('explore.card.publishedProject')}
           </h3>
           <p className="mt-2 text-lg font-bold text-foreground leading-tight">{currentProposal.title}</p>
+          <p className="mt-1 text-xs font-semibold text-muted-foreground">
+            {t('explore.card.tfgType')}: {tfgTypeLabelById[currentProposal.type] ?? t('tfgTypes.otherWorks')}
+          </p>
           <p className="mt-3 text-sm leading-relaxed text-foreground/80">
             {currentProposal.description || currentProposal.creatorBiography || t('explore.common.noDescription')}
           </p>

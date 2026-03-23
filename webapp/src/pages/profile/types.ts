@@ -2,6 +2,7 @@ export interface Proposal {
   id: number
   title: string
   description: string
+  type: number
   publicationDate: string
   status: string
   tags: string[]
@@ -16,6 +17,8 @@ export interface ProfileData {
   id: number
   biography: string | null
   interests: string[]
+  notificationFrequency: 'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly'
+  notificationReminderHour: number
 }
 
 export interface PublicProfile {
@@ -31,6 +34,7 @@ export interface PublicProfile {
     id: number
     title: string
     description: string
+    type: number
     status: 'proposed' | 'in_progress' | 'completed'
     publicationDate: string
   }>

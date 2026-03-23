@@ -26,6 +26,8 @@ export class AuthApplicationService {
                 surname: users.surname,
                 registrationDate: users.registrationDate,
                 biography: users.biography,
+                notificationFrequency: users.notificationFrequency,
+                notificationReminderHour: users.notificationReminderHour,
                 role: users.role,
             })
             .from(users)
@@ -53,6 +55,8 @@ export class AuthApplicationService {
                 surname: user.surname,
                 registrationDate: user.registrationDate,
                 biography: user.biography,
+                notificationFrequency: user.notificationFrequency,
+                notificationReminderHour: user.notificationReminderHour,
                 role: user.role,
                 interests: interestRows.map((row) => row.name),
             },
@@ -90,6 +94,8 @@ export class AuthApplicationService {
                 passwordHash: users.passwordHash,
                 registrationDate: users.registrationDate,
                 biography: users.biography,
+                notificationFrequency: users.notificationFrequency,
+                notificationReminderHour: users.notificationReminderHour,
                 role: users.role,
             })
             .from(users)
@@ -125,6 +131,8 @@ export class AuthApplicationService {
                 surname: user.surname,
                 registrationDate: user.registrationDate,
                 biography: user.biography,
+                notificationFrequency: user.notificationFrequency,
+                notificationReminderHour: user.notificationReminderHour,
                 role: user.role,
                 interests: interestRows.map((row) => row.name),
             },

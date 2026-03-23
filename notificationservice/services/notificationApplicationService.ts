@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer'
 import db from '@match-tfe/db'
-import { matches, notifications, projects, users } from '@match-tfe/db/schema'
+import { notifications, users } from '@match-tfe/db/schema'
 import { and, desc, eq, inArray, isNotNull, or } from 'drizzle-orm'
 
 export class HttpError extends Error {
@@ -26,7 +26,63 @@ type CreateUserNotificationInput = {
   content: string
 }
 
+type UnreadNotificationRow = {
+  userId: number
+  type: string
+  content: string
+  timestamp: Date | null
+}
+
+type NotificationFrequency = 'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly'
+
+const REMINDER_INTERVAL_DAYS: Record<NotificationFrequency, number> = {
+  disabled: Number.POSITIVE_INFINITY,
+  daily: 1,
+  weekly: 7,
+  biweekly: 14,
+  monthly: 30,
+}
+
 export class NotificationApplicationService {
+  private getHourInTimezone(now: Date, timezone: string) {
+    const rawHour = new Intl.DateTimeFormat('en-GB', {
+      timeZone: timezone,
+      hour: '2-digit',
+      hour12: false,
+    }).format(now)
+
+    return Number.parseInt(rawHour, 10)
+  }
+
+  private isReminderDue(
+    lastSentAt: Date | null,
+    frequency: NotificationFrequency,
+    reminderHour: number,
+    currentHour: number,
+    now: Date
+  ) {
+    if (frequency === 'disabled') {
+      return false
+    }
+
+    const normalizedReminderHour = Number.isInteger(reminderHour) && reminderHour >= 0 && reminderHour <= 23
+      ? reminderHour
+      : 9
+
+    if (currentHour !== normalizedReminderHour) {
+      return false
+    }
+
+    if (!lastSentAt) {
+      return true
+    }
+
+    const elapsedMs = now.getTime() - lastSentAt.getTime()
+    const requiredMs = REMINDER_INTERVAL_DAYS[frequency] * 24 * 60 * 60 * 1000
+
+    return elapsedMs >= requiredMs
+  }
+
   async listUserNotifications(userEmail: string) {
     const [user] = await db
       .select({ id: users.id })
@@ -177,76 +233,125 @@ export class NotificationApplicationService {
     }
   }
 
-  async sendPendingMatchesReminderEmails() {
-    const pendingForStudentProposals = await db
-      .select({ studentId: projects.studentId })
-      .from(matches)
-      .innerJoin(projects, eq(projects.id, matches.projectId))
+  async sendUnreadNotificationsSummaryEmails(timezone: string) {
+    const unreadRows = await db
+      .select({
+        userId: notifications.userId,
+        type: notifications.type,
+        content: notifications.content,
+        timestamp: notifications.timestamp,
+      })
+      .from(notifications)
       .where(and(
-        eq(matches.status, 'pending'),
-        isNotNull(projects.studentId)
+        eq(notifications.read, false),
+        isNotNull(notifications.userId)
       ))
+      .orderBy(desc(notifications.timestamp))
 
-    const pendingRequestedByStudents = await db
-      .select({ studentId: users.id })
-      .from(matches)
-      .innerJoin(users, eq(users.id, matches.userId))
-      .where(and(
-        eq(matches.status, 'pending'),
-        eq(users.role, 'student')
-      ))
+    if (unreadRows.length === 0) {
+      return { sent: 0, failed: 0, recipients: [], message: 'No unread notifications found' }
+    }
 
-    const pendingCountsByStudent = new Map<number, number>()
+    const unreadByUserId = new Map<number, UnreadNotificationRow[]>()
 
-    for (const row of pendingForStudentProposals) {
-      if (!row.studentId) {
+    for (const row of unreadRows) {
+      if (!row.userId) {
         continue
       }
 
-      pendingCountsByStudent.set(row.studentId, (pendingCountsByStudent.get(row.studentId) ?? 0) + 1)
+      const current = unreadByUserId.get(row.userId) ?? []
+      current.push({
+        userId: row.userId,
+        type: row.type,
+        content: row.content,
+        timestamp: row.timestamp,
+      })
+      unreadByUserId.set(row.userId, current)
     }
 
-    for (const row of pendingRequestedByStudents) {
-      pendingCountsByStudent.set(row.studentId, (pendingCountsByStudent.get(row.studentId) ?? 0) + 1)
-    }
+    const userIds = [...unreadByUserId.keys()]
 
-    const studentIds = [...pendingCountsByStudent.keys()]
-
-    if (studentIds.length === 0) {
-      return { sent: 0, failed: 0, recipients: [], message: 'No pending student matches found' }
-    }
-
-    const studentRows = await db
-      .select({ id: users.id, email: users.email, name: users.name })
+    const userRows = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        notificationFrequency: users.notificationFrequency,
+        notificationReminderHour: users.notificationReminderHour,
+        lastReminderEmailSentAt: users.lastReminderEmailSentAt,
+      })
       .from(users)
-      .where(and(
-        eq(users.role, 'student'),
-        inArray(users.id, studentIds)
-      ))
+      .where(inArray(users.id, userIds))
 
-    const subject = process.env.PENDING_MATCHES_SUBJECT ?? 'Tienes matches pendientes en Match-TFE'
+    const now = new Date()
+    const currentHour = this.getHourInTimezone(now, timezone)
+    const dueUsers = userRows.filter((user) => this.isReminderDue(
+      user.lastReminderEmailSentAt,
+      (user.notificationFrequency as NotificationFrequency) ?? 'disabled',
+      user.notificationReminderHour,
+      currentHour,
+      now
+    ))
+
+    if (dueUsers.length === 0) {
+      return {
+        sent: 0,
+        failed: 0,
+        recipients: [],
+        skipped: userRows.length,
+        message: 'No reminder emails were due for the configured user frequencies',
+      }
+    }
+
+    const subject = process.env.PENDING_MATCHES_SUBJECT ?? 'Resumen de notificaciones pendientes en Match-TFE'
     const senderEmail = process.env.SMTP_FROM ?? process.env.SMTP_USER ?? 'no-reply@matchtfe.local'
     const transporter = this.createTransporter()
 
-    const sendResults = await Promise.allSettled(studentRows.map(async (student) => {
-      const pendingCount = pendingCountsByStudent.get(student.id) ?? 1
-      const plural = pendingCount === 1 ? '' : 's'
-      const text = `Hola ${student.name},\n\nTienes ${pendingCount} match${plural} pendiente${plural} en Match-TFE.\n\nEntra en la plataforma para revisar tus propuestas y responder a tiempo.\n\nUn saludo,\nEquipo Match-TFE`
+    const sendResults = await Promise.allSettled(dueUsers.map(async (user) => {
+      const unreadForUser = unreadByUserId.get(user.id) ?? []
+
+      const lines = unreadForUser
+        .slice(0, 10)
+        .map((notification, index) => `${index + 1}. [${notification.type}] ${notification.content}`)
+
+      const moreLine = unreadForUser.length > 10
+        ? `\nY ${unreadForUser.length - 10} notificaciones más sin leer.`
+        : ''
+
+      const text = `Hola ${user.name},\n\nTienes ${unreadForUser.length} notificaciones sin leer en Match-TFE.\n\nResumen:\n${lines.join('\n')}${moreLine}\n\nEntra en la plataforma para revisarlas.\n\nUn saludo,\nEquipo Match-TFE`
+      const htmlItems = unreadForUser
+        .slice(0, 10)
+        .map((notification) => `<li><strong>[${notification.type}]</strong> ${notification.content}</li>`)
+        .join('')
+      const htmlMoreLine = unreadForUser.length > 10
+        ? `<p>Y ${unreadForUser.length - 10} notificaciones más sin leer.</p>`
+        : ''
 
       await transporter.sendMail({
         from: senderEmail,
-        to: student.email,
+        to: user.email,
         subject,
         text,
-        html: `<p>Hola ${student.name},</p><p>Tienes <strong>${pendingCount}</strong> match${plural} pendiente${plural} en Match-TFE.</p><p>Entra en la plataforma para revisar tus propuestas y responder a tiempo.</p><p>Un saludo,<br/>Equipo Match-TFE</p>`,
+        html: `<p>Hola ${user.name},</p><p>Tienes <strong>${unreadForUser.length}</strong> notificaciones sin leer en Match-TFE.</p><p>Resumen:</p><ol>${htmlItems}</ol>${htmlMoreLine}<p>Entra en la plataforma para revisarlas.</p><p>Un saludo,<br/>Equipo Match-TFE</p>`,
       })
 
-      return student.email
+      return user.email
     }))
 
     const sentTo = sendResults
       .filter((result): result is PromiseFulfilledResult<string> => result.status === 'fulfilled')
       .map((result) => result.value)
+
+    const sentUserIds = dueUsers
+      .filter((_, index) => sendResults[index]?.status === 'fulfilled')
+      .map((user) => user.id)
+
+    if (sentUserIds.length > 0) {
+      await db
+        .update(users)
+        .set({ lastReminderEmailSentAt: new Date() })
+        .where(inArray(users.id, sentUserIds))
+    }
 
     const failedCount = sendResults.length - sentTo.length
 
@@ -254,9 +359,10 @@ export class NotificationApplicationService {
       sent: sentTo.length,
       failed: failedCount,
       recipients: sentTo,
+      skipped: userRows.length - dueUsers.length,
       message: failedCount > 0
-        ? 'Pending-match reminders sent with partial failures'
-        : 'Pending-match reminders sent successfully',
+        ? 'Unread notification summaries sent with partial failures'
+        : 'Unread notification summaries sent successfully',
     }
   }
 

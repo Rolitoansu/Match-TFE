@@ -17,6 +17,10 @@ function validate(schema: ZodObject<any>, source: 'body' | 'params' | 'query' = 
 export const TFECreationSchema = z.object({
     title: z.string(),
     description: z.string(),
+    type: z.coerce.number('Expected TFG type')
+        .int('TFG type must be an integer')
+        .min(1, 'TFG type is not valid')
+        .max(6, 'TFG type is not valid'),
     tags: z.array(z.string()).optional()
 })
 

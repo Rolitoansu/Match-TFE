@@ -12,6 +12,7 @@ interface ProposalDetailsData {
   id: number
   title: string
   description: string
+  type: number
   publicationDate: string
   isOwner: boolean
   viewerMatchStatus: 'pending' | 'accepted' | 'rejected' | null
@@ -160,6 +161,15 @@ export default function ProposalDetails() {
     return t(`proposalDetails.status.${status}`)
   }
 
+  const tfgTypeLabelById: Record<number, string> = {
+    1: t('tfgTypes.research'),
+    2: t('tfgTypes.hardwareSoftwareDevelopment'),
+    3: t('tfgTypes.professionalExperience'),
+    4: t('tfgTypes.qualitySecuritySystemsDesignAndImplementation'),
+    5: t('tfgTypes.specificHardwareSoftwareImplementation'),
+    6: t('tfgTypes.otherWorks'),
+  }
+
   function getCounterLabel(status: ProposalDetailsData['status']) {
     if (status === 'in_progress') {
       return t('proposalDetails.sidebar.status')
@@ -250,6 +260,9 @@ export default function ProposalDetails() {
             </h3>
             <p className="text-foreground/80 leading-relaxed text-lg">
               {proposal.description}
+            </p>
+            <p className="text-sm font-semibold text-foreground/80">
+              {t('proposalDetails.sections.tfgType')}: {tfgTypeLabelById[proposal.type] ?? t('tfgTypes.otherWorks')}
             </p>
           </section>
 

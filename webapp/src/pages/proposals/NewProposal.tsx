@@ -292,8 +292,12 @@ export default function NewProposal() {
                 onChange={(e) => updateType(Number(e.target.value))}
               >
                 <option value="0">{t('newProposal.settings.selectType')}</option>
-                <option value="1">{t('newProposal.settings.softwareDevelopment')}</option>
-                <option value="2">{t('newProposal.settings.research')}</option>
+                <option value="1">{t('newProposal.settings.research')}</option>
+                <option value="2">{t('newProposal.settings.hardwareSoftwareDevelopment')}</option>
+                <option value="3">{t('newProposal.settings.professionalExperience')}</option>
+                <option value="4">{t('newProposal.settings.qualitySecuritySystemsDesignAndImplementation')}</option>
+                <option value="5">{t('newProposal.settings.specificHardwareSoftwareImplementation')}</option>
+                <option value="6">{t('newProposal.settings.otherWorks')}</option>
               </select>
               <div className="text-xs font-medium text-red-600 mt-1">
                 {errors.typeError === 'blank' && t('newProposal.errors.typeRequired')}

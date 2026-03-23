@@ -31,7 +31,9 @@ export const adminStudentSchema = z.object({
 export const updateProfileSchema = z.object({
     biography: z.string("Expected biography").max(2000, "Biography cannot exceed 2000 characters").nullable().optional(),
     interests: z.array(z.string().trim().min(1, 'Interest tag cannot be empty')).max(30, 'Too many interests').optional(),
-}).refine((data) => data.biography !== undefined || data.interests !== undefined, {
+    notificationFrequency: z.enum(['disabled', 'daily', 'weekly', 'biweekly', 'monthly']).optional(),
+    notificationReminderHour: z.number('Expected reminder hour').int('Reminder hour must be an integer').min(0, 'Reminder hour must be between 0 and 23').max(23, 'Reminder hour must be between 0 and 23').optional(),
+}).refine((data) => data.biography !== undefined || data.interests !== undefined || data.notificationFrequency !== undefined || data.notificationReminderHour !== undefined, {
     message: 'At least one profile field must be provided',
 })
 

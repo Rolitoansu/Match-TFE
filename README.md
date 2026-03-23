@@ -31,9 +31,11 @@ SMTP_USER=<smtp_user>
 SMTP_PASS=<smtp_password>
 SMTP_FROM=<optional_sender_email>
 NOTIFICATION_TIMEZONE=<optional_timezone>          # default: Europe/Madrid
-PENDING_MATCHES_CRON=<optional_cron_expression>    # default: 0 9 * * 1 (lunes 09:00)
+PENDING_MATCHES_CRON=<optional_cron_expression>    # default: 0 * * * * (cada hora, se filtra por preferencias de usuario)
 PENDING_MATCHES_SUBJECT=<optional_email_subject>
 ```
+
+Los correos de recordatorio se envian automaticamente por usuario segun su frecuencia y hora configuradas, e incluyen un resumen de notificaciones pendientes por leer.
 
 ### 2. Launching the System
 

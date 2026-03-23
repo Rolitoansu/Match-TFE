@@ -10,6 +10,8 @@ export interface MatchTFEUser {
     surname: string
     registrationDate: string
     biography: string
+    notificationFrequency: 'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly'
+    notificationReminderHour: number
     interests: string[]
     role: 'student' | 'professor'
 }

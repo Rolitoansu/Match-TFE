@@ -22,6 +22,9 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 100 }).notNull().unique(),
   registrationDate: timestamp('registration_date', { withTimezone: true, mode: 'date' }).defaultNow(),
   biography: text('biography'),
+  notificationFrequency: varchar('notification_frequency', { length: 20 }).notNull().default('disabled'),
+  notificationReminderHour: integer('notification_reminder_hour').notNull().default(9),
+  lastReminderEmailSentAt: timestamp('last_reminder_email_sent_at', { withTimezone: true, mode: 'date' }),
   role: varchar('role', { length: 20 }).notNull(),
 })
 
@@ -67,12 +70,15 @@ export const projects = pgTable('projects', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   title: varchar('title', { length: 200 }).notNull(),
   description: text('description'),
+  tfeType: integer('tfe_type').notNull().default(6),
   status: projectStatusEnum('status').notNull().default('proposed'),
   publicationDate: timestamp('publication_date', { withTimezone: true, mode: 'date' }).defaultNow(),
   expirationDate: timestamp('expiration_date', { withTimezone: true, mode: 'date' }).default(sql`CURRENT_TIMESTAMP + INTERVAL '12 months'`),
   tutorId: integer('tutor_id').references(() => users.id, { onDelete: 'set null' }),
   studentId: integer('student_id').references(() => users.id, { onDelete: 'set null' }),
-})
+}, (table) => [
+  check('project_tfe_type_range', sql`${table.tfeType} >= 1 AND ${table.tfeType} <= 6`),
+])
 
 export const tags = pgTable('tags', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),

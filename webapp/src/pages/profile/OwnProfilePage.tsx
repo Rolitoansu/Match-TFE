@@ -1,6 +1,5 @@
 import {
   User,
-  Settings,
   Mail,
   PencilLine,
   FileText,
@@ -35,6 +34,14 @@ export default function OwnProfilePage() {
   const [savingInterests, setSavingInterests] = useState(false)
   const [interestsError, setInterestsError] = useState<string | null>(null)
   const [interestsSuccess, setInterestsSuccess] = useState<string | null>(null)
+  const [notificationFrequency, setNotificationFrequency] = useState<'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly'>('disabled')
+  const [notificationReminderHour, setNotificationReminderHour] = useState(9)
+  const [draftNotificationFrequency, setDraftNotificationFrequency] = useState<'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly'>('disabled')
+  const [draftNotificationReminderHour, setDraftNotificationReminderHour] = useState(9)
+  const [isEditingNotificationFrequency, setIsEditingNotificationFrequency] = useState(false)
+  const [savingNotificationFrequency, setSavingNotificationFrequency] = useState(false)
+  const [notificationFrequencyError, setNotificationFrequencyError] = useState<string | null>(null)
+  const [notificationFrequencySuccess, setNotificationFrequencySuccess] = useState<string | null>(null)
   const [interestSearch, setInterestSearch] = useState('')
   const [debouncedInterestSearch, setDebouncedInterestSearch] = useState('')
   const [interestInputFocused, setInterestInputFocused] = useState(false)
@@ -61,6 +68,10 @@ export default function OwnProfilePage() {
         const profile: ProfileData = profileResponse.data.user
         setAboutMe(profile.biography ?? '')
         setSelectedInterests(profile.interests ?? [])
+        setNotificationFrequency(profile.notificationFrequency ?? 'disabled')
+        setNotificationReminderHour(profile.notificationReminderHour ?? 9)
+        setDraftNotificationFrequency(profile.notificationFrequency ?? 'disabled')
+        setDraftNotificationReminderHour(profile.notificationReminderHour ?? 9)
 
         setAvailableTags(tagsResponse.data.tags ?? [])
       } catch (error) {
@@ -98,6 +109,18 @@ export default function OwnProfilePage() {
 
     return () => clearTimeout(timeoutId)
   }, [interestsSuccess])
+
+  useEffect(() => {
+    if (!notificationFrequencySuccess) {
+      return
+    }
+
+    const timeoutId = setTimeout(() => {
+      setNotificationFrequencySuccess(null)
+    }, 3000)
+
+    return () => clearTimeout(timeoutId)
+  }, [notificationFrequencySuccess])
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedInterestSearch(interestSearch), 300)
@@ -174,6 +197,40 @@ export default function OwnProfilePage() {
     } finally {
       setSavingInterests(false)
     }
+  }
+
+  async function saveNotificationFrequency() {
+    setSavingNotificationFrequency(true)
+    setNotificationFrequencyError(null)
+    setNotificationFrequencySuccess(null)
+
+    try {
+      await api.patch('/user/profile', {
+        notificationFrequency: draftNotificationFrequency,
+        notificationReminderHour: draftNotificationReminderHour,
+      })
+      setNotificationFrequency(draftNotificationFrequency)
+      setNotificationReminderHour(draftNotificationReminderHour)
+      setIsEditingNotificationFrequency(false)
+      setNotificationFrequencySuccess(t('ownProfile.feedback.notificationFrequencyUpdated'))
+    } catch (error) {
+      console.error('Error actualizando frecuencia de notificaciones:', error)
+      setNotificationFrequencyError(t('ownProfile.feedback.notificationFrequencyUpdateError'))
+    } finally {
+      setSavingNotificationFrequency(false)
+    }
+  }
+
+  const notificationFrequencyLabelByKey = {
+    disabled: t('ownProfile.notifications.frequency.disabled'),
+    daily: t('ownProfile.notifications.frequency.daily'),
+    weekly: t('ownProfile.notifications.frequency.weekly'),
+    biweekly: t('ownProfile.notifications.frequency.biweekly'),
+    monthly: t('ownProfile.notifications.frequency.monthly'),
+  } as const
+
+  function formatHour(hour: number) {
+    return `${String(hour).padStart(2, '0')}:00`
   }
 
   return (
@@ -439,6 +496,96 @@ export default function OwnProfilePage() {
                 {interestsError && <p className="mt-2 text-xs text-red-600">{interestsError}</p>}
                 {interestsSuccess && <p className="mt-2 text-xs text-green-600">{interestsSuccess}</p>}
               </div>
+
+              <div>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center justify-between">
+                  {t('ownProfile.notifications.title')}
+                  <button
+                    type="button"
+                    className="text-primary hover:opacity-80 transition-opacity"
+                    onClick={() => {
+                      setIsEditingNotificationFrequency((prev) => !prev)
+                      setDraftNotificationFrequency(notificationFrequency)
+                      setDraftNotificationReminderHour(notificationReminderHour)
+                      setNotificationFrequencyError(null)
+                      setNotificationFrequencySuccess(null)
+                    }}
+                  >
+                    <PencilLine size={12} className="cursor-pointer" />
+                  </button>
+                </h3>
+
+                {isEditingNotificationFrequency ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground">{t('ownProfile.notifications.helper')}</p>
+                    <select
+                      value={draftNotificationFrequency}
+                      onChange={(event) => setDraftNotificationFrequency(event.target.value as 'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly')}
+                      className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                      disabled={savingNotificationFrequency}
+                    >
+                      <option value="disabled">{t('ownProfile.notifications.frequency.disabled')}</option>
+                      <option value="daily">{t('ownProfile.notifications.frequency.daily')}</option>
+                      <option value="weekly">{t('ownProfile.notifications.frequency.weekly')}</option>
+                      <option value="biweekly">{t('ownProfile.notifications.frequency.biweekly')}</option>
+                      <option value="monthly">{t('ownProfile.notifications.frequency.monthly')}</option>
+                    </select>
+
+                    {draftNotificationFrequency !== 'disabled' && (
+                      <div className="space-y-1">
+                        <label htmlFor="notificationReminderHour" className="text-xs font-semibold text-muted-foreground">
+                          {t('ownProfile.notifications.hourLabel')}
+                        </label>
+                        <input
+                          id="notificationReminderHour"
+                          type="number"
+                          min={0}
+                          max={23}
+                          step={1}
+                          value={draftNotificationReminderHour}
+                          onChange={(event) => setDraftNotificationReminderHour(Math.min(23, Math.max(0, Number(event.target.value) || 0)))}
+                          className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                          disabled={savingNotificationFrequency}
+                        />
+                        <p className="text-xs text-muted-foreground">{t('ownProfile.notifications.hourHelper')}</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary transition-colors"
+                        onClick={() => {
+                          setIsEditingNotificationFrequency(false)
+                          setDraftNotificationFrequency(notificationFrequency)
+                          setDraftNotificationReminderHour(notificationReminderHour)
+                          setNotificationFrequencyError(null)
+                        }}
+                        disabled={savingNotificationFrequency}
+                      >
+                        {t('ownProfile.common.cancel')}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
+                        onClick={saveNotificationFrequency}
+                        disabled={savingNotificationFrequency}
+                      >
+                        {savingNotificationFrequency ? t('ownProfile.common.saving') : t('ownProfile.notifications.save')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed text-foreground/80">
+                    {notificationFrequency === 'disabled'
+                      ? notificationFrequencyLabelByKey[notificationFrequency]
+                      : `${notificationFrequencyLabelByKey[notificationFrequency]} · ${formatHour(notificationReminderHour)}`}
+                  </p>
+                )}
+
+                {notificationFrequencyError && <p className="mt-2 text-xs text-red-600">{notificationFrequencyError}</p>}
+                {notificationFrequencySuccess && <p className="mt-2 text-xs text-green-600">{notificationFrequencySuccess}</p>}
+              </div>
             </div>
           </div>
         </div>
@@ -449,9 +596,6 @@ export default function OwnProfilePage() {
               <FileText className="text-primary" size={20} />
               {t('ownProfile.published.title')}
             </h3>
-            <div className="flex gap-2">
-              <button className="p-2 text-muted-foreground hover:text-primary transition-colors"><Settings size={18} /></button>
-            </div>
           </div>
 
           <div className="grid gap-4">

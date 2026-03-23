@@ -19,6 +19,7 @@ interface Proposal {
   id: number
   title: string
   description: string
+  type: number
   publicationDate: string
   status: 'proposed' | 'in_progress' | 'completed'
   interestCount: number
@@ -98,6 +99,15 @@ export default function Proposals() {
     proposed: t('proposals.status.open'),
     in_progress: t('proposals.status.inProgress'),
     completed: t('proposals.status.completed'),
+  }
+
+  const tfgTypeLabelById: Record<number, string> = {
+    1: t('tfgTypes.research'),
+    2: t('tfgTypes.hardwareSoftwareDevelopment'),
+    3: t('tfgTypes.professionalExperience'),
+    4: t('tfgTypes.qualitySecuritySystemsDesignAndImplementation'),
+    5: t('tfgTypes.specificHardwareSoftwareImplementation'),
+    6: t('tfgTypes.otherWorks'),
   }
 
   return (
@@ -185,6 +195,9 @@ export default function Proposals() {
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       <Clock size={14} /> {new Date(proposal.publicationDate).toLocaleString()}
+                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t('proposals.fields.tfgType')}: {tfgTypeLabelById[proposal.type] ?? t('tfgTypes.otherWorks')}
                     </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       <CheckCircle2 size={14} /> {proposal.status === 'in_progress' ? t('proposals.assignment.assigned') : proposal.interestCount > 0 ? t('proposals.assignment.hasInterested') : t('proposals.assignment.noInterested')}

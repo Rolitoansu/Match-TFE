@@ -2,6 +2,14 @@
 	"common": {
 		"loading": "Cargando..."
 	},
+	"tfgTypes": {
+		"research": "Investigación",
+		"hardwareSoftwareDevelopment": "Desarrollo de hardware/software",
+		"professionalExperience": "Experiencia Profesional",
+		"qualitySecuritySystemsDesignAndImplementation": "Sistemas de calidad y seguridad TI",
+		"specificHardwareSoftwareImplementation": "Implantación de hardware/software específico",
+		"otherWorks": "Otros trabajos"
+	},
 	"header": {
 		"nav": {
 			"explore": "Explorar",
@@ -65,7 +73,8 @@
 			"completed": "Finalizada"
 		},
 		"sections": {
-			"projectDescription": "Descripción del Proyecto"
+			"projectDescription": "Descripción del Proyecto",
+			"tfgType": "Tipo de TFG"
 		},
 		"renew": {
 			"button": "Renovar TFE (1 año)",
@@ -291,7 +300,8 @@
 		},
 		"card": {
 			"publishedProject": "TFE Publicado",
-			"tags": "Etiquetas"
+			"tags": "Etiquetas",
+			"tfgType": "Tipo"
 		},
 		"actions": {
 			"pass": "Pasar",
@@ -337,8 +347,12 @@
 			"title": "Configuración",
 			"projectType": "Tipo de Trabajo",
 			"selectType": "-- Seleccionar tipo --",
-			"softwareDevelopment": "Desarrollo de Software",
-			"research": "Investigación"
+			"research": "Investigación",
+			"hardwareSoftwareDevelopment": "Desarrollo de hardware/software",
+			"professionalExperience": "Experiencia Profesional",
+			"qualitySecuritySystemsDesignAndImplementation": "Sistemas de calidad y seguridad TI",
+			"specificHardwareSoftwareImplementation": "Implantación de hardware/software específico",
+			"otherWorks": "Otros trabajos"
 		}
 	},
 	"ownProfile": {
@@ -358,7 +372,9 @@
 			"aboutUpdated": "Tu perfil se ha actualizado correctamente.",
 			"aboutUpdateError": "No se pudo actualizar tu biografía. Inténtalo de nuevo.",
 			"interestsUpdated": "Intereses actualizados correctamente.",
-			"interestsUpdateError": "No se pudieron actualizar los intereses. Inténtalo de nuevo."
+			"interestsUpdateError": "No se pudieron actualizar los intereses. Inténtalo de nuevo.",
+			"notificationFrequencyUpdated": "Frecuencia de notificaciones actualizada correctamente.",
+			"notificationFrequencyUpdateError": "No se pudo actualizar la frecuencia de notificaciones. Inténtalo de nuevo."
 		},
 		"about": {
 			"title": "Sobre mí",
@@ -375,6 +391,20 @@
 			"allAdded": "Ya has añadido todas las etiquetas disponibles.",
 			"save": "Guardar intereses",
 			"empty": "Todavía no has definido intereses."
+		},
+		"notifications": {
+			"title": "Notificaciones por correo",
+			"helper": "Elige cada cuánto recibir recordatorios de matches pendientes por correo.",
+			"save": "Guardar frecuencia",
+			"hourLabel": "Hora del recordatorio",
+			"hourHelper": "Se enviará aproximadamente a esta hora (formato 24h).",
+			"frequency": {
+				"disabled": "Desactivadas",
+				"daily": "Diarias",
+				"weekly": "Semanal",
+				"biweekly": "Quincenal",
+				"monthly": "Mensual"
+			}
 		},
 		"published": {
 			"title": "Mis TFEs Publicados",
@@ -414,7 +444,8 @@
 		},
 		"fields": {
 			"status": "Estado",
-			"interested": "Interesados"
+			"interested": "Interesados",
+			"tfgType": "Tipo"
 		},
 		"badges": {
 			"match": "match",

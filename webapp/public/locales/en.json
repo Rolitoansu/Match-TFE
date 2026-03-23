@@ -2,6 +2,14 @@
 	"common": {
 		"loading": "Loading..."
 	},
+	"tfgTypes": {
+		"research": "Research",
+		"hardwareSoftwareDevelopment": "Hardware/Software Development",
+		"professionalExperience": "Professional Experience",
+		"qualitySecuritySystemsDesignAndImplementation": "IT Quality and Security Systems",
+		"specificHardwareSoftwareImplementation": "Specific Hardware/Software Deployment",
+		"otherWorks": "Other works"
+	},
 	"header": {
 		"nav": {
 			"explore": "Explore",
@@ -65,7 +73,8 @@
 			"completed": "Completed"
 		},
 		"sections": {
-			"projectDescription": "Project Description"
+			"projectDescription": "Project Description",
+			"tfgType": "TFG type"
 		},
 		"renew": {
 			"button": "Renew Thesis (1 year)",
@@ -291,7 +300,8 @@
 		},
 		"card": {
 			"publishedProject": "Published Project",
-			"tags": "Tags"
+			"tags": "Tags",
+			"tfgType": "Type"
 		},
 		"actions": {
 			"pass": "Pass",
@@ -337,8 +347,12 @@
 			"title": "Settings",
 			"projectType": "Project Type",
 			"selectType": "-- Select type --",
-			"softwareDevelopment": "Software Development",
-			"research": "Research"
+			"research": "Research",
+			"hardwareSoftwareDevelopment": "Hardware/Software Development",
+			"professionalExperience": "Professional Experience",
+			"qualitySecuritySystemsDesignAndImplementation": "IT Quality and Security Systems",
+			"specificHardwareSoftwareImplementation": "Specific Hardware/Software Deployment",
+			"otherWorks": "Other works"
 		}
 	},
 	"ownProfile": {
@@ -358,7 +372,9 @@
 			"aboutUpdated": "Your profile has been updated successfully.",
 			"aboutUpdateError": "Could not update your biography. Please try again.",
 			"interestsUpdated": "Interests updated successfully.",
-			"interestsUpdateError": "Could not update interests. Please try again."
+			"interestsUpdateError": "Could not update interests. Please try again.",
+			"notificationFrequencyUpdated": "Notification frequency updated successfully.",
+			"notificationFrequencyUpdateError": "Could not update notification frequency. Please try again."
 		},
 		"about": {
 			"title": "About me",
@@ -375,6 +391,20 @@
 			"allAdded": "You have already added all available tags.",
 			"save": "Save interests",
 			"empty": "You have not defined interests yet."
+		},
+		"notifications": {
+			"title": "Email notifications",
+			"helper": "Choose how often to receive pending-match reminder emails.",
+			"save": "Save frequency",
+			"hourLabel": "Reminder hour",
+			"hourHelper": "Emails will be sent around this hour (24h format).",
+			"frequency": {
+				"disabled": "Disabled",
+				"daily": "Daily",
+				"weekly": "Weekly",
+				"biweekly": "Every two weeks",
+				"monthly": "Monthly"
+			}
 		},
 		"published": {
 			"title": "My Published Projects",
@@ -414,7 +444,8 @@
 		},
 		"fields": {
 			"status": "Status",
-			"interested": "Interested"
+			"interested": "Interested",
+			"tfgType": "Type"
 		},
 		"badges": {
 			"match": "match",

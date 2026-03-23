@@ -36,6 +36,30 @@ describe('userservice validate middleware', () => {
     expect(req.body.biography).toBe('Bio test')
   })
 
+  it('accepts profile update with only notification frequency', () => {
+    const parsed = updateProfileSchema.safeParse({ notificationFrequency: 'daily' })
+
+    expect(parsed.success).toBe(true)
+  })
+
+  it('accepts profile update with only notification reminder hour', () => {
+    const parsed = updateProfileSchema.safeParse({ notificationReminderHour: 8 })
+
+    expect(parsed.success).toBe(true)
+  })
+
+  it('rejects invalid notification frequency values', () => {
+    const parsed = updateProfileSchema.safeParse({ notificationFrequency: 'yearly' })
+
+    expect(parsed.success).toBe(false)
+  })
+
+  it('rejects invalid reminder hour values', () => {
+    const parsed = updateProfileSchema.safeParse({ notificationReminderHour: 24 })
+
+    expect(parsed.success).toBe(false)
+  })
+
   it('rejects empty admin user update payload', () => {
     const parsed = adminUpdateUserSchema.safeParse({})
 

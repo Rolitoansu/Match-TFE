@@ -64,10 +64,10 @@ app.get('/tags', async (_req, res) => {
 
 app.post('/proposals', validate(TFECreationSchema), async (req, res) => {
     const userEmail = req.headers['x-user-email'] as string
-    const { title, description, tags: tagNames } = req.body
+    const { title, description, type, tags: tagNames } = req.body
 
     try {
-        const result = await projectService.createProposal(userEmail, { title, description, tags: tagNames })
+        const result = await projectService.createProposal(userEmail, { title, description, type, tags: tagNames })
         return res.status(201).json(result)
     } catch (exception) {
         if (exception instanceof HttpError) {

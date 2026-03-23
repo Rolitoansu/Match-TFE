@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import axios from 'axios'
 import db from '@match-tfe/db'
 import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
 import { and, desc, eq, inArray, or } from 'drizzle-orm'
@@ -25,6 +26,8 @@ type RegisterStudentInput = {
 type UpdateProfileInput = {
     biography?: string | null
     interests?: string[]
+    notificationFrequency?: 'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly'
+    notificationReminderHour?: number
 }
 
 export class UserApplicationService {
@@ -36,11 +39,7 @@ export class UserApplicationService {
         }
 
         try {
-            await fetch(`${NOTIFICATION_SERVICE_URL}/users`, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ userId, type, content }),
-            })
+            await axios.post(`${NOTIFICATION_SERVICE_URL}/users`, { userId, type, content })
         } catch (error) {
             console.warn('[userservice] notification dispatch failed:', error)
         }
@@ -100,6 +99,8 @@ export class UserApplicationService {
                 surname: input.surname,
                 registrationDate,
                 biography: null,
+                notificationFrequency: 'disabled',
+                notificationReminderHour: 9,
                 role: 'student',
                 interests: [],
             },
@@ -122,6 +123,7 @@ export class UserApplicationService {
                 id: projects.id,
                 title: projects.title,
                 description: projects.description,
+                type: projects.tfeType,
                 publicationDate: projects.publicationDate,
                 status: projects.status,
             })
@@ -160,6 +162,8 @@ export class UserApplicationService {
                 surname: users.surname,
                 registrationDate: users.registrationDate,
                 biography: users.biography,
+                notificationFrequency: users.notificationFrequency,
+                notificationReminderHour: users.notificationReminderHour,
                 role: users.role,
             })
             .from(users)
@@ -202,6 +206,24 @@ export class UserApplicationService {
                 .where(eq(users.id, currentUser.id))
         }
 
+        if (input.notificationFrequency !== undefined) {
+            const frequencyUpdate = input.notificationFrequency === 'disabled'
+                ? { notificationFrequency: input.notificationFrequency, lastReminderEmailSentAt: null }
+                : { notificationFrequency: input.notificationFrequency }
+
+            await db
+                .update(users)
+                .set(frequencyUpdate)
+                .where(eq(users.id, currentUser.id))
+        }
+
+        if (input.notificationReminderHour !== undefined) {
+            await db
+                .update(users)
+                .set({ notificationReminderHour: input.notificationReminderHour })
+                .where(eq(users.id, currentUser.id))
+        }
+
         if (input.interests !== undefined) {
             const normalizedInterests = [...new Set(input.interests.map((name) => name.trim()).filter(Boolean))]
             const tagRows = normalizedInterests.length > 0
@@ -232,6 +254,8 @@ export class UserApplicationService {
                 surname: users.surname,
                 registrationDate: users.registrationDate,
                 biography: users.biography,
+                notificationFrequency: users.notificationFrequency,
+                notificationReminderHour: users.notificationReminderHour,
                 role: users.role,
             })
             .from(users)
@@ -296,6 +320,7 @@ export class UserApplicationService {
                 id: projects.id,
                 title: projects.title,
                 description: projects.description,
+                type: projects.tfeType,
                 status: projects.status,
                 publicationDate: projects.publicationDate,
             })

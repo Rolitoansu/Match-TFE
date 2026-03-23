@@ -9,17 +9,17 @@ const app = express()
 app.use(express.json())
 
 const notificationService = new NotificationApplicationService()
-const pendingMatchesCron = process.env.PENDING_MATCHES_CRON ?? '0 9 * * 1'
+const pendingMatchesCron = process.env.PENDING_MATCHES_CRON ?? '0 * * * *'
 const pendingMatchesTimezone = process.env.NOTIFICATION_TIMEZONE ?? 'Europe/Madrid'
 
 cron.schedule(
   pendingMatchesCron,
   async () => {
     try {
-      const result = await notificationService.sendPendingMatchesReminderEmails()
-      console.log('[notificationservice] pending-matches reminder job result:', result)
+      const result = await notificationService.sendUnreadNotificationsSummaryEmails(pendingMatchesTimezone)
+      console.log('[notificationservice] unread-notifications summary job result:', result)
     } catch (error) {
-      console.error('[notificationservice] pending-matches reminder job failed:', error)
+      console.error('[notificationservice] unread-notifications summary job failed:', error)
     }
   },
   { timezone: pendingMatchesTimezone }

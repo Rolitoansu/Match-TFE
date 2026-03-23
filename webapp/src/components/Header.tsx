@@ -228,7 +228,7 @@ export const Header = () => {
               className="h-11 rounded-full border border-black/5 bg-slate-100/85 pl-9 pr-8 text-xs font-bold uppercase tracking-[0.08em] text-slate-600 transition-colors hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
               aria-label="Language"
             >
-              <option value="es">Espanol</option>
+              <option value="es">Español</option>
               <option value="en">English</option>
             </select>
           </label>

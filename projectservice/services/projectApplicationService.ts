@@ -1,3 +1,4 @@
+import axios from 'axios'
 import db from '@match-tfe/db'
 import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
 import { and, desc, eq, inArray, isNotNull, ne, or } from 'drizzle-orm'
@@ -23,6 +24,7 @@ type CurrentUser = {
 type CreateProposalInput = {
     title: string
     description?: string
+    type: number
     tags?: string[]
 }
 
@@ -43,6 +45,7 @@ export class ProjectApplicationService {
                     id: projects.id,
                     title: projects.title,
                     description: projects.description,
+                    type: projects.tfeType,
                     publicationDate: projects.publicationDate,
                     status: projects.status,
                     studentId: projects.studentId,
@@ -102,6 +105,7 @@ export class ProjectApplicationService {
                 id: projects.id,
                 title: projects.title,
                 description: projects.description,
+                type: projects.tfeType,
                 publicationDate: projects.publicationDate,
                 status: projects.status,
             })
@@ -137,11 +141,7 @@ export class ProjectApplicationService {
         }
 
         try {
-            await fetch(`${NOTIFICATION_SERVICE_URL}/users`, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ userId, type, content }),
-            })
+            await axios.post(`${NOTIFICATION_SERVICE_URL}/users`, { userId, type, content })
         } catch (error) {
             console.warn('[projectservice] notification dispatch failed:', error)
         }
@@ -208,6 +208,7 @@ export class ProjectApplicationService {
                     id: projects.id,
                     title: projects.title,
                     description: projects.description,
+                    type: projects.tfeType,
                     publicationDate: projects.publicationDate,
                     status: projects.status,
                     studentId: projects.studentId,
@@ -223,6 +224,7 @@ export class ProjectApplicationService {
                     id: projects.id,
                     title: projects.title,
                     description: projects.description,
+                    type: projects.tfeType,
                     publicationDate: projects.publicationDate,
                     status: projects.status,
                     studentId: projects.studentId,
@@ -305,6 +307,7 @@ export class ProjectApplicationService {
                     id: acceptedMatchContext.project.id,
                     title: acceptedMatchContext.project.title,
                     description: acceptedMatchContext.project.description,
+                    type: acceptedMatchContext.project.type,
                     publicationDate: acceptedMatchContext.project.publicationDate,
                     status: acceptedMatchContext.project.status,
                     tags: tagsForMatchedProposal,
@@ -333,6 +336,7 @@ export class ProjectApplicationService {
                 id: projects.id,
                 title: projects.title,
                 description: projects.description,
+                type: projects.tfeType,
                 publicationDate: projects.publicationDate,
                 status: projects.status,
                 creatorId: users.id,
@@ -421,6 +425,7 @@ export class ProjectApplicationService {
                 id: projects.id,
                 title: projects.title,
                 description: projects.description,
+                type: projects.tfeType,
                 publicationDate: projects.publicationDate,
                 status: projects.status,
                 studentId: projects.studentId,
@@ -541,8 +546,8 @@ export class ProjectApplicationService {
                 .insert(projects)
                 .values(
                     currentUser.role === 'student'
-                        ? { title: input.title, description: input.description, studentId: currentUser.id }
-                        : { title: input.title, description: input.description, tutorId: currentUser.id }
+                        ? { title: input.title, description: input.description, tfeType: input.type, studentId: currentUser.id }
+                        : { title: input.title, description: input.description, tfeType: input.type, tutorId: currentUser.id }
                 )
                 .returning({ id: projects.id })
 

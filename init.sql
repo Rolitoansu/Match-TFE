@@ -6,6 +6,9 @@ CREATE TABLE users (
     email VARCHAR(100) NOT NULL UNIQUE,
     registration_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     biography TEXT,
+    notification_frequency VARCHAR(20) NOT NULL DEFAULT 'disabled' CHECK (notification_frequency IN ('disabled', 'daily', 'weekly', 'biweekly', 'monthly')),
+    notification_reminder_hour INTEGER NOT NULL DEFAULT 9 CHECK (notification_reminder_hour >= 0 AND notification_reminder_hour <= 23),
+    last_reminder_email_sent_at TIMESTAMPTZ,
     role VARCHAR(20) NOT NULL CHECK (role IN ('student', 'professor'))
 );
 
@@ -32,6 +35,7 @@ CREATE TABLE projects (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     description TEXT,
+    tfe_type INTEGER NOT NULL DEFAULT 6 CHECK (tfe_type >= 1 AND tfe_type <= 6),
     status VARCHAR(20) DEFAULT 'proposed' CHECK (status IN ('proposed', 'in_progress', 'completed')),
     publication_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     expiration_date TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '12 months'),

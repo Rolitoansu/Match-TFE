@@ -172,7 +172,7 @@ describe('ProjectApplicationService', () => {
     vi.mocked(db.select).mockReturnValueOnce(createLimitChain([]) as any)
     const service = new ProjectApplicationService()
 
-    await expect(service.createProposal('x@example.com', { title: 'T' })).rejects.toMatchObject({
+    await expect(service.createProposal('x@example.com', { title: 'T', type: 1 })).rejects.toMatchObject({
       status: 404,
       payload: { error: 'User not found' },
     })
@@ -196,7 +196,7 @@ describe('ProjectApplicationService', () => {
     })
 
     const service = new ProjectApplicationService()
-    await expect(service.createProposal('s@example.com', { title: 'T', tags: ['IA', 'Cloud'] })).rejects.toMatchObject({
+    await expect(service.createProposal('s@example.com', { title: 'T', type: 2, tags: ['IA', 'Cloud'] })).rejects.toMatchObject({
       status: 400,
       payload: { error: 'One or more tags are not allowed' },
     })
@@ -216,7 +216,7 @@ describe('ProjectApplicationService', () => {
     })
 
     const service = new ProjectApplicationService()
-    const result = await service.createProposal('s@example.com', { title: 'T' })
+    const result = await service.createProposal('s@example.com', { title: 'T', type: 3 })
 
     expect(result.message).toBe('Project proposal created successfully')
   })
@@ -244,7 +244,7 @@ describe('ProjectApplicationService', () => {
     })
 
     const service = new ProjectApplicationService()
-    const result = await service.createProposal('s@example.com', { title: 'T', tags: ['IA', 'ML'] })
+    const result = await service.createProposal('s@example.com', { title: 'T', type: 4, tags: ['IA', 'ML'] })
 
     expect(result.message).toBe('Project proposal created successfully')
   })

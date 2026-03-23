@@ -81,9 +81,11 @@ app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
         ? (req.body.biography?.trim() || null)
         : undefined
     const interests = req.body.interests as string[] | undefined
+    const notificationFrequency = req.body.notificationFrequency as 'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | undefined
+    const notificationReminderHour = req.body.notificationReminderHour as number | undefined
 
     try {
-        const result = await userService.updateAuthenticatedProfile(userEmail, { biography, interests })
+        const result = await userService.updateAuthenticatedProfile(userEmail, { biography, interests, notificationFrequency, notificationReminderHour })
         return res.json(result)
     } catch (error) {
         if (error instanceof HttpError) {

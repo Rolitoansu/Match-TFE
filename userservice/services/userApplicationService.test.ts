@@ -216,6 +216,23 @@ describe('UserApplicationService', () => {
     expect(result.user.interests).toEqual(['IA'])
   })
 
+  it('updates notification frequency in updateAuthenticatedProfile', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1 }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, email: 'u@example.com', name: 'U', surname: 'S', registrationDate: new Date(), biography: 'Bio', notificationFrequency: 'disabled', notificationReminderHour: 7, role: 'student' }]) as any)
+      .mockReturnValueOnce(createJoinWhereChain([{ name: 'IA' }]) as any)
+
+    vi.mocked(db.update).mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+    } as any)
+
+    const service = new UserApplicationService('secret')
+    const result = await service.updateAuthenticatedProfile('u@example.com', { notificationFrequency: 'disabled', notificationReminderHour: 7 })
+
+    expect(result.user.notificationFrequency).toBe('disabled')
+    expect(result.user.notificationReminderHour).toBe(7)
+  })
+
   it('throws 404 when updateAuthenticatedProfile cannot refetch updated user', async () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1 }]) as any)

@@ -31,11 +31,11 @@ function createWhereChain<T>(rows: T[]) {
   }
 }
 
-function createJoinWhereChain<T>(rows: T[]) {
+function createWhereOrderChain<T>(rows: T[]) {
   return {
     from: vi.fn().mockReturnThis(),
-    innerJoin: vi.fn().mockReturnThis(),
-    where: vi.fn().mockResolvedValue(rows),
+    where: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockResolvedValue(rows),
   }
 }
 
@@ -141,18 +141,115 @@ describe('NotificationApplicationService', () => {
     expect(result.message).toBe('Notifications cleared successfully')
   })
 
-  it('returns empty reminder result when no pending matches exist', async () => {
+  it('returns empty reminder result when no unread notifications exist', async () => {
     vi.mocked(db.select)
-      .mockReturnValueOnce(createJoinWhereChain([]) as any)
-      .mockReturnValueOnce(createJoinWhereChain([]) as any)
+      .mockReturnValueOnce(createWhereOrderChain([]) as any)
 
     const service = new NotificationApplicationService()
-    const result = await service.sendPendingMatchesReminderEmails()
+    const result = await service.sendUnreadNotificationsSummaryEmails('UTC')
 
     expect(result).toMatchObject({
       sent: 0,
       failed: 0,
       recipients: [],
     })
+  })
+
+  it('skips reminder emails when frequency window has not elapsed', async () => {
+    const nowUtcHour = new Date().getUTCHours()
+
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createWhereOrderChain([
+        {
+          userId: 10,
+          type: 'info',
+          content: 'A',
+          timestamp: new Date(),
+        },
+      ]) as any)
+      .mockReturnValueOnce(createWhereChain([
+        {
+          id: 10,
+          email: 'st@example.com',
+          name: 'Stu',
+          notificationFrequency: 'monthly',
+          notificationReminderHour: nowUtcHour,
+          lastReminderEmailSentAt: new Date(),
+        },
+      ]) as any)
+
+    const service = new NotificationApplicationService()
+    const result = await service.sendUnreadNotificationsSummaryEmails('UTC')
+
+    expect(result.sent).toBe(0)
+    expect(result.failed).toBe(0)
+    expect(result.skipped).toBe(1)
+  })
+
+  it('skips reminder emails when notifications are disabled', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createWhereOrderChain([
+        {
+          userId: 10,
+          type: 'info',
+          content: 'A',
+          timestamp: new Date(),
+        },
+      ]) as any)
+      .mockReturnValueOnce(createWhereChain([
+        {
+          id: 10,
+          email: 'st@example.com',
+          name: 'Stu',
+          notificationFrequency: 'disabled',
+          notificationReminderHour: 9,
+          lastReminderEmailSentAt: null,
+        },
+      ]) as any)
+
+    const service = new NotificationApplicationService()
+    const result = await service.sendUnreadNotificationsSummaryEmails('UTC')
+
+    expect(result.sent).toBe(0)
+    expect(result.skipped).toBe(1)
+  })
+
+  it('sends unread notification summary when user is due', async () => {
+    const sendMail = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(nodemailer.createTransport).mockReturnValue({ sendMail } as any)
+    const nowUtcHour = new Date().getUTCHours()
+
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createWhereOrderChain([
+        {
+          userId: 10,
+          type: 'match_pending',
+          content: 'Tienes un match pendiente',
+          timestamp: new Date(),
+        },
+      ]) as any)
+      .mockReturnValueOnce(createWhereChain([
+        {
+          id: 10,
+          email: 'st@example.com',
+          name: 'Stu',
+          notificationFrequency: 'daily',
+          notificationReminderHour: nowUtcHour,
+          lastReminderEmailSentAt: null,
+        },
+      ]) as any)
+
+    vi.mocked(db.update).mockReturnValueOnce({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
+      }),
+    } as any)
+
+    const service = new NotificationApplicationService()
+    const result = await service.sendUnreadNotificationsSummaryEmails('UTC')
+
+    expect(sendMail).toHaveBeenCalledOnce()
+    expect(result.sent).toBe(1)
+    expect(result.failed).toBe(0)
   })
 })
