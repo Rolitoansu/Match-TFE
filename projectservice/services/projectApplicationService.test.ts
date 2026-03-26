@@ -51,7 +51,8 @@ function createOrderChain<T>(rows: T[]) {
 
 describe('ProjectApplicationService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
+    vi.spyOn(ProjectApplicationService.prototype as any, 'getAcceptedMatchContext').mockResolvedValue(null)
   })
 
   it('throws 404 on getProposals when user is not found', async () => {
@@ -68,6 +69,7 @@ describe('ProjectApplicationService', () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
       .mockReturnValueOnce(createProposalListChain([{ id: 11, title: 'T', description: 'D', publicationDate: new Date(), status: 'proposed', studentId: null, tutorId: 9 }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ name: 'Tutor', surname: 'One' }]) as any)
       .mockReturnValueOnce(createWhereChain([{ userId: 2, status: 'pending' }]) as any)
       .mockReturnValueOnce(createWhereChain([{ id: 2, name: 'Ana', surname: 'Lopez', email: 'ana@example.com' }]) as any)
       .mockReturnValueOnce(createWhereChain([{ name: 'IA' }]) as any)
@@ -107,6 +109,7 @@ describe('ProjectApplicationService', () => {
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
       .mockReturnValueOnce(createWhereChain([{ tagId: 10 }]) as any)
       .mockReturnValueOnce(createOrderChain([{ id: 50, title: 'A', description: 'B', publicationDate: new Date(), status: 'proposed', creatorId: 2, creatorName: 'P', creatorSurname: 'Q', creatorBiography: null }]) as any)
+      .mockReturnValueOnce(createLimitChain([]) as any)
       .mockReturnValueOnce(createWhereChain([{ id: 10 }]) as any)
       .mockReturnValueOnce(createLimitChain([]) as any)
       .mockReturnValueOnce(createWhereChain([{ name: 'IA' }]) as any)
@@ -148,6 +151,7 @@ describe('ProjectApplicationService', () => {
       .mockReturnValueOnce(createWhereChain([{ name: 'IA' }]) as any)
       .mockReturnValueOnce(createLimitChain([{ id: 9, name: 'Tutor', surname: 'One', email: 'tutor@example.com' }]) as any)
       .mockReturnValueOnce(createLimitChain([{ projectId: 10 }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ status: 'accepted' }]) as any)
 
     const service = new ProjectApplicationService()
     const result = await service.getProposalById('student@example.com', 10)
@@ -178,6 +182,16 @@ describe('ProjectApplicationService', () => {
     })
   })
 
+  it('throws 400 on createProposal when tags are not provided', async () => {
+    vi.mocked(db.select).mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+    const service = new ProjectApplicationService()
+
+    await expect(service.createProposal('s@example.com', { title: 'T', type: 3 })).rejects.toMatchObject({
+      status: 400,
+      payload: { error: 'At least one tag is required' },
+    })
+  })
+
   it('throws 400 on createProposal when provided tags are invalid', async () => {
     vi.mocked(db.select).mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
     vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
@@ -200,25 +214,6 @@ describe('ProjectApplicationService', () => {
       status: 400,
       payload: { error: 'One or more tags are not allowed' },
     })
-  })
-
-  it('creates proposal successfully without tags', async () => {
-    vi.mocked(db.select).mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
-    vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
-      const trx = {
-        insert: vi.fn().mockReturnValue({
-          values: vi.fn().mockReturnValue({
-            returning: vi.fn().mockResolvedValue([{ id: 20 }]),
-          }),
-        }),
-      }
-      await cb(trx)
-    })
-
-    const service = new ProjectApplicationService()
-    const result = await service.createProposal('s@example.com', { title: 'T', type: 3 })
-
-    expect(result.message).toBe('Project proposal created successfully')
   })
 
   it('creates proposal and inserts project tags when valid tags are provided', async () => {
@@ -283,6 +278,18 @@ describe('ProjectApplicationService', () => {
     })
   })
 
+  it('throws 409 on renewProposal when proposal is completed', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'completed', studentId: 1, tutorId: null }]) as any)
+
+    const service = new ProjectApplicationService()
+    await expect(service.renewProposal('s@example.com', 5)).rejects.toMatchObject({
+      status: 409,
+      payload: { error: 'Completed proposals cannot be renewed' },
+    })
+  })
+
   it('renews proposal for owner', async () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
@@ -298,17 +305,27 @@ describe('ProjectApplicationService', () => {
     expect(result.expiresAt).toBeInstanceOf(Date)
   })
 
-  it('completes proposal execution successfully', async () => {
+  it('completes proposal execution successfully for involved professor and closes accepted match', async () => {
     vi.mocked(db.select)
-      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
-      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'in_progress', studentId: 1, tutorId: null }]) as any)
-      .mockReturnValueOnce(createLimitChain([{ userId: 9 }]) as any)
-    vi.mocked(db.update).mockReturnValueOnce({
-      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
-    } as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 9, role: 'professor' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'in_progress', studentId: 1, tutorId: 9 }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ userId: 1 }]) as any)
+    vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+      const trx = {
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue(undefined),
+          }),
+        }),
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
+      }
+      await cb(trx)
+    })
 
     const service = new ProjectApplicationService()
-    const result = await service.completeProposal('s@example.com', 5)
+    const result = await service.completeProposal('p@example.com', 5)
 
     expect(result).toMatchObject({
       completed: true,
@@ -317,14 +334,26 @@ describe('ProjectApplicationService', () => {
     })
   })
 
-  it('throws 409 on completeProposal when there is no accepted match', async () => {
+  it('throws 403 on completeProposal when requester is not professor', async () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
-      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'in_progress', studentId: 1, tutorId: null }]) as any)
-      .mockReturnValueOnce(createLimitChain([]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'in_progress', studentId: 1, tutorId: 9 }]) as any)
 
     const service = new ProjectApplicationService()
     await expect(service.completeProposal('s@example.com', 5)).rejects.toMatchObject({
+      status: 403,
+      payload: { error: 'Only professors can mark the proposal as completed' },
+    })
+  })
+
+  it('throws 409 on completeProposal when there is no accepted match', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 9, role: 'professor' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'in_progress', studentId: 1, tutorId: 9 }]) as any)
+      .mockReturnValueOnce(createLimitChain([]) as any)
+
+    const service = new ProjectApplicationService()
+    await expect(service.completeProposal('p@example.com', 5)).rejects.toMatchObject({
       status: 409,
       payload: { error: 'Proposal has no accepted match to complete' },
     })
@@ -503,6 +532,10 @@ describe('ProjectApplicationService', () => {
         select: vi
           .fn()
           .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
           .mockReturnValueOnce(createLimitChain([{ userId: 2 }])),
         update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) }),
       }
@@ -558,7 +591,13 @@ describe('ProjectApplicationService', () => {
       .mockReturnValueOnce(createLimitChain([{ id: 5, status: 'proposed', studentId: 1, tutorId: null }]) as any)
     vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
       const trx = {
-        select: vi.fn().mockReturnValueOnce(createLimitChain([{ userId: 9 }])),
+        select: vi
+          .fn()
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([{ userId: 9 }])),
         update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) }),
       }
       await cb(trx)
@@ -581,7 +620,8 @@ describe('ProjectApplicationService', () => {
           .fn()
           .mockReturnValueOnce(createLimitChain([]))
           .mockReturnValueOnce(createLimitChain([]))
-          .mockReturnValueOnce(createLimitChain([{ projectId: 99 }])),
+          .mockReturnValueOnce(createLimitChain([{ projectId: 99 }]))
+          .mockReturnValueOnce(createLimitChain([])),
         update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) }),
       }
       await cb(trx)
@@ -602,6 +642,10 @@ describe('ProjectApplicationService', () => {
       const trx = {
         select: vi
           .fn()
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([]))
           .mockReturnValueOnce(createLimitChain([]))
           .mockReturnValueOnce(createLimitChain([])),
         update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) }),

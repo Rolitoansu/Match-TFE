@@ -142,6 +142,27 @@ app.patch('/proposals/:id/cancel', validate(GetTFESchema, 'params'), async (req,
     }
 })
 
+app.patch('/proposals/:id/complete', validate(GetTFESchema, 'params'), async (req, res) => {
+    const userEmail = req.headers['x-user-email'] as string
+    const projectId = Number(req.params.id)
+
+    if (!userEmail) {
+        return res.status(401).json({ error: 'Missing authenticated user email' })
+    }
+
+    try {
+        const result = await projectService.completeProposal(userEmail, projectId)
+        return res.json(result)
+    } catch (exception) {
+        if (exception instanceof HttpError) {
+            return res.status(exception.status).json(exception.payload)
+        }
+
+        console.error(exception)
+        return res.status(500).json({ error: 'Error completing proposal execution' })
+    }
+})
+
 app.post('/proposals/:id/like', validate(GetTFESchema, 'params'), async (req, res) => {
     const userEmail = req.headers['x-user-email'] as string
     const projectId = Number(req.params.id)

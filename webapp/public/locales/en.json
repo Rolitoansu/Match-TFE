@@ -85,6 +85,11 @@
 			"cancelling": "Cancelling...",
 			"confirm": "Are you sure you want to cancel this thesis assignment? This will set the thesis back to open status."
 		},
+		"complete": {
+			"button": "Mark as completed",
+			"completing": "Completing...",
+			"confirm": "Are you sure you want to mark this thesis as completed? This will close the active match."
+		},
 		"sidebar": {
 			"status": "Status",
 			"likesReceived": "Likes received",
@@ -107,7 +112,9 @@
 			"acceptMatchSuccess": "Match accepted successfully",
 			"acceptMatchError": "Could not accept match. Please try again.",
 			"cancelSuccess": "Thesis assignment cancelled successfully",
-			"cancelError": "Could not cancel thesis assignment. Please try again."
+			"cancelError": "Could not cancel thesis assignment. Please try again.",
+			"completeSuccess": "Thesis completed successfully. The active match has been closed.",
+			"completeError": "Could not complete the thesis. Please try again."
 		}
 	},
 	"admin": {
@@ -335,7 +342,8 @@
 		"errors": {
 			"titleRequired": "Title is required.",
 			"descriptionRequired": "Description is required.",
-			"typeRequired": "Project type is required."
+			"typeRequired": "Project type is required.",
+			"tagsRequired": "You must add at least one technology."
 		},
 		"suggestions": {
 			"results": "Results",
@@ -445,6 +453,7 @@
 		"fields": {
 			"status": "Status",
 			"interested": "Interested",
+			"uploadedBy": "Uploaded by",
 			"tfgType": "Type"
 		},
 		"badges": {

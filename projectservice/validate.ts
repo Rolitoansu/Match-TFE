@@ -21,7 +21,8 @@ export const TFECreationSchema = z.object({
         .int('TFG type must be an integer')
         .min(1, 'TFG type is not valid')
         .max(6, 'TFG type is not valid'),
-    tags: z.array(z.string()).optional()
+    tags: z.array(z.string())
+        .min(1, 'At least one tag is required')
 })
 
 export const GetTFESchema = z.object({

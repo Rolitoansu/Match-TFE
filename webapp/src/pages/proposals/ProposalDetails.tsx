@@ -45,6 +45,7 @@ export default function ProposalDetails() {
   const [acceptingUserId, setAcceptingUserId] = useState<number | null>(null)
   const [matchFeedback, setMatchFeedback] = useState<string | null>(null)
   const [cancellingExecution, setCancellingExecution] = useState(false)
+  const [completingExecution, setCompletingExecution] = useState(false)
 
   useEffect(() => {
     if (!renewFeedback) return
@@ -138,6 +139,35 @@ export default function ProposalDetails() {
     }
   }
 
+  async function handleCompleteExecution() {
+    if (!proposal) return
+
+    const shouldComplete = confirm(t('proposalDetails.complete.confirm'))
+
+    if (!shouldComplete) {
+      return
+    }
+
+    setMatchFeedback(null)
+    setCompletingExecution(true)
+
+    try {
+      await api.patch(`/project/proposals/${id}/complete`)
+
+      const { data: refreshedData } = await api.get(`/project/proposals/${id}`)
+      if (refreshedData?.proposal) {
+        setProposal(refreshedData.proposal)
+      }
+
+      setMatchFeedback(t('proposalDetails.feedback.completeSuccess'))
+    } catch (error) {
+      console.error('Error completing proposal execution:', error)
+      setMatchFeedback(t('proposalDetails.feedback.completeError'))
+    } finally {
+      setCompletingExecution(false)
+    }
+  }
+
   useEffect(() => {
     async function fetchProposal() {
       try {
@@ -152,10 +182,11 @@ export default function ProposalDetails() {
     fetchProposal()
   }, [])
 
-  const canRenew = Boolean(proposal?.isOwner || (proposal?.user?.id && user?.id && proposal.user.id === user.id))
+  const canRenew = proposal?.status !== 'completed' && Boolean(proposal?.isOwner || (proposal?.user?.id && user?.id && proposal.user.id === user.id))
   const hasAcceptedMatch = proposal?.interestedUsers.some((person) => person.matchStatus === 'accepted') ?? false
   const canContactProposalOwner = Boolean(!proposal?.isOwner && proposal?.user?.email)
   const canCancelExecution = proposal?.status === 'in_progress' && (proposal.isOwner || proposal.viewerMatchStatus === 'accepted')
+  const canCompleteExecution = proposal?.status === 'in_progress' && user?.role === 'professor' && (proposal.isOwner || proposal.viewerMatchStatus === 'accepted')
 
   function getStatusLabel(status: ProposalDetailsData['status']) {
     return t(`proposalDetails.status.${status}`)
@@ -200,6 +231,14 @@ export default function ProposalDetails() {
     }
 
     return t('proposalDetails.cancel.button')
+  }
+
+  function getCompleteButtonLabel() {
+    if (completingExecution) {
+      return t('proposalDetails.complete.completing')
+    }
+
+    return t('proposalDetails.complete.button')
   }
 
   function getAcceptButtonLabel(personId: number) {
@@ -338,6 +377,16 @@ export default function ProposalDetails() {
                   className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border border-amber-300 bg-amber-50 text-amber-800 font-black transition-colors hover:bg-amber-100 disabled:opacity-60"
                 >
                   {getCancelButtonLabel()}
+                </button>
+              )}
+              {canCompleteExecution && (
+                <button
+                  type="button"
+                  onClick={handleCompleteExecution}
+                  disabled={completingExecution}
+                  className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border border-emerald-300 bg-emerald-50 text-emerald-800 font-black transition-colors hover:bg-emerald-100 disabled:opacity-60"
+                >
+                  {getCompleteButtonLabel()}
                 </button>
               )}
               

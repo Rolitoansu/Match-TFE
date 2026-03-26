@@ -1,5 +1,4 @@
 import {
-  User,
   Mail,
   PencilLine,
   FileText,
@@ -251,15 +250,6 @@ export default function OwnProfilePage() {
         <div className="xl:col-span-4 space-y-6">
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-col items-center text-center">
-              <div className="relative mb-3">
-                <div className="h-22 w-22 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10">
-                  <User size={42} strokeWidth={1.5} />
-                </div>
-                <button className="absolute -bottom-1.5 -right-1.5 p-1.5 bg-white border border-border rounded-lg shadow-sm text-primary hover:bg-primary hover:text-white transition-colors">
-                  <PencilLine size={14} />
-                </button>
-              </div>
-
               <h2 className="text-xl font-bold">{user!.name}</h2>
               <p className="text-primary font-semibold text-xs mb-1">{user!.role === 'professor' ? t('ownProfile.roles.professor') : t('ownProfile.roles.student')}</p>
 
@@ -269,16 +259,11 @@ export default function OwnProfilePage() {
               </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-3 gap-2 border-y border-border/50 py-6 text-center">
-              <div>
-                <p className="text-lg font-bold">0</p>
-                <p className="text-[10px] uppercase font-bold text-muted-foreground">Matches</p>
-              </div>
+            <div className="mt-8 grid grid-cols-1 gap-2 border-y border-border/50 py-6 text-center">
               <div>
                 <p className="text-lg font-bold">{proposals?.length ?? 0}</p>
                 <p className="text-[10px] uppercase font-bold text-muted-foreground">TFEs</p>
               </div>
-
             </div>
 
             <div className="mt-8 space-y-6">

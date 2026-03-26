@@ -213,6 +213,8 @@ export class ProjectApplicationService {
                     status: projects.status,
                     studentId: projects.studentId,
                     tutorId: projects.tutorId,
+                    creatorName: users.name,
+                    creatorSurname: users.surname,
                 })
                 .from(projects)
                 .innerJoin(users, eq(users.id, projects.tutorId))
@@ -229,6 +231,8 @@ export class ProjectApplicationService {
                     status: projects.status,
                     studentId: projects.studentId,
                     tutorId: projects.tutorId,
+                    creatorName: users.name,
+                    creatorSurname: users.surname,
                 })
                 .from(projects)
                 .innerJoin(users, eq(users.id, projects.studentId))
@@ -239,6 +243,14 @@ export class ProjectApplicationService {
         const proposalsWithInterestedUsers = await Promise.all(proposals.map(async (proposal) => {
             const { ownerId } = this.getOwner(proposal)
             const isOwner = ownerId === currentUser.id
+
+            const [proposalOwner] = ownerId
+                ? await db
+                    .select({ name: users.name, surname: users.surname })
+                    .from(users)
+                    .where(eq(users.id, ownerId))
+                    .limit(1)
+                : []
 
             const proposalMatches = await db
                 .select({ userId: matches.userId, status: matches.status })
@@ -276,6 +288,8 @@ export class ProjectApplicationService {
 
             return {
                 ...proposal,
+                creatorName: proposalOwner?.name ?? proposal.creatorName ?? 'Usuario',
+                creatorSurname: proposalOwner?.surname ?? proposal.creatorSurname ?? '',
                 interestCount: interestedMatches.length,
                 likedByCurrentUser,
                 tags: tagsForProposal,
@@ -541,6 +555,10 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'User not found' })
         }
 
+        if (!input.tags || input.tags.length === 0) {
+            throw new HttpError(400, { error: 'At least one tag is required' })
+        }
+
         await db.transaction(async (trx) => {
             const [project] = await trx
                 .insert(projects)
@@ -551,20 +569,18 @@ export class ProjectApplicationService {
                 )
                 .returning({ id: projects.id })
 
-            if (input.tags && input.tags.length > 0) {
-                const tagIds = await trx
-                    .select({ id: tags.id })
-                    .from(tags)
-                    .where(inArray(tags.name, input.tags))
+            const tagIds = await trx
+                .select({ id: tags.id })
+                .from(tags)
+                .where(inArray(tags.name, input.tags))
 
-                if (tagIds.length !== input.tags.length) {
-                    throw new HttpError(400, { error: 'One or more tags are not allowed' })
-                }
-
-                await trx
-                    .insert(projectTags)
-                    .values(tagIds.map((tag) => ({ projectId: project.id, tagId: tag.id })))
+            if (tagIds.length !== input.tags.length) {
+                throw new HttpError(400, { error: 'One or more tags are not allowed' })
             }
+
+            await trx
+                .insert(projectTags)
+                .values(tagIds.map((tag) => ({ projectId: project.id, tagId: tag.id })))
         })
 
         return { message: 'Project proposal created successfully' }
@@ -578,7 +594,7 @@ export class ProjectApplicationService {
         }
 
         const [proposal] = await db
-            .select({ id: projects.id, studentId: projects.studentId, tutorId: projects.tutorId })
+            .select({ id: projects.id, status: projects.status, studentId: projects.studentId, tutorId: projects.tutorId })
             .from(projects)
             .where(eq(projects.id, projectId))
             .limit(1)
@@ -593,6 +609,10 @@ export class ProjectApplicationService {
 
         if (!isOwner) {
             throw new HttpError(403, { error: 'Only the owner can renew a proposal' })
+        }
+
+        if (proposal.status === 'completed') {
+            throw new HttpError(409, { error: 'Completed proposals cannot be renewed' })
         }
 
         const renewedAt = new Date()
@@ -624,13 +644,13 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Proposal not found' })
         }
 
+        if (currentUser.role !== 'professor') {
+            throw new HttpError(403, { error: 'Only professors can mark the proposal as completed' })
+        }
+
         const isOwner = currentUser.role === 'student'
             ? proposal.studentId === currentUser.id
             : proposal.tutorId === currentUser.id
-
-        if (!isOwner) {
-            throw new HttpError(403, { error: 'Only the owner can mark the proposal as completed' })
-        }
 
         if (proposal.status !== 'in_progress') {
             throw new HttpError(409, { error: 'Only proposals in progress can be completed' })
@@ -649,10 +669,25 @@ export class ProjectApplicationService {
             throw new HttpError(409, { error: 'Proposal has no accepted match to complete' })
         }
 
-        await db
-            .update(projects)
-            .set({ status: 'completed' })
-            .where(eq(projects.id, projectId))
+        const isAcceptedProfessor = acceptedMatch.userId === currentUser.id
+
+        if (!isOwner && !isAcceptedProfessor) {
+            throw new HttpError(403, { error: 'Only a professor involved in the proposal can mark it as completed' })
+        }
+
+        await db.transaction(async (trx) => {
+            await trx
+                .update(projects)
+                .set({ status: 'completed' })
+                .where(eq(projects.id, projectId))
+
+            await trx
+                .delete(matches)
+                .where(and(
+                    eq(matches.projectId, projectId),
+                    eq(matches.status, 'accepted')
+                ))
+        })
 
         return {
             completed: true,

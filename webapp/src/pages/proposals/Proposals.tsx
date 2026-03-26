@@ -2,7 +2,6 @@ import {
   Plus, 
   Search, 
   FileText, 
-  MoreVertical, 
   Users, 
   ArrowUpRight,
   Clock,
@@ -22,6 +21,8 @@ interface Proposal {
   type: number
   publicationDate: string
   status: 'proposed' | 'in_progress' | 'completed'
+  creatorName: string
+  creatorSurname: string
   interestCount: number
   likedByCurrentUser: boolean
   interestedUsers?: Array<{
@@ -197,6 +198,9 @@ export default function Proposals() {
                       <Clock size={14} /> {new Date(proposal.publicationDate).toLocaleString()}
                     </span>
                     <span className="text-xs font-medium text-muted-foreground">
+                      {t('proposalDetails.publishedBy')}: {proposal.creatorName} {proposal.creatorSurname}
+                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">
                       {t('proposals.fields.tfgType')}: {tfgTypeLabelById[proposal.type] ?? t('tfgTypes.otherWorks')}
                     </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -251,9 +255,6 @@ export default function Proposals() {
                     onClick={() => navigate(`/proposals/details/${proposal.id}`)}>
                     {t('proposals.viewDetails')}
                     <ArrowUpRight size={14} />
-                  </button>
-                  <button className="p-2 text-muted-foreground hover:bg-slate-100 rounded-lg transition-colors">
-                    <MoreVertical size={18} />
                   </button>
                 </div>
               </div>

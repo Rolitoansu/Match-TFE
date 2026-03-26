@@ -85,6 +85,11 @@
 			"cancelling": "Cancelando...",
 			"confirm": "¿Seguro que quieres cancelar la realización de este TFE? Esta acción dejará el TFE de nuevo en estado abierto."
 		},
+		"complete": {
+			"button": "Marcar como finalizado",
+			"completing": "Finalizando...",
+			"confirm": "¿Seguro que quieres marcar este TFE como finalizado? Esta acción cerrará el match activo."
+		},
 		"sidebar": {
 			"status": "Estado",
 			"likesReceived": "Likes recibidos",
@@ -107,7 +112,9 @@
 			"acceptMatchSuccess": "Match aceptado correctamente",
 			"acceptMatchError": "No se pudo aceptar el match. Intenta de nuevo.",
 			"cancelSuccess": "Realización del TFE cancelada correctamente",
-			"cancelError": "No se pudo cancelar la realización del TFE. Intenta de nuevo."
+			"cancelError": "No se pudo cancelar la realización del TFE. Intenta de nuevo.",
+			"completeSuccess": "TFE finalizado correctamente. El match activo se ha cerrado.",
+			"completeError": "No se pudo finalizar el TFE. Intenta de nuevo."
 		}
 	},
 	"admin": {
@@ -335,7 +342,8 @@
 		"errors": {
 			"titleRequired": "El título es obligatorio.",
 			"descriptionRequired": "La descripción es obligatoria.",
-			"typeRequired": "El tipo de trabajo es obligatorio."
+			"typeRequired": "El tipo de trabajo es obligatorio.",
+			"tagsRequired": "Debes añadir al menos una tecnología."
 		},
 		"suggestions": {
 			"results": "Resultados",
@@ -445,6 +453,7 @@
 		"fields": {
 			"status": "Estado",
 			"interested": "Interesados",
+			"uploadedBy": "Subido por",
 			"tfgType": "Tipo"
 		},
 		"badges": {

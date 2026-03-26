@@ -24,6 +24,7 @@ interface TFEErrors {
   titleError: string | null
   descriptionError: string | null
   typeError: string | null
+  tagsError: string | null
 }
 
 export default function NewProposal() {
@@ -31,7 +32,7 @@ export default function NewProposal() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [proposalInfo, setProposalInfo] = useState<TFEProposalInfo>({ title: '', description: '', type: 0 })
-  const [errors, setErrors] = useState<TFEErrors>({ titleError: null, descriptionError: null, typeError: null })
+  const [errors, setErrors] = useState<TFEErrors>({ titleError: null, descriptionError: null, typeError: null, tagsError: null })
   const [allowedTags, setAllowedTags] = useState<string[]>([])
   const [tagSearch, setTagSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -84,6 +85,7 @@ export default function NewProposal() {
     const updated = current.includes(tag)
       ? current.filter(t => t !== tag)
       : [...current, tag]
+    setErrors(prev => ({ ...prev, tagsError: updated.length > 0 ? null : 'blank' }))
     setProposalInfo({ ...proposalInfo, tags: updated })
   }
 
@@ -106,7 +108,8 @@ export default function NewProposal() {
     const newErrors = {
       titleError: proposalInfo.title?.trim() ? null : 'blank',
       descriptionError: proposalInfo.description?.trim() ? null : 'blank',
-      typeError: proposalInfo.type ? null : 'blank'
+      typeError: proposalInfo.type ? null : 'blank',
+      tagsError: (proposalInfo.tags?.length ?? 0) > 0 ? null : 'blank'
     }
 
     setErrors(prev => ({ ...prev, ...newErrors }))
@@ -265,6 +268,9 @@ export default function NewProposal() {
                     </div>
                   )
                 })()}
+              </div>
+              <div className="text-xs font-medium text-red-600 mt-1">
+                {errors.tagsError === 'blank' && t('newProposal.errors.tagsRequired')}
               </div>
             </div>
           </div>

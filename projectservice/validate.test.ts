@@ -41,6 +41,10 @@ describe('projectservice validate middleware', () => {
     ).toBe(true)
 
     expect(
+      TFECreationSchema.safeParse({ title: 'T', description: 'D', type: 1, tags: [] }).success
+    ).toBe(false)
+
+    expect(
       AdminTagImportSchema.safeParse({ tags: [{ name: 'IA' }, { name: 'ML' }] }).success
     ).toBe(true)
   })
