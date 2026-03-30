@@ -1,7 +1,10 @@
 import { Router } from 'express'
 import proxy from 'express-http-proxy'
 
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://authservice:5000'
+const HOST = process.env.HOST || 'http://localhost'
+const PORT = process.env.PORT || 5000
+const AUTH_SERVICE_URL = `${HOST}:${PORT}`
+
 const router = Router()
 
 router.post('/login', proxy(AUTH_SERVICE_URL))

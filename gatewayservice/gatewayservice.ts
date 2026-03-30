@@ -7,9 +7,10 @@ import projectRoutes from './routes/projectRoutes'
 import adminRoutes from './routes/adminRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
+const HOST = process.env.HOST || 'http://localhost'
+const PORT = process.env.PORT || 3000
+const FRONTEND_URL = `${HOST}:${PORT}`
 
-const PORT = process.env.PORT || 8000
 const app = express()
 
 app.use(cors({ origin: FRONTEND_URL, credentials: true }))

@@ -2,7 +2,10 @@ import { Router } from 'express'
 import proxy from 'express-http-proxy'
 import authMiddleware from '../middleware'
 
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://userservice:5001'
+const HOST = process.env.HOST || 'http://localhost'
+const PORT = process.env.PORT || 5001
+const USER_SERVICE_URL = `${HOST}:${PORT}`
+
 const router = Router()
 
 router.post('/register', proxy(USER_SERVICE_URL))
