@@ -2,9 +2,7 @@ import { Router } from 'express'
 import proxy from 'express-http-proxy'
 import authMiddleware from '../middleware'
 
-const HOST = process.env.HOST || 'http://localhost'
-const PORT = process.env.USER_SERVICE_PORT || 5001
-const USER_SERVICE_URL = `${HOST}:${PORT}`
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://userservice:5001'
 
 const router = Router()
 

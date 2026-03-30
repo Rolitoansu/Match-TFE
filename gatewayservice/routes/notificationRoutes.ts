@@ -2,9 +2,7 @@ import { Router } from 'express'
 import proxy from 'express-http-proxy'
 import authMiddleware from '../middleware'
 
-const HOST = process.env.HOST || 'http://localhost'
-const PORT = process.env.NOTIFICATION_SERVICE_PORT || 5004
-const NOTIFICATION_SERVICE_URL = `${HOST}:${PORT}`
+const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notificationservice:5004'
 
 const router = Router()
 
