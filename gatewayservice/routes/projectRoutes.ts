@@ -3,7 +3,7 @@ import proxy from 'express-http-proxy'
 import authMiddleware from '../middleware'
 
 const HOST = process.env.HOST || 'http://localhost'
-const PORT = process.env.PORT || 5002
+const PORT = process.env.PROJECT_SERVICE_PORT || 5002
 const PROJECT_SERVICE_URL = `${HOST}:${PORT}`
 
 const router = Router()

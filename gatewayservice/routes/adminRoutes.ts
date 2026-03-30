@@ -4,13 +4,13 @@ import authMiddleware from '../middleware'
 
 const HOST = process.env.HOST || 'http://localhost'
 
-const AUTH_PORT = process.env.PORT || 5000
+const AUTH_PORT = process.env.AUTH_SERVICE_PORT || 5000
 const AUTH_SERVICE_URL = `${HOST}:${AUTH_PORT}`
 
-const USER_PORT = process.env.PORT || 5001
+const USER_PORT = process.env.USER_SERVICE_PORT || 5001
 const USER_SERVICE_URL = `${HOST}:${USER_PORT}`
 
-const PROJECT_PORT = process.env.PORT || 5002
+const PROJECT_PORT = process.env.PROJECT_SERVICE_PORT || 5002
 const PROJECT_SERVICE_URL = `${HOST}:${PROJECT_PORT}`
 
 const router = Router()
