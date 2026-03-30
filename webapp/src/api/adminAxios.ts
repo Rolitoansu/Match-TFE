@@ -1,7 +1,10 @@
 import axios from 'axios'
 
+const HOST = import.meta.env.VITE_HOST || 'http://localhost'
+const PORT = import.meta.env.VITE_API_GATEWAY_PORT || 8000
+
 const adminApi = axios.create({
-    baseURL: import.meta.env.API_GATEWAY_URL || 'http://localhost:8000'
+    baseURL: `${HOST}:${PORT}`
 })
 
 adminApi.interceptors.request.use(config => {
