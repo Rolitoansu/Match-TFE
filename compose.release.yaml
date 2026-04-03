@@ -6,7 +6,7 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     ports:
-      - "${DB_PORT}:${DB_PORT}"
+      - "127.0.0.1:${DB_PORT}:${DB_PORT}"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -111,7 +111,7 @@ services:
       - projectservice
       - notificationservice
     ports:
-      - "${GATEWAY_PORT:-8000}:8000"
+      - "127.0.0.1:${GATEWAY_PORT:-8000}:8000"
     environment:
       NODE_ENV: production
       STAGE: production
@@ -135,7 +135,7 @@ services:
     depends_on:
       - gatewayservice
     ports:
-      - "${WEBAPP_PORT:-3000}:80"
+      - "127.0.0.1:${WEBAPP_PORT:-3000}:80"
     networks:
       - match_network_release
 
