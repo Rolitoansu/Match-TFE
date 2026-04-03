@@ -50,6 +50,33 @@ docker compose up
 ```
 The `-d` flag runs the containers in detached mode (background). If you need to see the real-time logs, you can use `docker compose logs -f`.
 
+### 3. Docker Release (Production-like)
+
+To run a release-oriented stack (without `develop.watch` and with production container commands), use:
+
+```bash
+docker compose -f compose.release.yaml up -d --build
+```
+
+Useful commands:
+
+```bash
+# See logs
+docker compose -f compose.release.yaml logs -f
+
+# Stop release stack
+docker compose -f compose.release.yaml down
+```
+
+Optional environment variables for release:
+
+```bash
+GATEWAY_PORT=8000
+WEBAPP_PORT=3000
+VITE_HOST=http://localhost
+VITE_API_GATEWAY_PORT=8000
+```
+
 ### Notification API
 
 The gateway now exposes an endpoint to send emails to students:

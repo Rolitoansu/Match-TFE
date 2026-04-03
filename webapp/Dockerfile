@@ -1,4 +1,4 @@
-FROM node:25.7-alpine
+FROM node:25.7-alpine AS development
 WORKDIR /app
 RUN npm install -g pnpm
 
@@ -7,3 +7,23 @@ RUN pnpm install
 
 EXPOSE 3000
 CMD ["pnpm", "run", "dev"]
+
+FROM node:25.7-alpine AS build
+WORKDIR /app
+RUN npm install -g pnpm
+
+COPY ./webapp ./
+RUN pnpm install
+
+ARG VITE_HOST=http://localhost
+ARG VITE_API_GATEWAY_PORT=8000
+ENV VITE_HOST=${VITE_HOST}
+ENV VITE_API_GATEWAY_PORT=${VITE_API_GATEWAY_PORT}
+
+RUN pnpm run build
+
+FROM nginx:1.27-alpine AS release
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
