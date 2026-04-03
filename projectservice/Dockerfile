@@ -21,7 +21,7 @@ COPY projectservice/ ./projectservice/
 COPY database/ ./database/
 
 WORKDIR /usr/src/projectservice
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 ENV NODE_ENV=production
 EXPOSE 5002

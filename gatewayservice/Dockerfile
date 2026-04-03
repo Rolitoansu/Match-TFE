@@ -15,7 +15,7 @@ WORKDIR /usr/src/gatewayservice
 RUN npm install -g pnpm
 COPY . .
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 ENV NODE_ENV=production
 EXPOSE 8000

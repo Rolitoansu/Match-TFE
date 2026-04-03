@@ -21,7 +21,7 @@ COPY userservice/ ./userservice/
 COPY database/ ./database/
 
 WORKDIR /usr/src/userservice
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 ENV NODE_ENV=production
 EXPOSE 5001

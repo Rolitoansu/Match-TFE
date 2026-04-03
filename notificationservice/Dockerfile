@@ -21,7 +21,7 @@ COPY notificationservice/ ./notificationservice/
 COPY database/ ./database/
 
 WORKDIR /usr/src/notificationservice
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 ENV NODE_ENV=production
 EXPOSE 5004
