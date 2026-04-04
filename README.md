@@ -73,8 +73,8 @@ Optional environment variables for release:
 ```bash
 GATEWAY_PORT=8000
 WEBAPP_PORT=3000
-VITE_HOST=http://localhost
-VITE_API_GATEWAY_PORT=8000
+VITE_HOST=https://match-tfe.tudominio.com/api
+VITE_API_GATEWAY_PORT=443
 ```
 
 ### Notification API

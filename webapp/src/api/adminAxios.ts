@@ -1,10 +1,8 @@
 import axios from 'axios'
-
-const HOST = import.meta.env.VITE_HOST || 'http://localhost'
-const PORT = import.meta.env.VITE_API_GATEWAY_PORT || 8000
+import { getApiBaseUrl } from './baseUrl'
 
 const adminApi = axios.create({
-    baseURL: `${HOST}:${PORT}`
+    baseURL: getApiBaseUrl()
 })
 
 adminApi.interceptors.request.use(config => {
