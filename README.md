@@ -71,10 +71,10 @@ docker compose -f compose.release.yaml down
 Optional environment variables for release:
 
 ```bash
-GATEWAY_PORT=8000
-WEBAPP_PORT=3000
-VITE_HOST=https://match-tfe.tudominio.com/api
-VITE_API_GATEWAY_PORT=443
+FRONTEND_URL=https://match-tfe.tudominio.com
+VITE_PUBLIC_API_URL=https://match-tfe.tudominio.com/api
+GATEWAY_BIND_PORT=8000
+WEBAPP_BIND_PORT=3000
 ```
 
 ### Notification API

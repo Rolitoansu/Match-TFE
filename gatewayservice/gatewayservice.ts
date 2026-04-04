@@ -7,7 +7,7 @@ import projectRoutes from './routes/projectRoutes'
 import adminRoutes from './routes/adminRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 
-const PORT = Number(process.env.GATEWAY_PORT || process.env.PORT || 8000)
+const PORT = Number(process.env.PORT || 8000)
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
 
 const app = express()

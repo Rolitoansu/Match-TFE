@@ -15,10 +15,8 @@ RUN npm install -g pnpm
 COPY ./webapp ./
 RUN pnpm install
 
-ARG VITE_HOST=http://localhost
-ARG VITE_API_GATEWAY_PORT=8000
-ENV VITE_HOST=${VITE_HOST}
-ENV VITE_API_GATEWAY_PORT=${VITE_API_GATEWAY_PORT}
+ARG VITE_PUBLIC_API_URL=http://localhost:8000
+ENV VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
 
 RUN pnpm run build
 

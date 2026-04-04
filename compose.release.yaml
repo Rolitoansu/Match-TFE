@@ -111,12 +111,11 @@ services:
       - projectservice
       - notificationservice
     ports:
-      - "127.0.0.1:${GATEWAY_PORT:-8000}:8000"
+      - "127.0.0.1:${GATEWAY_BIND_PORT:-8000}:8000"
     environment:
       NODE_ENV: production
       STAGE: production
       PORT: 8000
-      GATEWAY_PORT: 8000
     env_file:
       - .env
     networks:
@@ -129,13 +128,12 @@ services:
       dockerfile: ./webapp/Dockerfile
       target: release
       args:
-        VITE_HOST: ${VITE_HOST:-http://localhost}
-        VITE_API_GATEWAY_PORT: ${VITE_API_GATEWAY_PORT:-8000}
+        VITE_PUBLIC_API_URL: ${VITE_PUBLIC_API_URL:-http://localhost:8000}
     restart: unless-stopped
     depends_on:
       - gatewayservice
     ports:
-      - "127.0.0.1:${WEBAPP_PORT:-3000}:80"
+      - "127.0.0.1:${WEBAPP_BIND_PORT:-3000}:80"
     networks:
       - match_network_release
 
