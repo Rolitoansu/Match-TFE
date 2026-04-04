@@ -221,7 +221,7 @@ export default function Explore() {
   if (loading) {
     return (
       <div className="flex items-center justify-center px-4 py-6">
-        <div className="w-full max-w-md rounded-4xl border border-border bg-card p-10 text-center shadow-2xl shadow-gray-200/50">
+        <div className="w-full max-w-sm rounded-4xl border border-border p-8 text-center shadow-2xl shadow-gray-200/50 sm:max-w-md sm:bg-card sm:p-10">
           <p className="text-sm text-muted-foreground">{t('explore.loading')}</p>
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function Explore() {
   if (error) {
     return (
       <div className="flex items-center justify-center px-4 py-6">
-        <div className="w-full max-w-md rounded-4xl border border-border bg-card p-10 text-center shadow-2xl shadow-gray-200/50">
+        <div className="w-full max-w-sm rounded-4xl border border-border p-8 text-center shadow-2xl shadow-gray-200/50 sm:max-w-md sm:bg-card sm:p-10">
           <p className="text-sm text-red-600">{error}</p>
         </div>
       </div>
@@ -241,7 +241,7 @@ export default function Explore() {
   if (!currentProposal) {
     return (
       <div className="flex items-center justify-center px-4 py-6">
-        <div className="w-full max-w-md rounded-4xl border border-border bg-card p-10 text-center shadow-2xl shadow-gray-200/50">
+        <div className="w-full max-w-sm rounded-4xl border border-border p-8 text-center shadow-2xl shadow-gray-200/50 sm:max-w-md sm:bg-card sm:p-10">
           <Sparkles className="mx-auto mb-3 text-primary" size={24} />
           <h2 className="text-lg font-bold text-foreground">{t('explore.empty.title')}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{t('explore.empty.subtitle', { rolePlural: targetRolePluralLabel })}</p>
@@ -262,15 +262,15 @@ export default function Explore() {
 
   return (
     <div className="flex items-center justify-center px-4 py-6">
-      <div className="w-full max-w-md overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-gray-200/50">
+      <div className="w-full max-w-sm overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-gray-200/50 sm:max-w-md">
 
-        <div className="flex flex-col items-center justify-end bg-primary/5 pt-8 pb-8 relative">
-          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <GraduationCap size={64} strokeWidth={1.5} />
+        <div className="relative flex flex-col items-center justify-end bg-primary/5 pb-6 pt-6 sm:pb-8 sm:pt-8">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-32 sm:w-32">
+            <GraduationCap size={52} strokeWidth={1.5} className="sm:h-16 sm:w-16" />
           </div>
 
-          <div className="mt-6 text-center px-6">
-            <h2 className="text-2xl font-bold text-foreground">
+          <div className="mt-4 px-5 text-center sm:mt-6 sm:px-6">
+            <h2 className="text-xl font-bold text-foreground sm:text-2xl">
               {currentProposal.creatorName} {currentProposal.creatorSurname}
             </h2>
             <p className="text-muted-foreground">{profileTypeLabel}</p>
@@ -307,17 +307,17 @@ export default function Explore() {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <div className="mt-8 flex items-center justify-between gap-3">
             <button
               onClick={skipCurrentProposal}
-              className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-secondary"
+              className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border border-border px-3 py-3 text-sm font-bold text-foreground transition-colors hover:bg-secondary"
               disabled={loadingLike}
             >
               <X size={16} /> {t('explore.actions.pass')}
             </button>
             <button
               onClick={likeCurrentProposal}
-              className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
               disabled={loadingLike || currentProposal.liked}
             >
               <Heart size={16} />
