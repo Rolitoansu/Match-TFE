@@ -131,7 +131,7 @@ export default function NewProposal() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 lg:p-10">
+    <div className="mx-auto max-w-4xl p-4 sm:p-6 lg:p-10">
       <button 
         onClick={() => navigate('/proposals')}
         className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 group"
@@ -139,15 +139,15 @@ export default function NewProposal() {
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm font-semibold">{t('newProposal.backToProposals')}</span>
       </button>
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('newProposal.title')}</h1>
+      <div className="mb-8 sm:mb-10">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{t('newProposal.title')}</h1>
         <p className="text-muted-foreground mt-2">
           {t('newProposal.subtitle', { rolePlural: targetRolePluralLabel })}
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-border rounded-3xl p-8 shadow-sm space-y-6">
+          <div className="space-y-6 rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-8">
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
                 {t('newProposal.fields.projectTitle')}
@@ -275,7 +275,7 @@ export default function NewProposal() {
             </div>
           </div>
           <div className="flex items-center justify-end gap-4">
-            <button className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-all"
+            <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-3 font-bold text-white shadow-lg shadow-primary/25 transition-all hover:opacity-90 sm:w-auto"
               onClick={submitProposal}
             >
               {t('newProposal.publish')}

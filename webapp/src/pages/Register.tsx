@@ -48,8 +48,8 @@ export default function Register() {
     }
 
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center bg-background px-6 py-12">
-            <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-xl border border-border">
+        <div className="flex min-h-svh flex-col items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-12">
+            <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl sm:p-8">
                 <div className="mb-8 flex flex-col items-center gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <UserPlus className="h-6 w-6" />

@@ -32,8 +32,8 @@ export default function Login() {
     }
 
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center bg-background px-6">
-            <div className="w-full max-w-sm rounded-2xl bg-card p-8 shadow-xl border border-border">
+        <div className="flex min-h-svh flex-col items-center justify-center bg-background px-4 sm:px-6">
+            <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl sm:p-8">
                 
                 <div className="mb-8 flex flex-col items-center gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">

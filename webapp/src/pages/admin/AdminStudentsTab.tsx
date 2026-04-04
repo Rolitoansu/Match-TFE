@@ -86,7 +86,7 @@ export function AdminStudentsTab() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-8">
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-8">
       <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
         <Users className="text-primary" size={20} />
         {t('admin.students.title')}
@@ -106,7 +106,7 @@ export function AdminStudentsTab() {
           const file = e.dataTransfer.files?.[0]
           if (file) processStudentCSV(file)
         }}
-        className={`cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
+        className={`cursor-pointer rounded-2xl border-2 border-dashed p-5 text-center transition-all sm:p-8 ${
           isStudentDragActive ? 'border-primary bg-primary/8' : 'border-border hover:border-primary/50'
         }`}
       >

@@ -172,18 +172,18 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-black/10 bg-white/95 shadow-[0_14px_32px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-6 px-6 py-4">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:gap-6 sm:px-6 sm:py-4">
         <button
           type="button"
           onClick={() => navigate('/home')}
-          className="justify-self-start text-left transition-opacity hover:opacity-80"
+          className="text-left transition-opacity hover:opacity-80 sm:justify-self-start"
         >
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Match-TFE
           </h1>
         </button>
 
-        <nav className="flex items-center justify-center gap-2 rounded-full border border-black/5 bg-slate-100/85 p-1.5 shadow-sm shadow-slate-200/70">
+        <nav className="order-3 flex w-full items-center justify-start gap-2 overflow-x-auto rounded-full border border-black/5 bg-slate-100/85 p-1.5 shadow-sm shadow-slate-200/70 sm:order-0 sm:w-auto sm:justify-center">
           {items.map((item) => {
             const isActive = location.pathname === item.route || location.pathname.startsWith(item.route + '/')
             const Icon = item.icon
@@ -193,7 +193,7 @@ export const Header = () => {
                 key={item.name}
                 type="button"
                 className={[
-                  'flex min-w-33 shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 transition-all duration-200 active:scale-[0.98]',
+                  'flex h-10 min-w-10 shrink-0 items-center justify-center gap-2 rounded-full px-3 py-2.5 transition-all duration-200 active:scale-[0.98] sm:h-auto sm:min-w-33 sm:px-4',
                   isActive
                     ? 'bg-white text-primary shadow-sm shadow-slate-300/70'
                     : 'text-slate-500 hover:bg-white/70 hover:text-foreground',
@@ -206,7 +206,7 @@ export const Header = () => {
                   className={isActive ? 'text-primary' : 'text-current'}
                 />
                 <span className={[
-                  'text-xs font-black uppercase tracking-[0.12em] transition-colors',
+                  'hidden text-xs font-black uppercase tracking-[0.12em] transition-colors sm:inline',
                   isActive ? 'text-primary' : 'text-current',
                 ].join(' ')}>
                   {item.name}
@@ -216,7 +216,7 @@ export const Header = () => {
           })}
         </nav>
 
-        <div className="relative flex items-center justify-end gap-2" ref={notificationPanelRef}>
+        <div className="relative flex items-center justify-end gap-2 self-end sm:self-auto" ref={notificationPanelRef}>
           <label className="relative">
             <span className="sr-only">Language</span>
             <Languages className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -225,7 +225,7 @@ export const Header = () => {
               onChange={(event) => {
                 void i18n.changeLanguage(event.target.value)
               }}
-              className="h-11 rounded-full border border-black/5 bg-slate-100/85 pl-9 pr-8 text-xs font-bold uppercase tracking-[0.08em] text-slate-600 transition-colors hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-11 w-28 rounded-full border border-black/5 bg-slate-100/85 pl-9 pr-8 text-xs font-bold uppercase tracking-[0.08em] text-slate-600 transition-colors hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-auto"
               aria-label="Language"
             >
               <option value="es">Español</option>
@@ -246,7 +246,7 @@ export const Header = () => {
             )}
           </button>
           {isNotificationsOpen && (
-            <div className="absolute right-0 top-14 z-40 w-80 rounded-2xl border border-black/10 bg-white p-3 shadow-xl shadow-slate-300/60">
+            <div className="absolute right-0 top-14 z-40 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-black/10 bg-white p-3 shadow-xl shadow-slate-300/60 sm:w-80">
               <div className="mb-2 flex items-center justify-between px-1">
                 <p className="text-sm font-semibold text-foreground">{t('header.notifications.title')}</p>
                 <button

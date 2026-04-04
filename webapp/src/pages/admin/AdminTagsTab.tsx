@@ -161,13 +161,13 @@ export function AdminTagsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-border bg-card p-8">
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
           <Plus className="text-primary" size={20} />
           {t('admin.tags.create.title')}
         </h2>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <input
             type="text"
             value={newTag}
@@ -185,8 +185,8 @@ export function AdminTagsTab() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-8">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-8">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <Tag className="text-primary" size={20} />
             {t('admin.tags.list.title')} ({filteredTags.length})
@@ -205,7 +205,7 @@ export function AdminTagsTab() {
         ) : filteredTags.length > 0 ? (
           <>
             {selectedTags.size > 0 && (
-              <div className="mb-4 flex items-center justify-between rounded-lg bg-red-50 p-3 border border-red-200 animate-slideInDown">
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-3 animate-slideInDown sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-sm font-semibold text-red-700">{t('admin.tags.list.selectedCount', { count: selectedTags.size })}</span>
                 <div className="flex gap-2">
                   <button
@@ -228,7 +228,7 @@ export function AdminTagsTab() {
                 <div key={tag.id} className={`flex items-center justify-between rounded-lg p-3 transition-smooth ${
                   selectedTags.has(tag.id) ? 'bg-red-50 border border-red-200' : 'bg-muted'
                 }`}>
-                  <div className="flex items-center gap-3 flex-1">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <input
                       type="checkbox"
                       checked={selectedTags.has(tag.id)}
@@ -252,10 +252,10 @@ export function AdminTagsTab() {
                         autoFocus
                       />
                     ) : (
-                      <span className="font-medium">{tag.name}</span>
+                      <span className="truncate font-medium">{tag.name}</span>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="ml-3 flex shrink-0 gap-2">
                     {editingTagId === tag.id ? (
                       <button
                         onClick={() => saveEditTag(tag.id)}
@@ -290,7 +290,7 @@ export function AdminTagsTab() {
         )}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-8">
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
           <FileSpreadsheet className="text-primary" size={20} />
           {t('admin.tags.upload.title')}

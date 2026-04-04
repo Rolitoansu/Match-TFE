@@ -80,13 +80,13 @@ export function AdminUsersTab() {
   })
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-8">
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-8">
       <h2 className="mb-6 flex items-center gap-2 text-lg font-bold">
         <Users className="text-primary" size={20} />
         {t('admin.users.title')}
       </h2>
 
-      <div className="mb-6 flex gap-4">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
         <input
           type="text"
           value={userSearch}
@@ -110,7 +110,7 @@ export function AdminUsersTab() {
       ) : filteredUsers.length > 0 ? (
         <>
           {selectedUsers.size > 0 && (
-            <div className="mb-4 flex items-center justify-between rounded-lg bg-red-50 p-3 border border-red-200 animate-slideInDown">
+            <div className="mb-4 flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-3 animate-slideInDown sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-sm font-semibold text-red-700">{t('admin.users.selectedCount', { count: selectedUsers.size })}</span>
               <div className="flex gap-2">
                 <button
@@ -129,7 +129,7 @@ export function AdminUsersTab() {
             </div>
           )}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-170 text-sm">
               <thead className="bg-muted">
                 <tr>
                   <th className="px-4 py-3 text-left font-bold w-12">
@@ -184,7 +184,8 @@ export function AdminUsersTab() {
                           {user.role === 'student' ? t('admin.users.roles.student') : t('admin.users.roles.professor')}
                       </span>
                     </td>
-                    <td className="px-4 py-3 flex gap-2">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => {
                           setEditingUserId(user.id)
@@ -200,6 +201,7 @@ export function AdminUsersTab() {
                       >
                         {t('admin.users.actions.delete')}
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -270,8 +270,8 @@ export default function ProposalDetails() {
   }
 
   return proposal && (
-    <div className="max-w-6xl mx-auto p-6 lg:p-10 pb-32">
-      <div className="flex justify-between items-center mb-8">
+    <div className="mx-auto max-w-6xl p-4 pb-24 sm:p-6 sm:pb-32 lg:p-10">
+      <div className="mb-6 flex items-center justify-between sm:mb-8">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-semibold">
           <ArrowLeft size={20} /> {t('proposalDetails.back')}
         </button>
@@ -281,14 +281,14 @@ export default function ProposalDetails() {
         
         <div className="lg:col-span-8 space-y-8">
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter bg-blue-100 text-blue-700">
                 {getStatusLabel(proposal.status)}
               </span>
               <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">{new Date(proposal.publicationDate).toLocaleString()}</span>
             </div>
             
-            <h1 className="text-3xl md:text-4xl font-black text-foreground leading-tight">
+            <h1 className="text-2xl font-black leading-tight text-foreground md:text-4xl">
               {proposal.title}
             </h1>
           </div>
@@ -297,7 +297,7 @@ export default function ProposalDetails() {
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
               <BookOpen size={16} /> {t('proposalDetails.sections.projectDescription')}
             </h3>
-            <p className="text-foreground/80 leading-relaxed text-lg">
+            <p className="text-base leading-relaxed text-foreground/80 sm:text-lg">
               {proposal.description}
             </p>
             <p className="text-sm font-semibold text-foreground/80">
@@ -315,7 +315,7 @@ export default function ProposalDetails() {
         </div>
 
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white border border-border rounded-3xl p-8 shadow-sm space-y-6 sticky top-8">
+          <div className="sticky top-8 space-y-6 rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-8">
             
             <div className="space-y-4 text-center">
               <div className="mx-auto h-20 w-20 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">
@@ -412,7 +412,7 @@ export default function ProposalDetails() {
                       <p className="text-[11px] text-muted-foreground mt-1">
                         {getInterestedStatusText(person)}
                       </p>
-                      <div className="mt-2 flex gap-2">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => navigate(`/users/${person.id}`)}

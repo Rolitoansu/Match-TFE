@@ -112,16 +112,16 @@ export default function Proposals() {
   }
 
   return (
-    <div className="max-w-300 mx-auto p-6 lg:p-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+    <div className="mx-auto max-w-300 p-4 sm:p-6 lg:p-10">
+      <div className="mb-8 flex flex-col justify-between gap-4 md:mb-10 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('proposals.title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{t('proposals.title')}</h1>
           <p className="text-muted-foreground mt-1">{t('proposals.subtitle', { rolePlural: oppositeRolePluralLabel })}</p>
         </div>
         
         <button 
           onClick={() => navigate('/proposals/new')}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
         >
           <Plus size={20} />
           {t('proposals.newProposal')}
@@ -153,12 +153,12 @@ export default function Proposals() {
         </label>
       </div>
 
-      <div className="flex gap-8 border-b border-border mb-8 overflow-x-auto">
+      <div className="mb-8 flex gap-6 overflow-x-auto border-b border-border sm:gap-8">
         {tabs.map((tab) => (
           <button 
             key={tab.id}
             onClick={() => setSelectedTab(tab.id)}
-            className={`pb-4 text-sm font-bold transition-all relative ${
+            className={`relative min-w-max pb-4 text-sm font-bold transition-all ${
               selectedTab === tab.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -176,14 +176,14 @@ export default function Proposals() {
             key={proposal.id} 
             className="group bg-white border border-border rounded-3xl p-5 hover:border-primary/30 hover:shadow-xl hover:shadow-slate-200/50 transition-all"
           >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
               
               <div className="flex items-start gap-4 flex-1">
                 <div className={`p-3 rounded-2xl shrink-0 ${STATUS_STYLE[proposal.status]}`}>
                   <FileText size={24} />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
                       {proposal.title}
                     </h3>
@@ -233,8 +233,8 @@ export default function Proposals() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between lg:justify-end gap-8 border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-50">
-                <div className="flex gap-6">
+              <div className="flex flex-col gap-4 border-t border-slate-50 pt-4 sm:flex-row sm:items-center sm:justify-between lg:justify-end lg:gap-8 lg:border-t-0 lg:pt-0">
+                <div className="flex gap-6 sm:gap-4">
                   <div className="text-center">
                     <p className="text-sm font-bold text-foreground flex items-center gap-1.5 justify-center">
                       <Users size={16} className="text-primary" />
@@ -250,8 +250,8 @@ export default function Proposals() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-xl text-xs font-bold hover:bg-primary hover:text-white transition-all"
+                <div className="flex w-full items-center gap-2 sm:w-auto">
+                  <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-foreground transition-all hover:bg-primary hover:text-white sm:w-auto"
                     onClick={() => navigate(`/proposals/details/${proposal.id}`)}>
                     {t('proposals.viewDetails')}
                     <ArrowUpRight size={14} />

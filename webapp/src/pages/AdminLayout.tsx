@@ -16,20 +16,20 @@ export default function AdminLayout() {
     return (
         <div className="flex min-h-svh flex-col bg-gray-50/50">
             <header className="sticky top-0 z-50 w-full border-b border-black/10 bg-white/95 shadow-[0_14px_32px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl">
-                <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
+                <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
                     <button
                         type="button"
                         onClick={() => navigate('/admin')}
                         className="flex items-center gap-2 transition-opacity hover:opacity-80"
                     >
-                        <Shield className="text-primary" size={22} />
-                        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        <Shield className="text-primary" size={20} />
+                        <h1 className="text-lg font-bold tracking-tight text-foreground sm:text-2xl">
                             Match-TFE <span className="text-primary">Admin</span>
                         </h1>
                     </button>
 
                     <div className="flex items-center gap-2">
-                        <span className="mr-2 text-sm text-muted-foreground">{admin?.email}</span>
+                        <span className="mr-2 hidden text-sm text-muted-foreground sm:inline">{admin?.email}</span>
                         <button
                             type="button"
                             title={t('admin.layout.signOut')}

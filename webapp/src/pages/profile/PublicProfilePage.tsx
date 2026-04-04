@@ -47,8 +47,8 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 lg:p-10 pb-32">
-      <div className="mb-8">
+    <div className="mx-auto max-w-5xl p-4 pb-24 sm:p-6 sm:pb-32 lg:p-10">
+      <div className="mb-6 sm:mb-8">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-semibold"
@@ -59,7 +59,7 @@ export default function PublicProfilePage({ id }: PublicProfilePageProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-4 space-y-6">
-          <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+          <div className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-8">
             <div className="flex flex-col items-center text-center">
               <h2 className="text-2xl font-bold">{profile.name} {profile.surname}</h2>
               <p className="text-primary font-semibold text-sm mt-1">{ROLE_LABEL[profile.role]}</p>

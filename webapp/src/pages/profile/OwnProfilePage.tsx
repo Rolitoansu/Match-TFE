@@ -122,14 +122,14 @@ export default function OwnProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-350 p-6 lg:p-10">
-      <div className="mb-10 flex items-end justify-between px-2">
+    <div className="mx-auto max-w-350 p-4 sm:p-6 lg:p-10">
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 px-0 sm:mb-10 sm:flex-row sm:items-end sm:px-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('ownProfile.title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{t('ownProfile.title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t('ownProfile.subtitle')}</p>
         </div>
         <button
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:opacity-90"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:opacity-90 sm:w-auto"
           onClick={() => navigate('/proposals/new')}
         >
           <Plus size={18} />

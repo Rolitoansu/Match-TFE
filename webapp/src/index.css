@@ -9,6 +9,13 @@ html {
     scrollbar-gutter: stable;
 }
 
+html,
+body,
+#root {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 button,
 [role='button'],
 a[href],
@@ -105,4 +112,12 @@ textarea:disabled,
 
 .transition-transform {
     transition: transform 200ms ease-in-out;
+}
+
+@media (max-width: 640px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
 }

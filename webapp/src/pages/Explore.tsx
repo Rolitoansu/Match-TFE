@@ -102,7 +102,7 @@ export default function Explore() {
   if (matchedProposal) {
     return (
       <div className="flex items-center justify-center px-4 py-6">
-        <div className="w-full max-w-xl overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-gray-200/50 p-8">
+        <div className="w-full max-w-xl overflow-hidden rounded-4xl border border-border bg-card p-5 shadow-2xl shadow-gray-200/50 sm:p-8">
           <h2 className="text-xl font-black text-foreground">{t('explore.matched.title')}</h2>
 
           <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
@@ -277,7 +277,7 @@ export default function Explore() {
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-5 sm:p-8">
           <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-2">
             <Briefcase size={14} /> {t('explore.card.publishedProject')}
           </h3>
@@ -307,7 +307,7 @@ export default function Explore() {
             </div>
           </div>
 
-          <div className="mt-8 flex items-center justify-between gap-3">
+          <div className="mt-8 flex flex-col items-center justify-between gap-3 sm:flex-row">
             <button
               onClick={skipCurrentProposal}
               className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-border px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-secondary"
