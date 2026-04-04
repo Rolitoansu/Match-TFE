@@ -176,14 +176,14 @@ export const Header = () => {
         <button
           type="button"
           onClick={() => navigate('/home')}
-          className="text-left transition-opacity hover:opacity-80 md:justify-self-start"
+          className="self-center text-center transition-opacity hover:opacity-80 md:justify-self-start md:self-auto md:text-left"
         >
           <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
             Match-TFE
           </h1>
         </button>
 
-        <nav className="order-3 flex w-full items-center justify-center gap-2 overflow-x-auto rounded-full border border-black/5 bg-slate-100/85 p-1.5 shadow-sm shadow-slate-200/70 md:order-0 md:w-auto md:justify-center">
+        <nav className="order-3 flex w-full items-center justify-center gap-1.5 overflow-hidden rounded-full border border-black/5 bg-slate-100/85 p-1.5 shadow-sm shadow-slate-200/70 md:order-0 md:w-auto md:gap-2 md:overflow-x-auto md:justify-center">
           {items.map((item) => {
             const isActive = location.pathname === item.route || location.pathname.startsWith(item.route + '/')
             const Icon = item.icon
@@ -193,7 +193,7 @@ export const Header = () => {
                 key={item.name}
                 type="button"
                 className={[
-                  'flex h-10 min-w-10 shrink-0 items-center justify-center gap-2 rounded-full px-3 py-2.5 transition-all duration-200 active:scale-[0.98] md:h-auto md:min-w-33 md:px-4',
+                  'flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-2.5 transition-all duration-200 active:scale-[0.98] md:h-auto md:min-w-33 md:flex-none md:gap-2 md:px-4',
                   isActive
                     ? 'bg-white text-primary shadow-sm shadow-slate-300/70'
                     : 'text-slate-500 hover:bg-white/70 hover:text-foreground',
@@ -206,7 +206,7 @@ export const Header = () => {
                   className={isActive ? 'text-primary' : 'text-current'}
                 />
                 <span className={[
-                  'hidden text-xs font-black uppercase tracking-[0.12em] transition-colors md:inline',
+                  'max-w-14 truncate text-[11px] font-bold tracking-[0.02em] transition-colors md:max-w-none md:text-xs md:font-black md:uppercase md:tracking-[0.12em]',
                   isActive ? 'text-primary' : 'text-current',
                 ].join(' ')}>
                   {item.name}
@@ -216,7 +216,7 @@ export const Header = () => {
           })}
         </nav>
 
-        <div className="relative flex items-center justify-end gap-2 self-end md:self-auto" ref={notificationPanelRef}>
+        <div className="relative flex items-center justify-end gap-2 self-center md:self-auto" ref={notificationPanelRef}>
           <label className="relative">
             <span className="sr-only">Language</span>
             <Languages className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
