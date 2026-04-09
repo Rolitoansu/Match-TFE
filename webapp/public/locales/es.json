@@ -39,10 +39,12 @@
 	},
 	"login": {
 		"title": "Bienvenido de nuevo",
-		"subtitle": "Introduce tus credenciales para acceder a Match-TFE",
+		"subtitle": "Inicia sesión con tu cuenta Microsoft 365 de la universidad",
 		"emailLabel": "Correo electrónico",
 		"passwordLabel": "Contraseña",
 		"submit": "Iniciar sesión",
+		"microsoftSubmit": "Continuar con Microsoft 365",
+		"backToLanding": "Volver al inicio",
 		"errorInvalidCredentials": "Credenciales incorrectas o error en el servidor",
 		"noAccount": "¿No tienes cuenta?",
 		"registerLink": "Regístrate"

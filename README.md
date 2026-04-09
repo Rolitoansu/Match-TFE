@@ -33,9 +33,18 @@ SMTP_FROM=<optional_sender_email>
 NOTIFICATION_TIMEZONE=<optional_timezone>          # default: Europe/Madrid
 PENDING_MATCHES_CRON=<optional_cron_expression>    # default: 0 * * * * (cada hora, se filtra por preferencias de usuario)
 PENDING_MATCHES_SUBJECT=<optional_email_subject>
+
+# Microsoft 365 Authentication (Users)
+MICROSOFT_TENANT_ID=<tenant_id_or_common>          # default: common
+MICROSOFT_CLIENT_ID=<azure_app_client_id>
+MICROSOFT_CLIENT_SECRET=<azure_app_client_secret>
+MICROSOFT_REDIRECT_URI=<oauth_redirect_uri>        # e.g. http://localhost:8000/auth/microsoft/callback
+MICROSOFT_ALLOWED_DOMAIN=<optional_domain_filter>  # e.g. uniovi.es
 ```
 
 Los correos de recordatorio se envian automaticamente por usuario segun su frecuencia y hora configuradas, e incluyen un resumen de notificaciones pendientes por leer.
+
+User login is performed through Microsoft 365 OAuth. The legacy endpoint for user/password login (`POST /auth/login`) is disabled intentionally.
 
 ### 2. Launching the System
 

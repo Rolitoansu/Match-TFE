@@ -179,6 +179,7 @@ services:
     build:
       context: .
       dockerfile: ./webapp/Dockerfile
+      target: development
     develop:
       watch:
         - action: rebuild

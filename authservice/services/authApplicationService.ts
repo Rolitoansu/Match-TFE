@@ -16,6 +16,55 @@ export class HttpError extends Error {
 export class AuthApplicationService {
     constructor(private readonly jwtSecret: string) {}
 
+    private async buildUserSession(email: string) {
+        const normalizedEmail = email.trim().toLowerCase()
+
+        const [user] = await db
+            .select({
+                id: users.id,
+                name: users.name,
+                surname: users.surname,
+                registrationDate: users.registrationDate,
+                biography: users.biography,
+                notificationFrequency: users.notificationFrequency,
+                notificationReminderHour: users.notificationReminderHour,
+                role: users.role,
+            })
+            .from(users)
+            .where(eq(users.email, normalizedEmail))
+            .limit(1)
+
+        if (!user) {
+            throw new HttpError(401, { message: 'Invalid credentials' })
+        }
+
+        const interestRows = await db
+            .select({ name: tags.name })
+            .from(userTags)
+            .innerJoin(tags, eq(tags.id, userTags.tagId))
+            .where(eq(userTags.userId, user.id))
+
+        const refreshToken = jwt.sign({ email: normalizedEmail }, this.jwtSecret, { expiresIn: '30d' })
+        const accessToken = jwt.sign({ email: normalizedEmail }, this.jwtSecret, { expiresIn: '15m' })
+
+        return {
+            refreshToken,
+            accessToken,
+            user: {
+                id: user.id,
+                email: normalizedEmail,
+                name: user.name,
+                surname: user.surname,
+                registrationDate: user.registrationDate,
+                biography: user.biography,
+                notificationFrequency: user.notificationFrequency,
+                notificationReminderHour: user.notificationReminderHour,
+                role: user.role,
+                interests: interestRows.map((row) => row.name),
+            },
+        }
+    }
+
     async refreshUserSession(refreshToken: string) {
         const payload = jwt.verify(refreshToken, this.jwtSecret) as jwt.JwtPayload
 
@@ -86,6 +135,8 @@ export class AuthApplicationService {
     }
 
     async loginUser(email: string, password: string) {
+        const normalizedEmail = email.trim().toLowerCase()
+
         const [user] = await db
             .select({
                 id: users.id,
@@ -99,7 +150,7 @@ export class AuthApplicationService {
                 role: users.role,
             })
             .from(users)
-            .where(eq(users.email, email))
+            .where(eq(users.email, normalizedEmail))
             .limit(1)
 
         if (!user) {
@@ -112,31 +163,11 @@ export class AuthApplicationService {
             throw new HttpError(401, { message: 'Invalid credentials' })
         }
 
-        const interestRows = await db
-            .select({ name: tags.name })
-            .from(userTags)
-            .innerJoin(tags, eq(tags.id, userTags.tagId))
-            .where(eq(userTags.userId, user.id))
+        return this.buildUserSession(normalizedEmail)
+    }
 
-        const refreshToken = jwt.sign({ email }, this.jwtSecret, { expiresIn: '30d' })
-        const accessToken = jwt.sign({ email }, this.jwtSecret, { expiresIn: '15m' })
-
-        return {
-            refreshToken,
-            accessToken,
-            user: {
-                id: user.id,
-                email,
-                name: user.name,
-                surname: user.surname,
-                registrationDate: user.registrationDate,
-                biography: user.biography,
-                notificationFrequency: user.notificationFrequency,
-                notificationReminderHour: user.notificationReminderHour,
-                role: user.role,
-                interests: interestRows.map((row) => row.name),
-            },
-        }
+    async loginUserWithMicrosoft(email: string) {
+        return this.buildUserSession(email)
     }
 
     async loginAdmin(email: string, password: string) {

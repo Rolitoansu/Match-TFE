@@ -161,6 +161,18 @@ describe('AuthApplicationService', () => {
         ]) as any
       )
       .mockReturnValueOnce(
+        createSelectChain([
+          {
+            id: 1,
+            name: 'User',
+            surname: 'Test',
+            registrationDate: new Date('2026-01-01'),
+            biography: null,
+            role: 'student',
+          },
+        ]) as any
+      )
+      .mockReturnValueOnce(
         {
           from: vi.fn().mockReturnThis(),
           innerJoin: vi.fn().mockReturnThis(),
@@ -180,6 +192,41 @@ describe('AuthApplicationService', () => {
     expect(result.accessToken).toBe('access-token')
     expect(result.user.email).toBe('user@example.com')
     expect(result.user.interests).toEqual(['IA', 'Data'])
+  })
+
+  it('returns tokens and user payload on successful loginUserWithMicrosoft', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(
+        createSelectChain([
+          {
+            id: 10,
+            name: 'Marta',
+            surname: 'Perez',
+            registrationDate: new Date('2026-01-01'),
+            biography: null,
+            role: 'student',
+          },
+        ]) as any
+      )
+      .mockReturnValueOnce(
+        {
+          from: vi.fn().mockReturnThis(),
+          innerJoin: vi.fn().mockReturnThis(),
+          where: vi.fn().mockResolvedValue([{ name: 'Cloud' }]),
+        } as any
+      )
+
+    vi.mocked(jwt.sign)
+      .mockReturnValueOnce('ms-refresh-token' as never)
+      .mockReturnValueOnce('ms-access-token' as never)
+
+    const service = new AuthApplicationService('secret')
+    const result = await service.loginUserWithMicrosoft('MARTA@EXAMPLE.COM')
+
+    expect(result.refreshToken).toBe('ms-refresh-token')
+    expect(result.accessToken).toBe('ms-access-token')
+    expect(result.user.email).toBe('marta@example.com')
+    expect(result.user.interests).toEqual(['Cloud'])
   })
 
   it('throws 401 on loginAdmin when admin does not exist', async () => {

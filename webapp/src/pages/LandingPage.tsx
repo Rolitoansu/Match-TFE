@@ -1,9 +1,15 @@
 import { Button } from '@mui/material'
 import { GraduationCap, Users, Sparkles } from "lucide-react"
 import { useTranslation } from 'react-i18next'
+import { getApiBaseUrl } from '../api/baseUrl'
 
 export default function LandingPage() {
   const { t } = useTranslation()
+
+  const handleMicrosoftLogin = () => {
+    const baseUrl = getApiBaseUrl()
+    window.location.assign(`${baseUrl}/auth/microsoft/login`)
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
@@ -39,7 +45,7 @@ export default function LandingPage() {
         <div className="flex w-full flex-col gap-3">
           <Button
             className="w-full rounded-full bg-card text-primary shadow-lg hover:bg-card/90 font-semibold text-base h-12"
-            href='/login'
+            onClick={handleMicrosoftLogin}
           >
             {t('landing.loginWithMicrosoft')}
           </Button>
