@@ -1,80 +1,5 @@
-CREATE TABLE users (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    surname VARCHAR(100) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    registration_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    biography TEXT,
-    notification_frequency VARCHAR(20) NOT NULL DEFAULT 'disabled' CHECK (notification_frequency IN ('disabled', 'daily', 'weekly', 'biweekly', 'monthly')),
-    notification_reminder_hour INTEGER NOT NULL DEFAULT 9 CHECK (notification_reminder_hour >= 0 AND notification_reminder_hour <= 23),
-    last_reminder_email_sent_at TIMESTAMPTZ,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('student', 'professor'))
-);
-
-CREATE TABLE administrators (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE skills (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT
-);
-
-CREATE TABLE user_skills (
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    skill_id INTEGER REFERENCES skills(id) ON DELETE CASCADE,
-    mark INTEGER CHECK (mark >= 0 AND mark <= 10),
-    PRIMARY KEY (user_id, skill_id)
-);
-
-CREATE TABLE projects (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    description TEXT,
-    tfe_type INTEGER NOT NULL DEFAULT 6 CHECK (tfe_type >= 1 AND tfe_type <= 6),
-    status VARCHAR(20) DEFAULT 'proposed' CHECK (status IN ('proposed', 'in_progress', 'completed')),
-    publication_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    expiration_date TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP + INTERVAL '12 months'),
-    tutor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    student_id INTEGER REFERENCES users(id) ON DELETE SET NULL
-);
-
-CREATE TABLE matches (
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
-    PRIMARY KEY (project_id, user_id)
-);
-
-CREATE TABLE notifications (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    type VARCHAR(50) NOT NULL,
-    content TEXT NOT NULL,
-    read BOOLEAN DEFAULT FALSE,
-    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE tags (
-    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE
-);
-
-CREATE TABLE project_tags (
-    project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
-    tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (project_id, tag_id)
-);
-
-CREATE TABLE user_tags (
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    tag_id INTEGER REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, tag_id)
-);
+-- Seed-only script.
+-- Schema is created by Drizzle from database/schema.ts via `db-init`.
 
 -- Seed default admin user (password: admin123)
 INSERT INTO administrators (email, password_hash) VALUES
@@ -125,7 +50,7 @@ INSERT INTO tags (name) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- Seed professor proposals
-INSERT INTO projects (title, description, status, tutor_id) VALUES
+INSERT INTO projects (title, description, status, proposer_id) VALUES
     (
         'Asistente conversacional para campus universitario',
         'Diseno e implementacion de un asistente conversacional con RAG para resolver dudas academicas y administrativas.',
@@ -152,7 +77,7 @@ INSERT INTO projects (title, description, status, tutor_id) VALUES
     );
 
 -- Seed student proposals
-INSERT INTO projects (title, description, status, student_id) VALUES
+INSERT INTO projects (title, description, status, proposer_id) VALUES
     (
         'Sistema de recomendacion de TFGs',
         'Plataforma para recomendar TFGs en funcion de intereses, habilidades y experiencia previa.',

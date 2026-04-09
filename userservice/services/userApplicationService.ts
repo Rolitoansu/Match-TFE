@@ -1,9 +1,7 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import axios from 'axios'
-import db from '@match-tfe/db'
-import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
-import { and, desc, eq, inArray, or } from 'drizzle-orm'
+import { UserRepository } from '../repositories/userRepository'
 
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notificationservice:5004'
 
@@ -31,6 +29,8 @@ type UpdateProfileInput = {
 }
 
 export class UserApplicationService {
+    private readonly userRepository = new UserRepository()
+
     constructor(private readonly jwtSecret: string) {}
 
     private async sendNotification(userId: number, type: string, content: string) {
@@ -46,11 +46,7 @@ export class UserApplicationService {
     }
 
     async registerStudent(input: RegisterStudentInput) {
-        const [existingUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, input.email))
-            .limit(1)
+        const existingUser = await this.userRepository.findByEmail(input.email)
 
         if (existingUser) {
             throw new HttpError(409, { error: 'User already exists' })
@@ -60,22 +56,17 @@ export class UserApplicationService {
         const registrationDate = new Date()
         let createdUserId: number | null = null
 
-        await db.transaction(async (trx) => {
-            const [createdUser] = await trx
-                .insert(users)
-                .values({
-                    email: input.email,
-                    name: input.name,
-                    surname: input.surname,
-                    passwordHash,
-                    registrationDate,
-                    role: 'student',
-                })
-                .returning({ id: users.id })
+        await this.userRepository.transaction(async (trx) => {
+            const createdUser = await this.userRepository.createStudent({
+                email: input.email,
+                name: input.name,
+                surname: input.surname,
+                passwordHash,
+                registrationDate,
+            }, trx)
 
             createdUserId = createdUser?.id ?? null
         })
-
         if (!createdUserId) {
             throw new Error('User creation failed')
         }
@@ -108,44 +99,21 @@ export class UserApplicationService {
     }
 
     async getUserProposals(userId: number) {
-        const [user] = await db
-            .select({ id: users.id, role: users.role })
-            .from(users)
-            .where(eq(users.id, userId))
-            .limit(1)
+        const user = await this.userRepository.findRoleById(userId)
 
         if (!user) {
             throw new HttpError(404, { error: 'User not found' })
         }
 
-        const proposalRows = await db
-            .select({
-                id: projects.id,
-                title: projects.title,
-                description: projects.description,
-                type: projects.tfeType,
-                publicationDate: projects.publicationDate,
-                status: projects.status,
-            })
-            .from(projects)
-            .where(
-                user.role === 'student'
-                    ? eq(projects.studentId, user.id)
-                    : eq(projects.tutorId, user.id)
-            )
-            .orderBy(desc(projects.publicationDate))
+        const proposalRows = await this.userRepository.getProposalsForUser(user.id, user.role)
 
         const proposalsWithTags = await Promise.all(
             proposalRows.map(async (proposal) => {
-                const tagRows = await db
-                    .select({ name: tags.name })
-                    .from(tags)
-                    .innerJoin(projectTags, eq(projectTags.tagId, tags.id))
-                    .where(eq(projectTags.projectId, proposal.id))
+                const tags = await this.userRepository.getProposalTags(proposal.id)
 
                 return {
                     ...proposal,
-                    tags: tagRows.map((item) => item.name),
+                    tags,
                 }
             })
         )
@@ -154,215 +122,99 @@ export class UserApplicationService {
     }
 
     async getAuthenticatedProfile(userEmail: string) {
-        const [profile] = await db
-            .select({
-                id: users.id,
-                email: users.email,
-                name: users.name,
-                surname: users.surname,
-                registrationDate: users.registrationDate,
-                biography: users.biography,
-                notificationFrequency: users.notificationFrequency,
-                notificationReminderHour: users.notificationReminderHour,
-                role: users.role,
-            })
-            .from(users)
-            .where(eq(users.email, userEmail))
-            .limit(1)
+        const profile = await this.userRepository.findByEmail(userEmail)
 
         if (!profile) {
             throw new HttpError(404, { error: 'Authenticated user not found' })
         }
 
-        const interestRows = await db
-            .select({ name: tags.name })
-            .from(userTags)
-            .innerJoin(tags, eq(tags.id, userTags.tagId))
-            .where(eq(userTags.userId, profile.id))
+        const interests = await this.userRepository.getInterests(profile.id)
 
         return {
             user: {
                 ...profile,
-                interests: interestRows.map((row) => row.name),
+                interests,
             },
         }
     }
 
     async updateAuthenticatedProfile(userEmail: string, input: UpdateProfileInput) {
-        const [currentUser] = await db
-            .select({ id: users.id })
-            .from(users)
-            .where(eq(users.email, userEmail))
-            .limit(1)
+        const currentUser = await this.userRepository.findRequesterByEmail(userEmail)
 
         if (!currentUser) {
             throw new HttpError(404, { error: 'Authenticated user not found' })
         }
 
         if (input.biography !== undefined) {
-            await db
-                .update(users)
-                .set({ biography: input.biography })
-                .where(eq(users.id, currentUser.id))
+            await this.userRepository.updateUser(currentUser.id, { biography: input.biography })
         }
 
         if (input.notificationFrequency !== undefined) {
-            const frequencyUpdate = input.notificationFrequency === 'disabled'
-                ? { notificationFrequency: input.notificationFrequency, lastReminderEmailSentAt: null }
-                : { notificationFrequency: input.notificationFrequency }
-
-            await db
-                .update(users)
-                .set(frequencyUpdate)
-                .where(eq(users.id, currentUser.id))
+            await this.userRepository.updateNotificationFrequency(currentUser.id, input.notificationFrequency)
         }
 
         if (input.notificationReminderHour !== undefined) {
-            await db
-                .update(users)
-                .set({ notificationReminderHour: input.notificationReminderHour })
-                .where(eq(users.id, currentUser.id))
+            await this.userRepository.updateNotificationReminderHour(currentUser.id, input.notificationReminderHour)
         }
 
         if (input.interests !== undefined) {
             const normalizedInterests = [...new Set(input.interests.map((name) => name.trim()).filter(Boolean))]
             const tagRows = normalizedInterests.length > 0
-                ? await db
-                    .select({ id: tags.id, name: tags.name })
-                    .from(tags)
-                    .where(inArray(tags.name, normalizedInterests))
+                ? await this.userRepository.findTagsByNames(normalizedInterests)
                 : []
 
             if (tagRows.length !== normalizedInterests.length) {
                 throw new HttpError(400, { error: 'One or more interests are not valid tags' })
             }
 
-            await db.delete(userTags).where(eq(userTags.userId, currentUser.id))
-
-            if (tagRows.length > 0) {
-                await db
-                    .insert(userTags)
-                    .values(tagRows.map((tag) => ({ userId: currentUser.id, tagId: tag.id })))
-            }
+            await this.userRepository.replaceUserInterests(currentUser.id, tagRows.map((tag) => tag.id))
         }
 
-        const [updatedUser] = await db
-            .select({
-                id: users.id,
-                email: users.email,
-                name: users.name,
-                surname: users.surname,
-                registrationDate: users.registrationDate,
-                biography: users.biography,
-                notificationFrequency: users.notificationFrequency,
-                notificationReminderHour: users.notificationReminderHour,
-                role: users.role,
-            })
-            .from(users)
-            .where(eq(users.id, currentUser.id))
-            .limit(1)
+        const updatedUser = await this.userRepository.findById(currentUser.id)
 
         if (!updatedUser) {
             throw new HttpError(404, { error: 'Authenticated user not found' })
         }
 
-        const updatedInterestRows = await db
-            .select({ name: tags.name })
-            .from(userTags)
-            .innerJoin(tags, eq(tags.id, userTags.tagId))
-            .where(eq(userTags.userId, currentUser.id))
+        const updatedInterests = await this.userRepository.getInterests(currentUser.id)
 
         return {
             user: {
                 ...updatedUser,
-                interests: updatedInterestRows.map((row) => row.name),
+                interests: updatedInterests,
             },
         }
     }
 
     async getPublicProfile(userId: number, requesterEmail: string) {
-        const [requester] = await db
-            .select({ id: users.id })
-            .from(users)
-            .where(eq(users.email, requesterEmail))
-            .limit(1)
+        const requester = await this.userRepository.findRequesterByEmail(requesterEmail)
 
         if (!requester) {
             throw new HttpError(404, { error: 'Authenticated user not found' })
         }
 
-        const [profile] = await db
-            .select({
-                id: users.id,
-                name: users.name,
-                surname: users.surname,
-                email: users.email,
-                biography: users.biography,
-                role: users.role,
-                registrationDate: users.registrationDate,
-            })
-            .from(users)
-            .where(eq(users.id, userId))
-            .limit(1)
+        const profile = await this.userRepository.findPublicProfileById(userId)
 
         if (!profile) {
             throw new HttpError(404, { error: 'User not found' })
         }
 
-        const interestRows = await db
-            .select({ name: tags.name })
-            .from(userTags)
-            .innerJoin(tags, eq(tags.id, userTags.tagId))
-            .where(eq(userTags.userId, profile.id))
+        const interests = await this.userRepository.getInterests(profile.id)
 
-        const proposalRows = await db
-            .select({
-                id: projects.id,
-                title: projects.title,
-                description: projects.description,
-                type: projects.tfeType,
-                status: projects.status,
-                publicationDate: projects.publicationDate,
-            })
-            .from(projects)
-            .where(
-                profile.role === 'student'
-                    ? eq(projects.studentId, profile.id)
-                    : eq(projects.tutorId, profile.id)
-            )
-            .orderBy(desc(projects.publicationDate))
+        const proposalRows = await this.userRepository.getProposalsForUser(profile.id, profile.role)
 
         const isOwnProfile = requester.id === profile.id
         let canSeeEmail = isOwnProfile
 
         if (!canSeeEmail) {
-            const [acceptedBetweenUsers] = await db
-                .select({ projectId: matches.projectId })
-                .from(matches)
-                .innerJoin(projects, eq(projects.id, matches.projectId))
-                .where(and(
-                    eq(matches.status, 'accepted'),
-                    or(
-                        and(
-                            eq(matches.userId, requester.id),
-                            or(eq(projects.studentId, profile.id), eq(projects.tutorId, profile.id))
-                        ),
-                        and(
-                            eq(matches.userId, profile.id),
-                            or(eq(projects.studentId, requester.id), eq(projects.tutorId, requester.id))
-                        )
-                    )
-                ))
-                .limit(1)
-
-            canSeeEmail = Boolean(acceptedBetweenUsers)
+            canSeeEmail = await this.userRepository.hasAcceptedMatchBetweenUsers(requester.id, profile.id)
         }
 
         return {
             user: {
                 ...profile,
                 email: canSeeEmail ? profile.email : null,
-                interests: interestRows.map((row) => row.name),
+                interests,
                 proposals: proposalRows,
             },
         }
@@ -383,11 +235,7 @@ export class UserApplicationService {
             }
 
             try {
-                const [existing] = await db
-                    .select()
-                    .from(users)
-                    .where(eq(users.email, email))
-                    .limit(1)
+                const existing = await this.userRepository.findByEmail(email)
 
                 if (existing) {
                     skipped += 1
@@ -396,19 +244,27 @@ export class UserApplicationService {
 
                 const defaultPassword = email.split('@')[0]
                 const passwordHash = await bcrypt.hash(defaultPassword, 10)
+                let createdUserId: number | null = null
 
-                await db.transaction(async (trx) => {
-                    await trx
-                        .insert(users)
-                        .values({
-                            email,
-                            name,
-                            surname,
-                            passwordHash,
-                            registrationDate: new Date(),
-                            role: 'student',
-                        })
+                await this.userRepository.transaction(async (trx) => {
+                    const createdUser = await this.userRepository.createStudent({
+                        email,
+                        name,
+                        surname,
+                        passwordHash,
+                        registrationDate: new Date(),
+                    }, trx)
+
+                    createdUserId = createdUser?.id ?? null
                 })
+
+                if (createdUserId) {
+                    await this.sendNotification(
+                        createdUserId,
+                        'welcome_profile_setup',
+                        'Bienvenido a Match-TFE. Edita tus intereses en el perfil para mejorar tus matches.'
+                    )
+                }
 
                 created += 1
             } catch (error) {
@@ -436,11 +292,7 @@ export class UserApplicationService {
             }
 
             try {
-                const [existing] = await db
-                    .select()
-                    .from(users)
-                    .where(eq(users.email, email))
-                    .limit(1)
+                const existing = await this.userRepository.findByEmail(email)
 
                 if (existing) {
                     skipped += 1
@@ -449,19 +301,27 @@ export class UserApplicationService {
 
                 const defaultPassword = email.split('@')[0]
                 const passwordHash = await bcrypt.hash(defaultPassword, 10)
+                let createdUserId: number | null = null
 
-                await db.transaction(async (trx) => {
-                    await trx
-                        .insert(users)
-                        .values({
-                            email,
-                            name,
-                            surname,
-                            passwordHash,
-                            registrationDate: new Date(),
-                            role: 'professor',
-                        })
+                await this.userRepository.transaction(async (trx) => {
+                    const createdUser = await this.userRepository.createProfessor({
+                        email,
+                        name,
+                        surname,
+                        passwordHash,
+                        registrationDate: new Date(),
+                    }, trx)
+
+                    createdUserId = createdUser?.id ?? null
                 })
+
+                if (createdUserId) {
+                    await this.sendNotification(
+                        createdUserId,
+                        'welcome_profile_setup',
+                        'Bienvenido a Match-TFE. Edita tus intereses en el perfil para mejorar tus matches.'
+                    )
+                }
 
                 created += 1
             } catch (error) {
@@ -475,89 +335,43 @@ export class UserApplicationService {
     }
 
     async updateUser(userId: number, update: { name?: string; surname?: string; email?: string; biography?: string | null }) {
-        const [user] = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, userId))
-            .limit(1)
+        const user = await this.userRepository.findById(userId)
 
         if (!user) {
             throw new HttpError(404, { error: 'User not found' })
         }
 
         if (update.email && update.email !== user.email) {
-            const [existing] = await db
-                .select()
-                .from(users)
-                .where(eq(users.email, update.email))
-                .limit(1)
+            const existing = await this.userRepository.findByEmail(update.email)
 
             if (existing) {
                 throw new HttpError(409, { error: 'Email already in use' })
             }
         }
 
-        const updateData: Record<string, any> = {}
-        if (update.name !== undefined) updateData.name = update.name
-        if (update.surname !== undefined) updateData.surname = update.surname
-        if (update.email !== undefined) updateData.email = update.email
-        if (update.biography !== undefined) updateData.biography = update.biography
+        await this.userRepository.updateUser(userId, update)
 
-        await db
-            .update(users)
-            .set(updateData)
-            .where(eq(users.id, userId))
-
-        const [updatedUser] = await db
-            .select({
-                id: users.id,
-                name: users.name,
-                surname: users.surname,
-                email: users.email,
-                biography: users.biography,
-                role: users.role,
-                registrationDate: users.registrationDate,
-            })
-            .from(users)
-            .where(eq(users.id, userId))
-            .limit(1)
+        const updatedUser = await this.userRepository.findById(userId)
 
         return { user: updatedUser }
     }
 
     async deleteUser(userId: number) {
-        const [user] = await db
-            .select({ id: users.id })
-            .from(users)
-            .where(eq(users.id, userId))
-            .limit(1)
+        const user = await this.userRepository.findById(userId)
 
         if (!user) {
             throw new HttpError(404, { error: 'User not found' })
         }
 
-        await db.transaction(async (trx) => {
-            await trx
-                .delete(users)
-                .where(eq(users.id, userId))
+        await this.userRepository.transaction(async (trx) => {
+            await this.userRepository.deleteUser(userId, trx)
         })
 
         return { message: 'User deleted successfully' }
     }
 
     async listUsers() {
-        const usersList = await db
-            .select({
-                id: users.id,
-                name: users.name,
-                surname: users.surname,
-                email: users.email,
-                role: users.role,
-                registrationDate: users.registrationDate,
-                biography: users.biography,
-            })
-            .from(users)
-            .orderBy(desc(users.registrationDate))
+        const usersList = await this.userRepository.listUsers()
 
         return { users: usersList }
     }

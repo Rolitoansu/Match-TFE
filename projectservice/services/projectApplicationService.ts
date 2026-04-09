@@ -1,7 +1,5 @@
 import axios from 'axios'
-import db from '@match-tfe/db'
-import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
-import { and, desc, eq, inArray, isNotNull, ne, or } from 'drizzle-orm'
+import { ProjectRepository } from '../repositories/projectRepository'
 
 const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notificationservice:5004'
 
@@ -29,110 +27,10 @@ type CreateProposalInput = {
 }
 
 export class ProjectApplicationService {
+    private readonly projectRepository = new ProjectRepository()
+
     private async getAcceptedMatchContext(userId: number) {
-        const [acceptedAsInterestedUser] = await db
-            .select({ projectId: matches.projectId })
-            .from(matches)
-            .where(and(
-                eq(matches.userId, userId),
-                eq(matches.status, 'accepted')
-            ))
-            .limit(1)
-
-        if (acceptedAsInterestedUser) {
-            const [project] = await db
-                .select({
-                    id: projects.id,
-                    title: projects.title,
-                    description: projects.description,
-                    type: projects.tfeType,
-                    publicationDate: projects.publicationDate,
-                    status: projects.status,
-                    studentId: projects.studentId,
-                    tutorId: projects.tutorId,
-                })
-                .from(projects)
-                .where(eq(projects.id, acceptedAsInterestedUser.projectId))
-                .limit(1)
-
-            if (!project) {
-                return null
-            }
-
-            const counterpartUserId = project.studentId ?? project.tutorId
-
-            if (!counterpartUserId) {
-                return null
-            }
-
-            const [counterpart] = await db
-                .select({
-                    id: users.id,
-                    name: users.name,
-                    surname: users.surname,
-                    email: users.email,
-                })
-                .from(users)
-                .where(eq(users.id, counterpartUserId))
-                .limit(1)
-
-            if (!counterpart) {
-                return null
-            }
-
-            return { project, counterpart }
-        }
-
-        const [acceptedAsOwner] = await db
-            .select({ projectId: projects.id, interestedUserId: matches.userId })
-            .from(projects)
-            .innerJoin(matches, eq(matches.projectId, projects.id))
-            .where(and(
-                eq(matches.status, 'accepted'),
-                or(
-                    eq(projects.studentId, userId),
-                    eq(projects.tutorId, userId)
-                )
-            ))
-            .limit(1)
-
-        if (!acceptedAsOwner) {
-            return null
-        }
-
-        const [project] = await db
-            .select({
-                id: projects.id,
-                title: projects.title,
-                description: projects.description,
-                type: projects.tfeType,
-                publicationDate: projects.publicationDate,
-                status: projects.status,
-            })
-            .from(projects)
-            .where(eq(projects.id, acceptedAsOwner.projectId))
-            .limit(1)
-
-        if (!project) {
-            return null
-        }
-
-        const [counterpart] = await db
-            .select({
-                id: users.id,
-                name: users.name,
-                surname: users.surname,
-                email: users.email,
-            })
-            .from(users)
-            .where(eq(users.id, acceptedAsOwner.interestedUserId))
-            .limit(1)
-
-        if (!counterpart) {
-            return null
-        }
-
-        return { project, counterpart }
+        return this.projectRepository.getAcceptedMatchContext(userId)
     }
 
     private async sendNotification(userId: number, type: string, content: string) {
@@ -148,51 +46,55 @@ export class ProjectApplicationService {
     }
 
     private async getUserWithRole(userEmail: string): Promise<CurrentUser | null> {
-        const [user] = await db
-            .select({
-                id: users.id,
-                role: users.role,
-            })
-            .from(users)
-            .where(eq(users.email, userEmail))
-            .limit(1)
-
-        if (!user || (user.role !== 'student' && user.role !== 'professor')) {
-            return null
-        }
-
-        return user as CurrentUser
+        return this.projectRepository.getCurrentUserByEmail(userEmail)
     }
 
-    private getOwner(project: { studentId: number | null; tutorId: number | null }) {
-        if (project.studentId) {
-            return { ownerId: project.studentId, ownerRole: 'student' as const }
+    private getOwnerId(project: Record<string, unknown>) {
+        const proposerId = project.proposerId as number | null | undefined
+        const studentId = project.studentId as number | null | undefined
+        const tutorId = project.tutorId as number | null | undefined
+
+        return proposerId ?? tutorId ?? studentId ?? null
+    }
+
+    private getOwnerRole(project: Record<string, unknown>): UserRole | null {
+        const studentId = project.studentId as number | null | undefined
+        const tutorId = project.tutorId as number | null | undefined
+
+        if (studentId) {
+            return 'student'
         }
 
-        if (project.tutorId) {
-            return { ownerId: project.tutorId, ownerRole: 'professor' as const }
+        if (tutorId) {
+            return 'professor'
         }
 
-        return { ownerId: null, ownerRole: null }
+        return null
+    }
+
+    private isOwner(project: Record<string, unknown>, currentUser: CurrentUser) {
+        const proposerId = project.proposerId as number | null | undefined
+
+        if (proposerId !== undefined && proposerId !== null) {
+            return proposerId === currentUser.id
+        }
+
+        const studentId = project.studentId as number | null | undefined
+        const tutorId = project.tutorId as number | null | undefined
+
+        if (currentUser.role === 'student') {
+            return studentId === currentUser.id
+        }
+
+        return tutorId === currentUser.id
     }
 
     private async getProjectTagNames(projectId: number) {
-        const proposalTags = await db
-            .select({ name: tags.name })
-            .from(tags)
-            .innerJoin(projectTags, eq(projectTags.tagId, tags.id))
-            .where(eq(projectTags.projectId, projectId))
-
-        return proposalTags.map((tag) => tag.name)
+        return this.projectRepository.getProjectTagNames(projectId)
     }
 
     private async getProjectTagIds(projectId: number) {
-        const proposalTagIds = await db
-            .select({ id: projectTags.tagId })
-            .from(projectTags)
-            .where(eq(projectTags.projectId, projectId))
-
-        return proposalTagIds.map((tag) => tag.id)
+        return this.projectRepository.getProjectTagIds(projectId)
     }
 
     async getProposals(userEmail: string) {
@@ -202,75 +104,29 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
         }
 
-        const proposals = currentUser.role === 'student'
-            ? await db
-                .select({
-                    id: projects.id,
-                    title: projects.title,
-                    description: projects.description,
-                    type: projects.tfeType,
-                    publicationDate: projects.publicationDate,
-                    status: projects.status,
-                    studentId: projects.studentId,
-                    tutorId: projects.tutorId,
-                    creatorName: users.name,
-                    creatorSurname: users.surname,
-                })
-                .from(projects)
-                .innerJoin(users, eq(users.id, projects.tutorId))
-                .where(and(eq(users.role, 'professor'), isNotNull(projects.tutorId)))
-                .orderBy(desc(projects.publicationDate))
-                .limit(50)
-            : await db
-                .select({
-                    id: projects.id,
-                    title: projects.title,
-                    description: projects.description,
-                    type: projects.tfeType,
-                    publicationDate: projects.publicationDate,
-                    status: projects.status,
-                    studentId: projects.studentId,
-                    tutorId: projects.tutorId,
-                    creatorName: users.name,
-                    creatorSurname: users.surname,
-                })
-                .from(projects)
-                .innerJoin(users, eq(users.id, projects.studentId))
-                .where(and(eq(users.role, 'student'), isNotNull(projects.studentId)))
-                .orderBy(desc(projects.publicationDate))
-                .limit(50)
+        const proposals = await this.projectRepository.getProposalListByRole(currentUser.role, currentUser.id)
 
         const proposalsWithInterestedUsers = await Promise.all(proposals.map(async (proposal) => {
-            const { ownerId } = this.getOwner(proposal)
+            const ownerId = this.getOwnerId(proposal as Record<string, unknown>)
             const isOwner = ownerId === currentUser.id
 
-            const [proposalOwner] = ownerId
-                ? await db
-                    .select({ name: users.name, surname: users.surname })
-                    .from(users)
-                    .where(eq(users.id, ownerId))
-                    .limit(1)
-                : []
+            const proposalOwner = ownerId
+                ? await this.projectRepository.getProjectOwnerById(ownerId)
+                : null
 
-            const proposalMatches = await db
-                .select({ userId: matches.userId, status: matches.status })
-                .from(matches)
-                .where(eq(matches.projectId, proposal.id))
+            const proposalMatches = await this.projectRepository.getProjectMatches(proposal.id)
 
             const interestedMatches = proposalMatches.filter(
-                (match) => match.status === 'pending' || match.status === 'accepted'
+                (match: { userId: number; status: 'pending' | 'accepted' | 'rejected' }) => match.status === 'pending' || match.status === 'accepted'
             )
 
-            const interestedUserIds = interestedMatches.map((match) => match.userId)
+            const interestedUserIds = interestedMatches.map((match: { userId: number }) => match.userId)
             const interestedPeople = interestedUserIds.length > 0
-                ? await db
-                    .select({ id: users.id, name: users.name, surname: users.surname, email: users.email })
-                    .from(users)
-                    .where(inArray(users.id, interestedUserIds))
+                ? await this.projectRepository.getUsersByIds(interestedUserIds)
                 : []
 
             const interestedUsers = isOwner
-                ? interestedMatches.map((match) => {
+                ? interestedMatches.map((match: { userId: number; status: 'pending' | 'accepted' | 'rejected' }) => {
                     const person = interestedPeople.find((user) => user.id === match.userId)
                     return {
                         id: match.userId,
@@ -283,7 +139,7 @@ export class ProjectApplicationService {
                 })
                 : []
 
-            const likedByCurrentUser = interestedMatches.some((match) => match.userId === currentUser.id)
+            const likedByCurrentUser = interestedMatches.some((match: { userId: number }) => match.userId === currentUser.id)
             const tagsForProposal = await this.getProjectTagNames(proposal.id)
 
             return {
@@ -298,7 +154,7 @@ export class ProjectApplicationService {
         }))
 
         return {
-            proposals: proposalsWithInterestedUsers.map(({ studentId, tutorId, ...proposal }) => proposal),
+            proposals: proposalsWithInterestedUsers.map(({ proposerId, ...proposal }) => proposal),
         }
     }
 
@@ -333,53 +189,18 @@ export class ProjectApplicationService {
             }
         }
 
-        const currentUserInterestRows = await db
-            .select({ tagId: userTags.tagId })
-            .from(userTags)
-            .where(eq(userTags.userId, currentUser.id))
-
-        const currentUserInterestTagIds = new Set(currentUserInterestRows.map((row) => row.tagId))
+        const currentUserInterestTagIds = await this.projectRepository.getCurrentUserInterests(currentUser.id)
 
         if (currentUserInterestTagIds.size === 0) {
             return { viewerRole: currentUser.role, proposals: [], matchedProposal: null }
         }
 
-        const isStudent = currentUser.role === 'student'
-        const rawProposals = await db
-            .select({
-                id: projects.id,
-                title: projects.title,
-                description: projects.description,
-                type: projects.tfeType,
-                publicationDate: projects.publicationDate,
-                status: projects.status,
-                creatorId: users.id,
-                creatorName: users.name,
-                creatorSurname: users.surname,
-                creatorBiography: users.biography,
-            })
-            .from(projects)
-            .innerJoin(
-                users,
-                isStudent
-                    ? eq(users.id, projects.tutorId)
-                    : eq(users.id, projects.studentId)
-            )
-            .where(and(
-                eq(projects.status, 'proposed'),
-                ne(users.id, currentUser.id),
-                isStudent ? isNotNull(projects.tutorId) : isNotNull(projects.studentId)
-            ))
-            .orderBy(desc(projects.publicationDate))
+        const rawProposals = await this.projectRepository.getRawProposals(currentUser.role, currentUser.id)
 
         const proposals: Array<Record<string, unknown>> = []
 
         for (const proposal of rawProposals) {
-            const [hasAcceptedMatch] = await db
-                .select({ projectId: matches.projectId })
-                .from(matches)
-                .where(and(eq(matches.projectId, proposal.id), eq(matches.status, 'accepted')))
-                .limit(1)
+            const hasAcceptedMatch = await this.projectRepository.findAcceptedMatchByProjectId(proposal.id)
 
             if (hasAcceptedMatch) {
                 continue
@@ -392,11 +213,7 @@ export class ProjectApplicationService {
                 continue
             }
 
-            const [existingMatch] = await db
-                .select({ status: matches.status })
-                .from(matches)
-                .where(and(eq(matches.projectId, proposal.id), eq(matches.userId, currentUser.id)))
-                .limit(1)
+            const existingMatch = await this.projectRepository.findExistingMatch(proposal.id, currentUser.id)
 
             if (existingMatch) {
                 continue
@@ -434,79 +251,29 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
         }
 
-        const [proposal] = await db
-            .select({
-                id: projects.id,
-                title: projects.title,
-                description: projects.description,
-                type: projects.tfeType,
-                publicationDate: projects.publicationDate,
-                status: projects.status,
-                studentId: projects.studentId,
-                tutorId: projects.tutorId,
-            })
-            .from(projects)
-            .where(eq(projects.id, projectId))
+        const proposal = await this.projectRepository.findProjectById(projectId)
 
         if (!proposal) {
             throw new HttpError(404, { error: 'Project proposal not found' })
         }
 
-        const proposalTags = await db
-            .select({ name: tags.name })
-            .from(tags)
-            .innerJoin(projectTags, eq(projectTags.tagId, tags.id))
-            .where(eq(projectTags.projectId, projectId))
+        const proposalTags = await this.projectRepository.getProjectTagNames(projectId)
 
-        const ownerId = proposal.studentId ?? proposal.tutorId
+        const ownerId = this.getOwnerId(proposal as Record<string, unknown>)
 
-        const [proposalUser] = ownerId
-            ? await db
-                .select({ id: users.id, name: users.name, surname: users.surname, email: users.email })
-                .from(users)
-                .where(eq(users.id, ownerId))
-                .limit(1)
-            : []
+        const proposalUser = ownerId
+            ? await this.projectRepository.getProjectOwnerById(ownerId)
+            : null
 
-        const isOwner = currentUser.role === 'student'
-            ? proposal.studentId === currentUser.id
-            : proposal.tutorId === currentUser.id
+        const isOwner = ownerId === currentUser.id
 
         const interestedRows = isOwner
-            ? await db
-                .select({
-                    id: users.id,
-                    name: users.name,
-                    surname: users.surname,
-                    email: users.email,
-                    matchStatus: matches.status,
-                })
-                .from(matches)
-                .innerJoin(users, eq(users.id, matches.userId))
-                .where(and(
-                    eq(matches.projectId, projectId),
-                    inArray(matches.status, ['pending', 'accepted'])
-                ))
+            ? await this.projectRepository.getInterestedUsers(projectId)
             : []
 
-        const [acceptedMatch] = await db
-            .select({ projectId: matches.projectId })
-            .from(matches)
-            .where(and(
-                eq(matches.projectId, projectId),
-                eq(matches.userId, currentUser.id),
-                eq(matches.status, 'accepted')
-            ))
-            .limit(1)
+        const acceptedMatch = await this.projectRepository.findAcceptedMatchForUser(projectId, currentUser.id)
 
-        const [viewerMatch] = await db
-            .select({ status: matches.status })
-            .from(matches)
-            .where(and(
-                eq(matches.projectId, projectId),
-                eq(matches.userId, currentUser.id)
-            ))
-            .limit(1)
+        const viewerMatch = await this.projectRepository.findExistingMatch(projectId, currentUser.id)
 
         const canSeeOwnerEmail = isOwner || Boolean(acceptedMatch)
 
@@ -515,7 +282,7 @@ export class ProjectApplicationService {
                 ...proposal,
                 isOwner,
                 viewerMatchStatus: viewerMatch?.status ?? null,
-                tags: proposalTags.map((tag) => tag.name),
+                tags: proposalTags,
                 user: proposalUser
                     ? {
                         id: proposalUser.id,
@@ -536,20 +303,13 @@ export class ProjectApplicationService {
     }
 
     async getTags() {
-        const allTags = await db
-            .select({ id: tags.id, name: tags.name })
-            .from(tags)
-            .orderBy(tags.name)
+        const allTags = await this.projectRepository.getTags()
 
         return { tags: allTags }
     }
 
     async createProposal(userEmail: string, input: CreateProposalInput) {
-        const [currentUser] = await db
-            .select({ id: users.id, role: users.role })
-            .from(users)
-            .where(eq(users.email, userEmail))
-            .limit(1)
+        const currentUser = await this.projectRepository.getCurrentUserByEmail(userEmail)
 
         if (!currentUser || (currentUser.role !== 'student' && currentUser.role !== 'professor')) {
             throw new HttpError(404, { error: 'User not found' })
@@ -559,28 +319,17 @@ export class ProjectApplicationService {
             throw new HttpError(400, { error: 'At least one tag is required' })
         }
 
-        await db.transaction(async (trx) => {
-            const [project] = await trx
-                .insert(projects)
-                .values(
-                    currentUser.role === 'student'
-                        ? { title: input.title, description: input.description, tfeType: input.type, studentId: currentUser.id }
-                        : { title: input.title, description: input.description, tfeType: input.type, tutorId: currentUser.id }
-                )
-                .returning({ id: projects.id })
+        const inputTags = input.tags
 
-            const tagIds = await trx
-                .select({ id: tags.id })
-                .from(tags)
-                .where(inArray(tags.name, input.tags))
+        await this.projectRepository.transaction(async (trx) => {
+            const project = await this.projectRepository.createProposal(currentUser.role, currentUser.id, input, trx)
+            const tagIds = await this.projectRepository.findTagsByNames(inputTags, trx)
 
-            if (tagIds.length !== input.tags.length) {
+            if (tagIds.length !== inputTags.length) {
                 throw new HttpError(400, { error: 'One or more tags are not allowed' })
             }
 
-            await trx
-                .insert(projectTags)
-                .values(tagIds.map((tag) => ({ projectId: project.id, tagId: tag.id })))
+            await this.projectRepository.createProjectTags(project!.id, tagIds.map((tag: { id: number }) => tag.id), trx)
         })
 
         return { message: 'Project proposal created successfully' }
@@ -593,19 +342,13 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
         }
 
-        const [proposal] = await db
-            .select({ id: projects.id, status: projects.status, studentId: projects.studentId, tutorId: projects.tutorId })
-            .from(projects)
-            .where(eq(projects.id, projectId))
-            .limit(1)
+        const proposal = await this.projectRepository.findProjectById(projectId)
 
         if (!proposal) {
             throw new HttpError(404, { error: 'Proposal not found' })
         }
 
-        const isOwner = currentUser.role === 'student'
-            ? proposal.studentId === currentUser.id
-            : proposal.tutorId === currentUser.id
+        const isOwner = this.isOwner(proposal as Record<string, unknown>, currentUser)
 
         if (!isOwner) {
             throw new HttpError(403, { error: 'Only the owner can renew a proposal' })
@@ -619,10 +362,7 @@ export class ProjectApplicationService {
         const expiresAt = new Date(renewedAt)
         expiresAt.setFullYear(expiresAt.getFullYear() + 1)
 
-        await db
-            .update(projects)
-            .set({ publicationDate: renewedAt })
-            .where(eq(projects.id, projectId))
+        await this.projectRepository.updateProjectPublicationDate(projectId, renewedAt)
 
         return { publicationDate: renewedAt, renewedAt, expiresAt }
     }
@@ -634,11 +374,7 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
         }
 
-        const [proposal] = await db
-            .select({ id: projects.id, status: projects.status, studentId: projects.studentId, tutorId: projects.tutorId })
-            .from(projects)
-            .where(eq(projects.id, projectId))
-            .limit(1)
+        const proposal = await this.projectRepository.findProjectById(projectId)
 
         if (!proposal) {
             throw new HttpError(404, { error: 'Proposal not found' })
@@ -648,22 +384,13 @@ export class ProjectApplicationService {
             throw new HttpError(403, { error: 'Only professors can mark the proposal as completed' })
         }
 
-        const isOwner = currentUser.role === 'student'
-            ? proposal.studentId === currentUser.id
-            : proposal.tutorId === currentUser.id
+        const isOwner = this.isOwner(proposal as Record<string, unknown>, currentUser)
 
         if (proposal.status !== 'in_progress') {
             throw new HttpError(409, { error: 'Only proposals in progress can be completed' })
         }
 
-        const [acceptedMatch] = await db
-            .select({ userId: matches.userId })
-            .from(matches)
-            .where(and(
-                eq(matches.projectId, projectId),
-                eq(matches.status, 'accepted')
-            ))
-            .limit(1)
+        const acceptedMatch = await this.projectRepository.findAcceptedMatchUserId(projectId)
 
         if (!acceptedMatch) {
             throw new HttpError(409, { error: 'Proposal has no accepted match to complete' })
@@ -675,18 +402,10 @@ export class ProjectApplicationService {
             throw new HttpError(403, { error: 'Only a professor involved in the proposal can mark it as completed' })
         }
 
-        await db.transaction(async (trx) => {
-            await trx
-                .update(projects)
-                .set({ status: 'completed' })
-                .where(eq(projects.id, projectId))
+        await this.projectRepository.transaction(async (trx) => {
+            await this.projectRepository.updateProjectStatusInTransaction(projectId, 'completed', trx)
 
-            await trx
-                .delete(matches)
-                .where(and(
-                    eq(matches.projectId, projectId),
-                    eq(matches.status, 'accepted')
-                ))
+            await this.projectRepository.deleteAcceptedMatch(projectId, undefined, trx)
         })
 
         return {
@@ -703,11 +422,7 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
         }
 
-        const [proposal] = await db
-            .select({ id: projects.id, status: projects.status, studentId: projects.studentId, tutorId: projects.tutorId })
-            .from(projects)
-            .where(eq(projects.id, projectId))
-            .limit(1)
+        const proposal = await this.projectRepository.findProjectById(projectId)
 
         if (!proposal) {
             throw new HttpError(404, { error: 'Proposal not found' })
@@ -717,40 +432,23 @@ export class ProjectApplicationService {
             throw new HttpError(409, { error: 'Only proposals in progress can be cancelled' })
         }
 
-        const [acceptedMatch] = await db
-            .select({ userId: matches.userId })
-            .from(matches)
-            .where(and(
-                eq(matches.projectId, projectId),
-                eq(matches.status, 'accepted')
-            ))
-            .limit(1)
+        const acceptedMatch = await this.projectRepository.findAcceptedMatchUserId(projectId)
 
         if (!acceptedMatch) {
             throw new HttpError(409, { error: 'Proposal has no accepted match to cancel' })
         }
 
-        const isOwner = currentUser.role === 'student'
-            ? proposal.studentId === currentUser.id
-            : proposal.tutorId === currentUser.id
+        const isOwner = this.isOwner(proposal as Record<string, unknown>, currentUser)
         const isAcceptedUser = acceptedMatch.userId === currentUser.id
 
         if (!isOwner && !isAcceptedUser) {
             throw new HttpError(403, { error: 'Only the owner or matched user can cancel the proposal execution' })
         }
 
-        await db.transaction(async (trx) => {
-            await trx
-                .update(projects)
-                .set({ status: 'proposed' })
-                .where(eq(projects.id, projectId))
+        await this.projectRepository.transaction(async (trx) => {
+            await this.projectRepository.updateProjectStatusInTransaction(projectId, 'proposed', trx)
 
-            await trx
-                .delete(matches)
-                .where(and(
-                    eq(matches.projectId, projectId),
-                    eq(matches.userId, acceptedMatch.userId)
-                ))
+            await this.projectRepository.deleteAcceptedMatch(projectId, acceptedMatch.userId, trx)
         })
 
         return {
@@ -773,22 +471,16 @@ export class ProjectApplicationService {
             throw new HttpError(409, { error: 'You already have an accepted match' })
         }
 
-        const [proposal] = await db
-            .select({
-                id: projects.id,
-                studentId: projects.studentId,
-                tutorId: projects.tutorId,
-                status: projects.status,
-            })
-            .from(projects)
-            .where(eq(projects.id, projectId))
-            .limit(1)
+        const proposal = await this.projectRepository.findProjectById(projectId)
 
         if (!proposal || proposal.status !== 'proposed') {
             throw new HttpError(404, { error: 'Proposal not available for likes' })
         }
 
-        const { ownerId, ownerRole } = this.getOwner(proposal)
+        const ownerId = this.getOwnerId(proposal as Record<string, unknown>)
+        const hasCanonicalProposer = (proposal as { proposerId?: number | null }).proposerId !== undefined
+        const owner = ownerId && hasCanonicalProposer ? await this.projectRepository.getProjectOwnerById(ownerId) : null
+        const ownerRole = (owner?.role as UserRole | undefined) ?? this.getOwnerRole(proposal as Record<string, unknown>) ?? undefined
 
         if (!ownerId || !ownerRole) {
             throw new HttpError(400, { error: 'Proposal owner not found' })
@@ -802,47 +494,23 @@ export class ProjectApplicationService {
             throw new HttpError(400, { error: 'Only proposals from the opposite role can be liked' })
         }
 
-        await db.transaction(async (trx) => {
-            const [alreadyAccepted] = await trx
-                .select({ projectId: matches.projectId })
-                .from(matches)
-                .where(and(
-                    eq(matches.projectId, projectId),
-                    eq(matches.status, 'accepted')
-                ))
-                .limit(1)
+        await this.projectRepository.transaction(async (trx) => {
+            const alreadyAccepted = await this.projectRepository.findAcceptedMatchByProjectId(projectId, trx)
 
             if (alreadyAccepted) {
                 throw new HttpError(409, { error: 'This proposal already has an accepted match' })
             }
 
-            const [existingInteraction] = await trx
-                .select({ status: matches.status })
-                .from(matches)
-                .where(and(eq(matches.projectId, projectId), eq(matches.userId, currentUser.id)))
-                .limit(1)
+            const existingInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id, trx)
 
             if (!existingInteraction) {
-                await trx
-                    .insert(matches)
-                    .values({
-                        projectId,
-                        userId: currentUser.id,
-                        status: 'pending',
-                    })
+                await this.projectRepository.insertMatch(projectId, currentUser.id, 'pending', trx)
             } else if (existingInteraction.status !== 'accepted') {
-                await trx
-                    .update(matches)
-                    .set({ status: 'pending' })
-                    .where(and(eq(matches.projectId, projectId), eq(matches.userId, currentUser.id)))
+                await this.projectRepository.updateMatchStatus(projectId, currentUser.id, 'pending', trx)
             }
         })
 
-        const [updatedInteraction] = await db
-            .select({ status: matches.status })
-            .from(matches)
-            .where(and(eq(matches.projectId, projectId), eq(matches.userId, currentUser.id)))
-            .limit(1)
+        const updatedInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id)
 
         return {
             liked: true,
@@ -858,25 +526,13 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
         }
 
-        const [proposal] = await db
-            .select({
-                id: projects.id,
-                title: projects.title,
-                status: projects.status,
-                studentId: projects.studentId,
-                tutorId: projects.tutorId,
-            })
-            .from(projects)
-            .where(eq(projects.id, projectId))
-            .limit(1)
+        const proposal = await this.projectRepository.findProjectById(projectId)
 
         if (!proposal) {
             throw new HttpError(404, { error: 'Proposal not found' })
         }
 
-        const isOwner = currentUser.role === 'student'
-            ? proposal.studentId === currentUser.id
-            : proposal.tutorId === currentUser.id
+        const isOwner = this.isOwner(proposal as Record<string, unknown>, currentUser)
 
         if (!isOwner) {
             throw new HttpError(403, { error: 'Only the owner can accept a match' })
@@ -886,106 +542,37 @@ export class ProjectApplicationService {
             throw new HttpError(409, { error: 'Proposal is not available for new matches' })
         }
 
-        await db.transaction(async (trx) => {
-            const [ownerAcceptedAsInterestedUser] = await trx
-                .select({ projectId: matches.projectId })
-                .from(matches)
-                .where(and(
-                    eq(matches.userId, currentUser.id),
-                    eq(matches.status, 'accepted')
-                ))
-                .limit(1)
-
-            const [ownerAcceptedAsOwner] = await trx
-                .select({ projectId: projects.id })
-                .from(projects)
-                .innerJoin(matches, eq(matches.projectId, projects.id))
-                .where(and(
-                    eq(matches.status, 'accepted'),
-                    or(
-                        eq(projects.studentId, currentUser.id),
-                        eq(projects.tutorId, currentUser.id)
-                    )
-                ))
-                .limit(1)
+        await this.projectRepository.transaction(async (trx) => {
+            const ownerAcceptedAsInterestedUser = await this.projectRepository.findAnyAcceptedMatchAsInterestedUser(currentUser.id, trx)
+            const ownerAcceptedAsOwner = await this.projectRepository.findAnyAcceptedMatchAsOwner(currentUser.id, trx)
 
             if (ownerAcceptedAsInterestedUser || ownerAcceptedAsOwner) {
                 throw new HttpError(409, { error: 'You already have an accepted match' })
             }
 
-            const [candidateAcceptedAsInterestedUser] = await trx
-                .select({ projectId: matches.projectId })
-                .from(matches)
-                .where(and(
-                    eq(matches.userId, interestedUserId),
-                    eq(matches.status, 'accepted')
-                ))
-                .limit(1)
-
-            const [candidateAcceptedAsOwner] = await trx
-                .select({ projectId: projects.id })
-                .from(projects)
-                .innerJoin(matches, eq(matches.projectId, projects.id))
-                .where(and(
-                    eq(matches.status, 'accepted'),
-                    or(
-                        eq(projects.studentId, interestedUserId),
-                        eq(projects.tutorId, interestedUserId)
-                    )
-                ))
-                .limit(1)
+            const candidateAcceptedAsInterestedUser = await this.projectRepository.findAnyAcceptedMatchAsInterestedUser(interestedUserId, trx)
+            const candidateAcceptedAsOwner = await this.projectRepository.findAnyAcceptedMatchAsOwner(interestedUserId, trx)
 
             if (candidateAcceptedAsInterestedUser || candidateAcceptedAsOwner) {
                 throw new HttpError(409, { error: 'Selected user already has an accepted match' })
             }
 
-            const [alreadyAccepted] = await trx
-                .select({ userId: matches.userId })
-                .from(matches)
-                .where(and(
-                    eq(matches.projectId, projectId),
-                    eq(matches.status, 'accepted')
-                ))
-                .limit(1)
+            const alreadyAccepted = await this.projectRepository.findAcceptedMatchUserId(projectId, trx)
 
             if (alreadyAccepted) {
                 throw new HttpError(409, { error: 'This proposal already has an accepted match' })
             }
 
-            const [candidateLike] = await trx
-                .select({ userId: matches.userId })
-                .from(matches)
-                .where(and(
-                    eq(matches.projectId, projectId),
-                    eq(matches.userId, interestedUserId),
-                    eq(matches.status, 'pending')
-                ))
-                .limit(1)
+            const candidateLike = await this.projectRepository.findPendingMatch(projectId, interestedUserId, trx)
 
             if (!candidateLike) {
                 throw new HttpError(404, { error: 'Pending like not found for this user' })
             }
 
-            await trx
-                .update(matches)
-                .set({ status: 'rejected' })
-                .where(and(
-                    eq(matches.projectId, projectId),
-                    eq(matches.status, 'pending')
-                ))
+            await this.projectRepository.rejectPendingMatchesForProject(projectId, trx)
 
-            await trx
-                .update(matches)
-                .set({ status: 'accepted' })
-                .where(and(
-                    eq(matches.projectId, projectId),
-                    eq(matches.userId, interestedUserId)
-                ))
-
-            await trx
-                .update(projects)
-                .set({ status: 'in_progress' })
-                .where(eq(projects.id, projectId))
+            await this.projectRepository.updateMatchStatus(projectId, interestedUserId, 'accepted', trx)
+            await this.projectRepository.updateProjectStatusInTransaction(projectId, 'in_progress', trx)
         })
 
         await this.sendNotification(
@@ -1008,39 +595,29 @@ export class ProjectApplicationService {
             throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
         }
 
-        const [proposal] = await db
-            .select({ id: projects.id, studentId: projects.studentId, tutorId: projects.tutorId, status: projects.status })
-            .from(projects)
-            .where(eq(projects.id, projectId))
-            .limit(1)
+        const proposal = await this.projectRepository.findProjectById(projectId)
 
         if (!proposal || proposal.status !== 'proposed') {
             throw new HttpError(404, { error: 'Proposal not available' })
         }
 
-        const { ownerId, ownerRole } = this.getOwner(proposal)
+        const ownerId = this.getOwnerId(proposal as Record<string, unknown>)
+        const hasCanonicalProposer = (proposal as { proposerId?: number | null }).proposerId !== undefined
+        const owner = ownerId && hasCanonicalProposer ? await this.projectRepository.getProjectOwnerById(ownerId) : null
+        const ownerRole = (owner?.role as UserRole | undefined) ?? this.getOwnerRole(proposal as Record<string, unknown>) ?? undefined
         const isValidDirection = Boolean(ownerId && ownerRole && ownerRole !== currentUser.role)
 
         if (!isValidDirection) {
             throw new HttpError(400, { error: 'This proposal is not from the opposite role' })
         }
 
-        await db.transaction(async (trx) => {
-            const [existingInteraction] = await trx
-                .select({ status: matches.status })
-                .from(matches)
-                .where(and(eq(matches.projectId, projectId), eq(matches.userId, currentUser.id)))
-                .limit(1)
+        await this.projectRepository.transaction(async (trx) => {
+            const existingInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id, trx)
 
             if (!existingInteraction) {
-                await trx
-                    .insert(matches)
-                    .values({ projectId, userId: currentUser.id, status: 'rejected' })
+                await this.projectRepository.insertMatch(projectId, currentUser.id, 'rejected', trx)
             } else {
-                await trx
-                    .update(matches)
-                    .set({ status: 'rejected' })
-                    .where(and(eq(matches.projectId, projectId), eq(matches.userId, currentUser.id)))
+                await this.projectRepository.updateMatchStatus(projectId, currentUser.id, 'rejected', trx)
             }
         })
 
@@ -1048,7 +625,7 @@ export class ProjectApplicationService {
     }
 
     async listAdminTags() {
-        const allTags = await db.select().from(tags).orderBy(tags.name)
+        const allTags = await this.projectRepository.getTags()
         return { tags: allTags }
     }
 
@@ -1059,70 +636,25 @@ export class ProjectApplicationService {
             throw new HttpError(400, { error: 'Tag name is required' })
         }
 
-        const [existing] = await db
-            .select()
-            .from(tags)
-            .where(eq(tags.name, normalizedName))
-            .limit(1)
+        const existing = await this.projectRepository.findTagByName(normalizedName)
 
         if (existing) {
             throw new HttpError(409, { error: 'Tag already exists' })
         }
 
-        const [tag] = await db
-            .insert(tags)
-            .values({ name: normalizedName })
-            .returning({ id: tags.id, name: tags.name })
+        const tag = await this.projectRepository.createTag(normalizedName)
 
         return { tag }
     }
 
     async importAdminTags(tagList: Array<{ name: string }>) {
-        let created = 0
-        let skipped = 0
-        const errors: string[] = []
-
-        await db.transaction(async (trx) => {
-            for (const [index, item] of tagList.entries()) {
-                const normalizedName = item.name.trim()
-
-                if (!normalizedName) {
-                    skipped += 1
-                    errors.push(`Fila ${index + 2}: nombre vacio`)
-                    continue
-                }
-
-                const [existing] = await trx
-                    .select({ id: tags.id })
-                    .from(tags)
-                    .where(eq(tags.name, normalizedName))
-                    .limit(1)
-
-                if (existing) {
-                    skipped += 1
-                    continue
-                }
-
-                await trx.insert(tags).values({ name: normalizedName })
-                created += 1
-            }
-        })
-
-        return {
-            message: 'Tag import completed',
-            created,
-            skipped,
-            errors,
-        }
+        return this.projectRepository.importAdminTags(tagList)
     }
 
     async deleteAdminTag(tagId: number) {
-        const [deleted] = await db
-            .delete(tags)
-            .where(eq(tags.id, tagId))
-            .returning({ id: tags.id })
+        const deleted = await this.projectRepository.deleteTag(tagId)
 
-        if (!deleted) {
+        if (!deleted || deleted.length === 0) {
             throw new HttpError(404, { error: 'Tag not found' })
         }
 
@@ -1136,21 +668,13 @@ export class ProjectApplicationService {
             throw new HttpError(400, { error: 'Tag name cannot be empty' })
         }
 
-        const [existing] = await db
-            .select({ id: tags.id })
-            .from(tags)
-            .where(eq(tags.name, normalizedName))
-            .limit(1)
+        const existing = await this.projectRepository.findTagByName(normalizedName)
 
         if (existing && existing.id !== tagId) {
             throw new HttpError(409, { error: 'A tag with this name already exists' })
         }
 
-        const [updated] = await db
-            .update(tags)
-            .set({ name: normalizedName })
-            .where(eq(tags.id, tagId))
-            .returning({ id: tags.id, name: tags.name })
+        const [updated] = await this.projectRepository.updateTag(tagId, normalizedName)
 
         if (!updated) {
             throw new HttpError(404, { error: 'Tag not found' })

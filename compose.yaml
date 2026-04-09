@@ -12,12 +12,45 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - match_network
+
+  db-init:
+    container_name: dbinit-matchtfe
+    build:
+      context: .
+      dockerfile: ./userservice/Dockerfile
+      target: development
+    command: ["sh", "-c", "pnpm --filter @match-tfe/db db:push"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - match_network
+
+  db-seed:
+    container_name: dbseed-matchtfe
+    image: postgres:18-alpine
+    command:
+      - sh
+      - -c
+      - PGPASSWORD="$DB_PASSWORD" psql -h postgres -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f /seed/init.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    volumes:
+      - ./init.sql:/seed/init.sql:ro
     networks:
       - match_network
 
@@ -47,7 +80,12 @@ services:
           ignore:
             - node_modules
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      db-seed:
+        condition: service_completed_successfully
     networks:
       - match_network
     env_file:
@@ -79,7 +117,12 @@ services:
           ignore:
             - node_modules
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      db-seed:
+        condition: service_completed_successfully
     networks:
       - match_network
     env_file:
@@ -110,7 +153,12 @@ services:
           ignore:
             - node_modules
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      db-seed:
+        condition: service_completed_successfully
     networks:
       - match_network
     env_file:
@@ -141,7 +189,12 @@ services:
           ignore:
             - node_modules
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      db-seed:
+        condition: service_completed_successfully
     networks:
       - match_network
     env_file:
@@ -165,6 +218,8 @@ services:
           ignore:
             - node_modules
     depends_on:
+      - db-init
+      - db-seed
       - authservice
       - projectservice
       - notificationservice
@@ -179,6 +234,7 @@ services:
     build:
       context: .
       dockerfile: ./webapp/Dockerfile
+      target: development
     develop:
       watch:
         - action: rebuild
@@ -202,3 +258,4 @@ networks:
 
 volumes:
   postgres_data:
+    name: match_tfe_postgres_data

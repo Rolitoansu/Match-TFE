@@ -34,21 +34,6 @@ export const administrators = pgTable('administrators', {
   passwordHash: varchar('password_hash', { length: 255 }).notNull()
 })
 
-export const skills = pgTable('skills', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar('name', { length: 100 }).notNull(),
-  description: text('description'),
-})
-
-export const userSkills = pgTable('user_skills', {
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  skillId: integer('skill_id').references(() => skills.id, { onDelete: 'cascade' }).notNull(),
-  mark: integer('mark'),
-}, (table) => [
-  primaryKey({ columns: [table.userId, table.skillId] }),
-  check('mark_range', sql`${table.mark} >= 0 AND ${table.mark} <= 10`),
-])
-
 export const matches = pgTable('matches', {
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
@@ -74,8 +59,7 @@ export const projects = pgTable('projects', {
   status: projectStatusEnum('status').notNull().default('proposed'),
   publicationDate: timestamp('publication_date', { withTimezone: true, mode: 'date' }).defaultNow(),
   expirationDate: timestamp('expiration_date', { withTimezone: true, mode: 'date' }).default(sql`CURRENT_TIMESTAMP + INTERVAL '12 months'`),
-  tutorId: integer('tutor_id').references(() => users.id, { onDelete: 'set null' }),
-  studentId: integer('student_id').references(() => users.id, { onDelete: 'set null' }),
+  proposerId: integer('proposer_id').references(() => users.id, { onDelete: 'set null' }).notNull(),
 }, (table) => [
   check('project_tfe_type_range', sql`${table.tfeType} >= 1 AND ${table.tfeType} <= 6`),
 ])

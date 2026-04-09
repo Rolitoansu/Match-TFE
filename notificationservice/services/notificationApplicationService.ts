@@ -1,7 +1,5 @@
 import nodemailer from 'nodemailer'
-import db from '@match-tfe/db'
-import { notifications, users } from '@match-tfe/db/schema'
-import { and, desc, eq, inArray, isNotNull, or } from 'drizzle-orm'
+import { NotificationRepository } from '../repositories/notificationRepository'
 
 export class HttpError extends Error {
   constructor(
@@ -44,6 +42,8 @@ const REMINDER_INTERVAL_DAYS: Record<NotificationFrequency, number> = {
 }
 
 export class NotificationApplicationService {
+  private readonly notificationRepository = new NotificationRepository()
+
   private getHourInTimezone(now: Date, timezone: string) {
     const rawHour = new Intl.DateTimeFormat('en-GB', {
       timeZone: timezone,
@@ -84,28 +84,13 @@ export class NotificationApplicationService {
   }
 
   async listUserNotifications(userEmail: string) {
-    const [user] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, userEmail))
-      .limit(1)
+    const user = await this.notificationRepository.findUserByEmail(userEmail)
 
     if (!user) {
       throw new HttpError(404, { error: 'Authenticated user not found' })
     }
 
-    const rows = await db
-      .select({
-        id: notifications.id,
-        type: notifications.type,
-        content: notifications.content,
-        read: notifications.read,
-        timestamp: notifications.timestamp,
-      })
-      .from(notifications)
-      .where(eq(notifications.userId, user.id))
-      .orderBy(desc(notifications.timestamp))
-      .limit(50)
+    const rows = await this.notificationRepository.listUserNotifications(user.id)
 
     return {
       notifications: rows,
@@ -114,30 +99,13 @@ export class NotificationApplicationService {
   }
 
   async createUserNotification(input: CreateUserNotificationInput) {
-    const [recipient] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, input.userId))
-      .limit(1)
+    const recipient = await this.notificationRepository.findUserById(input.userId)
 
     if (!recipient) {
       throw new HttpError(404, { error: 'Notification recipient not found' })
     }
 
-    const [created] = await db
-      .insert(notifications)
-      .values({
-        type: input.type,
-        content: input.content,
-        userId: input.userId,
-      })
-      .returning({
-        id: notifications.id,
-        type: notifications.type,
-        content: notifications.content,
-        read: notifications.read,
-        timestamp: notifications.timestamp,
-      })
+    const created = await this.notificationRepository.createNotification(input)
 
     return {
       notification: created,
@@ -146,30 +114,13 @@ export class NotificationApplicationService {
   }
 
   async markNotificationAsRead(userEmail: string, notificationId: number) {
-    const [user] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, userEmail))
-      .limit(1)
+    const user = await this.notificationRepository.findUserByEmail(userEmail)
 
     if (!user) {
       throw new HttpError(404, { error: 'Authenticated user not found' })
     }
 
-    const [updated] = await db
-      .update(notifications)
-      .set({ read: true })
-      .where(and(
-        eq(notifications.id, notificationId),
-        eq(notifications.userId, user.id)
-      ))
-      .returning({
-        id: notifications.id,
-        type: notifications.type,
-        content: notifications.content,
-        read: notifications.read,
-        timestamp: notifications.timestamp,
-      })
+    const updated = await this.notificationRepository.markNotificationAsRead(user.id, notificationId)
 
     if (!updated) {
       throw new HttpError(404, { error: 'Notification not found' })
@@ -182,20 +133,13 @@ export class NotificationApplicationService {
   }
 
   async clearUserNotifications(userEmail: string) {
-    const [user] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, userEmail))
-      .limit(1)
+    const user = await this.notificationRepository.findUserByEmail(userEmail)
 
     if (!user) {
       throw new HttpError(404, { error: 'Authenticated user not found' })
     }
 
-    const deletedRows = await db
-      .delete(notifications)
-      .where(eq(notifications.userId, user.id))
-      .returning({ id: notifications.id })
+    const deletedRows = await this.notificationRepository.clearUserNotifications(user.id)
 
     return {
       deleted: deletedRows.length,
@@ -204,23 +148,13 @@ export class NotificationApplicationService {
   }
 
   async deleteNotification(userEmail: string, notificationId: number) {
-    const [user] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, userEmail))
-      .limit(1)
+    const user = await this.notificationRepository.findUserByEmail(userEmail)
 
     if (!user) {
       throw new HttpError(404, { error: 'Authenticated user not found' })
     }
 
-    const [deleted] = await db
-      .delete(notifications)
-      .where(and(
-        eq(notifications.id, notificationId),
-        eq(notifications.userId, user.id)
-      ))
-      .returning({ id: notifications.id })
+    const deleted = await this.notificationRepository.deleteNotification(user.id, notificationId)
 
     if (!deleted) {
       throw new HttpError(404, { error: 'Notification not found' })
@@ -234,19 +168,7 @@ export class NotificationApplicationService {
   }
 
   async sendUnreadNotificationsSummaryEmails(timezone: string) {
-    const unreadRows = await db
-      .select({
-        userId: notifications.userId,
-        type: notifications.type,
-        content: notifications.content,
-        timestamp: notifications.timestamp,
-      })
-      .from(notifications)
-      .where(and(
-        eq(notifications.read, false),
-        isNotNull(notifications.userId)
-      ))
-      .orderBy(desc(notifications.timestamp))
+    const unreadRows = await this.notificationRepository.getUnreadNotifications()
 
     if (unreadRows.length === 0) {
       return { sent: 0, failed: 0, recipients: [], message: 'No unread notifications found' }
@@ -271,17 +193,7 @@ export class NotificationApplicationService {
 
     const userIds = [...unreadByUserId.keys()]
 
-    const userRows = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        notificationFrequency: users.notificationFrequency,
-        notificationReminderHour: users.notificationReminderHour,
-        lastReminderEmailSentAt: users.lastReminderEmailSentAt,
-      })
-      .from(users)
-      .where(inArray(users.id, userIds))
+    const userRows = await this.notificationRepository.getUsersForReminder(userIds)
 
     const now = new Date()
     const currentHour = this.getHourInTimezone(now, timezone)
@@ -347,10 +259,7 @@ export class NotificationApplicationService {
       .map((user) => user.id)
 
     if (sentUserIds.length > 0) {
-      await db
-        .update(users)
-        .set({ lastReminderEmailSentAt: new Date() })
-        .where(inArray(users.id, sentUserIds))
+      await this.notificationRepository.updateLastReminderSentAt(sentUserIds, new Date())
     }
 
     const failedCount = sendResults.length - sentTo.length
@@ -367,11 +276,7 @@ export class NotificationApplicationService {
   }
 
   async sendEmailToStudents(input: SendStudentsEmailInput) {
-    const [requester] = await db
-      .select({ id: users.id, role: users.role, email: users.email, name: users.name })
-      .from(users)
-      .where(eq(users.email, input.requesterEmail))
-      .limit(1)
+    const requester = await this.notificationRepository.findUserByEmail(input.requesterEmail)
 
     if (!requester) {
       throw new HttpError(404, { error: 'Authenticated user not found' })
@@ -385,18 +290,12 @@ export class NotificationApplicationService {
     const emailTargets = [...new Set(input.studentEmails ?? [])]
 
     const recipientFilter = idTargets.length > 0 && emailTargets.length > 0
-      ? or(inArray(users.id, idTargets), inArray(users.email, emailTargets))
+      ? { ids: idTargets, emails: emailTargets }
       : idTargets.length > 0
-        ? inArray(users.id, idTargets)
-        : inArray(users.email, emailTargets)
+        ? { ids: idTargets }
+        : { emails: emailTargets }
 
-    const studentRows = await db
-      .select({ id: users.id, email: users.email, name: users.name, surname: users.surname })
-      .from(users)
-      .where(and(
-        eq(users.role, 'student'),
-        recipientFilter
-      ))
+    const studentRows = await this.notificationRepository.findStudentsByFilter(recipientFilter)
 
     if (studentRows.length === 0) {
       throw new HttpError(404, { error: 'No student recipients found' })

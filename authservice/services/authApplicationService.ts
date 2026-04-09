@@ -1,8 +1,6 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import db from '@match-tfe/db'
-import { administrators, tags, userTags, users } from '@match-tfe/db/schema'
-import { eq } from 'drizzle-orm'
+import { AuthRepository } from '../repositories/authRepository'
 
 export class HttpError extends Error {
     constructor(
@@ -14,35 +12,20 @@ export class HttpError extends Error {
 }
 
 export class AuthApplicationService {
+    private readonly authRepository = new AuthRepository()
+
     constructor(private readonly jwtSecret: string) {}
 
     async refreshUserSession(refreshToken: string) {
         const payload = jwt.verify(refreshToken, this.jwtSecret) as jwt.JwtPayload
 
-        const [user] = await db
-            .select({
-                id: users.id,
-                name: users.name,
-                surname: users.surname,
-                registrationDate: users.registrationDate,
-                biography: users.biography,
-                notificationFrequency: users.notificationFrequency,
-                notificationReminderHour: users.notificationReminderHour,
-                role: users.role,
-            })
-            .from(users)
-            .where(eq(users.email, payload.email as string))
-            .limit(1)
+        const user = await this.authRepository.getUserSessionByEmail(payload.email as string)
 
         if (!user) {
             throw new HttpError(401, { message: 'User no longer exists' })
         }
 
-        const interestRows = await db
-            .select({ name: tags.name })
-            .from(userTags)
-            .innerJoin(tags, eq(tags.id, userTags.tagId))
-            .where(eq(userTags.userId, user.id))
+        const interests = await this.authRepository.getUserInterests(user.id)
 
         const accessToken = jwt.sign({ email: payload.email }, this.jwtSecret, { expiresIn: '15m' })
 
@@ -58,7 +41,7 @@ export class AuthApplicationService {
                 notificationFrequency: user.notificationFrequency,
                 notificationReminderHour: user.notificationReminderHour,
                 role: user.role,
-                interests: interestRows.map((row) => row.name),
+                interests,
             },
         }
     }
@@ -70,11 +53,7 @@ export class AuthApplicationService {
             throw new HttpError(401, {})
         }
 
-        const [admin] = await db
-            .select({ id: administrators.id, email: administrators.email })
-            .from(administrators)
-            .where(eq(administrators.email, payload.email as string))
-            .limit(1)
+        const admin = await this.authRepository.getAdminByEmail(payload.email as string)
 
         if (!admin) {
             throw new HttpError(401, { message: 'Admin no longer exists' })
@@ -86,21 +65,7 @@ export class AuthApplicationService {
     }
 
     async loginUser(email: string, password: string) {
-        const [user] = await db
-            .select({
-                id: users.id,
-                name: users.name,
-                surname: users.surname,
-                passwordHash: users.passwordHash,
-                registrationDate: users.registrationDate,
-                biography: users.biography,
-                notificationFrequency: users.notificationFrequency,
-                notificationReminderHour: users.notificationReminderHour,
-                role: users.role,
-            })
-            .from(users)
-            .where(eq(users.email, email))
-            .limit(1)
+        const user = await this.authRepository.getUserPasswordByEmail(email)
 
         if (!user) {
             throw new HttpError(401, { message: 'Invalid credentials' })
@@ -112,11 +77,7 @@ export class AuthApplicationService {
             throw new HttpError(401, { message: 'Invalid credentials' })
         }
 
-        const interestRows = await db
-            .select({ name: tags.name })
-            .from(userTags)
-            .innerJoin(tags, eq(tags.id, userTags.tagId))
-            .where(eq(userTags.userId, user.id))
+        const interests = await this.authRepository.getUserInterests(user.id)
 
         const refreshToken = jwt.sign({ email }, this.jwtSecret, { expiresIn: '30d' })
         const accessToken = jwt.sign({ email }, this.jwtSecret, { expiresIn: '15m' })
@@ -134,21 +95,13 @@ export class AuthApplicationService {
                 notificationFrequency: user.notificationFrequency,
                 notificationReminderHour: user.notificationReminderHour,
                 role: user.role,
-                interests: interestRows.map((row) => row.name),
+                interests,
             },
         }
     }
 
     async loginAdmin(email: string, password: string) {
-        const [admin] = await db
-            .select({
-                id: administrators.id,
-                email: administrators.email,
-                passwordHash: administrators.passwordHash,
-            })
-            .from(administrators)
-            .where(eq(administrators.email, email))
-            .limit(1)
+        const admin = await this.authRepository.getAdminByEmail(email)
 
         if (!admin) {
             throw new HttpError(401, { message: 'Invalid credentials' })

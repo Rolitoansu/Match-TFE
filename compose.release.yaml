@@ -13,12 +13,45 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data_release:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - match_network_release
+
+  db-init:
+    container_name: dbinit-matchtfe-release
+    build:
+      context: .
+      dockerfile: ./userservice/Dockerfile
+      target: release
+    command: ["sh", "-c", "pnpm --filter @match-tfe/db db:push"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - match_network_release
+
+  db-seed:
+    container_name: dbseed-matchtfe-release
+    image: postgres:18-alpine
+    command:
+      - sh
+      - -c
+      - PGPASSWORD="$DB_PASSWORD" psql -h postgres -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f /seed/init.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    volumes:
+      - ./init.sql:/seed/init.sql:ro
     networks:
       - match_network_release
 
@@ -32,6 +65,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      db-seed:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       STAGE: production
@@ -51,6 +88,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      db-seed:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       STAGE: production
@@ -70,6 +111,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      db-seed:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       STAGE: production
@@ -89,6 +134,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      db-seed:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       STAGE: production
@@ -106,6 +155,8 @@ services:
       target: release
     restart: unless-stopped
     depends_on:
+      - db-init
+      - db-seed
       - authservice
       - userservice
       - projectservice
@@ -143,3 +194,4 @@ networks:
 
 volumes:
   postgres_data_release:
+    name: match_tfe_postgres_data_release
