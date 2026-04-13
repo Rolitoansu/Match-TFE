@@ -38,6 +38,8 @@ services:
   db-seed:
     container_name: dbseed-matchtfe
     image: postgres:18-alpine
+    profiles:
+      - seed
     command:
       - sh
       - -c
@@ -84,8 +86,6 @@ services:
         condition: service_healthy
       db-init:
         condition: service_completed_successfully
-      db-seed:
-        condition: service_completed_successfully
     networks:
       - match_network
     env_file:
@@ -121,8 +121,6 @@ services:
         condition: service_healthy
       db-init:
         condition: service_completed_successfully
-      db-seed:
-        condition: service_completed_successfully
     networks:
       - match_network
     env_file:
@@ -156,8 +154,6 @@ services:
       postgres:
         condition: service_healthy
       db-init:
-        condition: service_completed_successfully
-      db-seed:
         condition: service_completed_successfully
     networks:
       - match_network
@@ -193,8 +189,6 @@ services:
         condition: service_healthy
       db-init:
         condition: service_completed_successfully
-      db-seed:
-        condition: service_completed_successfully
     networks:
       - match_network
     env_file:
@@ -219,7 +213,6 @@ services:
             - node_modules
     depends_on:
       - db-init
-      - db-seed
       - authservice
       - projectservice
       - notificationservice

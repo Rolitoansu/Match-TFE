@@ -9,6 +9,7 @@ export interface Proposal {
   creatorSurname: string
   interestCount: number
   likedByCurrentUser: boolean
+    passedByCurrentUser?: boolean
   interestedUsers?: Array<{
     id: number
     name: string

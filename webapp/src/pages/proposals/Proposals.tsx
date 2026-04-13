@@ -17,6 +17,9 @@ export default function Proposals() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [proposals, setProposals] = useState<Proposal[]>([])
+  const [loadingLikeId, setLoadingLikeId] = useState<number | null>(null)
+  const [loadingPassId, setLoadingPassId] = useState<number | null>(null)
+  const [likeError, setLikeError] = useState<string | null>(null)
   const { filters, updateFilter, resetFilters, ensureSelectedTagIsAvailable } = useProposalFilters()
   const oppositeRolePluralLabel = user?.role === 'student'
     ? t('proposals.roles.professorsPlural')
@@ -87,6 +90,100 @@ export default function Proposals() {
     ensureSelectedTagIsAvailable(availableTags)
   }, [availableTags, ensureSelectedTagIsAvailable])
 
+  async function toggleLike(proposalId: number) {
+    const previousProposal = proposals.find((proposal) => proposal.id === proposalId)
+
+    if (!previousProposal) {
+      return
+    }
+
+    setLikeError(null)
+
+    try {
+      setLoadingLikeId(proposalId)
+      setProposals((previous) => previous.map((proposal) => {
+        if (proposal.id !== proposalId) {
+          return proposal
+        }
+
+        return {
+          ...proposal,
+          likedByCurrentUser: !proposal.likedByCurrentUser,
+          interestCount: proposal.interestCount + (proposal.likedByCurrentUser ? -1 : 1),
+        }
+      }))
+
+      const { data } = await api.post<{ liked: boolean }>(`/project/proposals/${proposalId}/like`)
+
+      setProposals((previous) => previous.map((proposal) => {
+        if (proposal.id !== proposalId) {
+          return proposal
+        }
+
+        const previousLiked = proposal.likedByCurrentUser
+        return {
+          ...proposal,
+          likedByCurrentUser: data.liked,
+          interestCount: proposal.interestCount + (data.liked === previousLiked ? 0 : (data.liked ? 1 : -1)),
+        }
+      }))
+    } catch (error) {
+      console.error('Error toggling like:', error)
+      setProposals((previous) => previous.map((proposal) => {
+        if (proposal.id !== proposalId) {
+          return proposal
+        }
+
+        return previousProposal
+      }))
+      const apiError = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+      setLikeError(apiError ?? t('explore.errors.like'))
+    } finally {
+      setLoadingLikeId(null)
+    }
+  }
+
+  async function togglePass(proposalId: number) {
+    const previousProposal = proposals.find((proposal) => proposal.id === proposalId)
+
+    if (!previousProposal) {
+      return
+    }
+
+    setLikeError(null)
+
+    try {
+      setLoadingPassId(proposalId)
+      
+        // Update proposal to show as passed optimistically
+        setProposals((previous) => previous.map((proposal) => {
+          if (proposal.id !== proposalId) {
+            return proposal
+          }
+
+          return {
+            ...proposal,
+            passedByCurrentUser: !proposal.passedByCurrentUser,
+          }
+        }))
+
+      await api.post(`/project/proposals/${proposalId}/pass`)
+    } catch (error) {
+      console.error('Error passing proposal:', error)
+        setProposals((previous) => previous.map((proposal) => {
+          if (proposal.id !== proposalId) {
+            return proposal
+          }
+
+          return previousProposal
+        }))
+      const apiError = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+      setLikeError(apiError ?? t('explore.errors.pass'))
+    } finally {
+      setLoadingPassId(null)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-300 p-4 sm:p-6 lg:p-10">
       <ProposalsHeader
@@ -118,12 +215,22 @@ export default function Proposals() {
         onSelectTab={(tab) => updateFilter('selectedTab', tab)}
       />
 
+      {likeError && (
+        <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {likeError}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4">
         {sortedProposals.map((proposal) => (
           <ProposalCard
             key={proposal.id}
             proposal={proposal}
             onViewDetails={(proposalId) => navigate(`/proposals/details/${proposalId}`)}
+            onToggleLike={toggleLike}
+            isLikeLoading={loadingLikeId === proposal.id}
+            onTogglePass={togglePass}
+            isPassLoading={loadingPassId === proposal.id}
           />
         ))}
 

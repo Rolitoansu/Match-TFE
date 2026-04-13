@@ -116,6 +116,7 @@ export class ProjectApplicationService {
 
             const proposalMatches = await this.projectRepository.getProjectMatches(proposal.id)
 
+
             const interestedMatches = proposalMatches.filter(
                 (match: { userId: number; status: 'pending' | 'accepted' | 'rejected' }) => match.status === 'pending' || match.status === 'accepted'
             )
@@ -140,6 +141,13 @@ export class ProjectApplicationService {
                 : []
 
             const likedByCurrentUser = interestedMatches.some((match: { userId: number }) => match.userId === currentUser.id)
+            
+                // Check if current user has rejected/passed this proposal
+                const userRejection = proposalMatches.find(
+                    (match: { userId: number; status: 'pending' | 'accepted' | 'rejected' }) => match.userId === currentUser.id && match.status === 'rejected'
+                )
+                const passedByCurrentUser = !!userRejection
+
             const tagsForProposal = await this.getProjectTagNames(proposal.id)
 
             return {
@@ -148,13 +156,14 @@ export class ProjectApplicationService {
                 creatorSurname: proposalOwner?.surname ?? proposal.creatorSurname ?? '',
                 interestCount: interestedMatches.length,
                 likedByCurrentUser,
+                    passedByCurrentUser,
                 tags: tagsForProposal,
                 interestedUsers,
             }
         }))
 
         return {
-            proposals: proposalsWithInterestedUsers.map(({ proposerId, ...proposal }) => proposal),
+                proposals: proposalsWithInterestedUsers.map(({ proposerId, ...proposal }) => proposal),
         }
     }
 
@@ -517,6 +526,32 @@ export class ProjectApplicationService {
             matchStatus: updatedInteraction?.status ?? 'pending',
             matched: false,
         }
+    }
+
+    async toggleProposalLike(userEmail: string, projectId: number) {
+        const currentUser = await this.getUserWithRole(userEmail)
+
+        if (!currentUser) {
+            throw new HttpError(404, { error: 'Authenticated user not found or role not supported' })
+        }
+
+        const existingInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id)
+
+        if (existingInteraction?.status === 'accepted') {
+            throw new HttpError(409, { error: 'Cannot remove an accepted match' })
+        }
+
+        if (existingInteraction?.status === 'pending') {
+            await this.projectRepository.deleteMatch(projectId, currentUser.id)
+
+            return {
+                liked: false,
+                matchStatus: null,
+                matched: false,
+            }
+        }
+
+        return this.likeProposal(userEmail, projectId)
     }
 
     async acceptProposalMatch(userEmail: string, projectId: number, interestedUserId: number) {

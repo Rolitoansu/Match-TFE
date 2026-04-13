@@ -313,6 +313,7 @@
 		"actions": {
 			"pass": "Pasar",
 			"like": "Me gusta",
+			"liked": "Te gusta",
 			"interestSent": "Interés enviado",
 			"matched": "Match hecho"
 		},
@@ -479,7 +480,16 @@
 		"badges": {
 			"match": "match",
 			"like": "like"
-		}
+		},
+		"favorites": {
+			"title": "Mis Favoritos",
+			"subtitle": "Propuestas guardadas para revisar después",
+			"empty": "Aún no tienes propuestas favoritas. ¡Guarda algunas para revisarlas más tarde!"
+		},
+		"addFavorite": "Guardar como favorito",
+		"removeFavorite": "Remover de favoritos",
+		"addLike": "Marcar como interesado",
+		"removeLike": "Remover interés"
 	},
 	"publicProfile": {
 		"back": "Volver",

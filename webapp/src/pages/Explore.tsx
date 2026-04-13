@@ -152,12 +152,24 @@ export default function Explore() {
   }
 
   async function likeCurrentProposal() {
-    if (!currentProposal || loadingLike) {
+    if (!currentProposal || loadingLike || currentProposal.liked) {
       return
     }
 
     try {
       setLoadingLike(true)
+      setProposals((previous) => previous.map((proposal, index) => {
+        if (index !== currentIndex) {
+          return proposal
+        }
+
+        return {
+          ...proposal,
+          liked: true,
+          matchStatus: 'pending',
+        }
+      }))
+
       const { data } = await api.post<{ liked: boolean; matchStatus: MatchStatus }>(`/project/proposals/${currentProposal.id}/like`)
 
       setProposals((previous) => previous.map((proposal, index) => {
@@ -167,31 +179,22 @@ export default function Explore() {
 
         return {
           ...proposal,
-          liked: true,
+          liked: data.liked,
           matchStatus: data.matchStatus,
         }
       }))
-
-      setCurrentIndex((prev) => prev + 1)
     } catch (likeError) {
-      const status = (likeError as { response?: { status?: number } }).response?.status
+      setProposals((previous) => previous.map((proposal, index) => {
+        if (index !== currentIndex) {
+          return proposal
+        }
 
-      if (status === 409 || status === 404) {
-        setProposals((previous) => previous.map((proposal, index) => {
-          if (index !== currentIndex) {
-            return proposal
-          }
-
-          return {
-            ...proposal,
-            liked: true,
-            matchStatus: 'rejected',
-          }
-        }))
-        setCurrentIndex((prev) => prev + 1)
-        return
-      }
-
+        return {
+          ...proposal,
+          liked: false,
+          matchStatus: null,
+        }
+      }))
       console.error(likeError)
       setError(t('explore.errors.like'))
     } finally {
@@ -316,15 +319,20 @@ export default function Explore() {
               <X size={16} /> {t('explore.actions.pass')}
             </button>
             <button
+              type="button"
               onClick={likeCurrentProposal}
-              className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-              disabled={loadingLike || currentProposal.liked}
+              className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-bold transition-opacity ${
+                currentProposal.liked
+                  ? 'border border-border text-foreground'
+                  : 'bg-primary text-white hover:opacity-90'
+              } disabled:opacity-60`}
+              disabled={loadingLike || currentProposal.liked || currentProposal.matchStatus === 'accepted'}
             >
               <Heart size={16} />
               {currentProposal.matchStatus === 'accepted'
                 ? t('explore.actions.matched')
                 : currentProposal.liked
-                  ? t('explore.actions.interestSent')
+                  ? t('explore.actions.liked')
                   : t('explore.actions.like')}
             </button>
           </div>

@@ -14,7 +14,7 @@ The current model is "proposal-heavy": professors are forced to publish an exces
 Follow these steps to get the environment up and running using Docker.
 
 Database schema is initialized automatically from `database/schema.ts` using Drizzle (`drizzle-kit push`) through the `db-init` container.
-Sample data inserts are kept in `init.sql` and applied by the `db-seed` container after schema initialization.
+Sample data inserts are kept in `init.sql` and can be applied manually with the optional `db-seed` profile.
 
 ### 1. Environment Configuration
 Create a `.env` file in the **root folder** of the project and define the following variables:
@@ -59,7 +59,7 @@ If you only need to re-apply the schema manually:
 docker compose run --rm db-init
 
 # Re-apply sample seed data from init.sql
-docker compose run --rm db-seed
+docker compose --profile seed run --rm db-seed
 ```
 
 ### 3. Docker Release (Production-like)

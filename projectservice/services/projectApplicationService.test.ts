@@ -513,6 +513,31 @@ describe('ProjectApplicationService', () => {
     expect(result.liked).toBe(true)
   })
 
+  it('removes existing pending like on toggleProposalLike', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ status: 'pending' }]) as any)
+
+    vi.mocked(db.delete).mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) } as any)
+
+    const service = new ProjectApplicationService()
+    const result = await service.toggleProposalLike('s@example.com', 5)
+
+    expect(result).toMatchObject({ liked: false, matchStatus: null, matched: false })
+  })
+
+  it('creates like on toggleProposalLike when no interaction exists', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([]) as any)
+
+    const service = new ProjectApplicationService()
+    vi.spyOn(service, 'likeProposal').mockResolvedValue({ liked: true, matchStatus: 'pending', matched: false })
+    const result = await service.toggleProposalLike('s@example.com', 5)
+
+    expect(result).toMatchObject({ liked: true, matchStatus: 'pending', matched: false })
+  })
+
   it('throws 404 on acceptProposalMatch when user is not found', async () => {
     vi.mocked(db.select).mockReturnValueOnce(createLimitChain([]) as any)
 

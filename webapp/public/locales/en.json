@@ -313,6 +313,7 @@
 		"actions": {
 			"pass": "Pass",
 			"like": "Like",
+			"liked": "Liked",
 			"interestSent": "Interest sent",
 			"matched": "Matched"
 		},
@@ -479,7 +480,16 @@
 		"badges": {
 			"match": "match",
 			"like": "like"
-		}
+		},
+		"favorites": {
+			"title": "My Favorites",
+			"subtitle": "Saved proposals to review later",
+			"empty": "You don't have any favorite proposals yet. Save some to review them later!"
+		},
+		"addFavorite": "Save as favorite",
+		"removeFavorite": "Remove from favorites",
+		"addLike": "Mark as interested",
+		"removeLike": "Remove interest"
 	},
 	"publicProfile": {
 		"back": "Back",

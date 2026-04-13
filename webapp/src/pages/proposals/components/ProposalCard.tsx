@@ -1,10 +1,14 @@
-import { ArrowUpRight, CheckCircle2, Clock, FileText, Heart, Users } from 'lucide-react'
+import { ArrowUpRight, X, CheckCircle2, Clock, FileText, Heart, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Proposal } from '../model/proposalTypes'
 
 type Props = {
   proposal: Proposal
   onViewDetails: (proposalId: number) => void
+  onToggleLike?: (proposalId: number) => void
+  isLikeLoading?: boolean
+  onTogglePass?: (proposalId: number) => void
+  isPassLoading?: boolean
 }
 
 const STATUS_STYLE: Record<Proposal['status'], string> = {
@@ -13,7 +17,7 @@ const STATUS_STYLE: Record<Proposal['status'], string> = {
   completed: 'bg-slate-100 text-slate-600',
 }
 
-export function ProposalCard({ proposal, onViewDetails }: Props) {
+export function ProposalCard({ proposal, onViewDetails, onToggleLike, isLikeLoading = false, onTogglePass, isPassLoading = false }: Props) {
   const { t } = useTranslation()
 
   const statusLabel: Record<Proposal['status'], string> = {
@@ -43,11 +47,6 @@ export function ProposalCard({ proposal, onViewDetails }: Props) {
               <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
                 {proposal.title}
               </h3>
-              {proposal.likedByCurrentUser && (
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600" title={t('proposals.interestRegistered')}>
-                  <Heart size={13} fill="currentColor" />
-                </span>
-              )}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -107,7 +106,38 @@ export function ProposalCard({ proposal, onViewDetails }: Props) {
           </div>
 
           <div className="flex w-full items-center gap-2 sm:w-auto">
+            {onToggleLike && (
+              <button
+                type="button"
+                className={`flex items-center justify-center rounded-xl p-2 transition-all disabled:opacity-60 ${
+                  proposal.likedByCurrentUser
+                    ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
+                    : 'bg-secondary text-foreground hover:bg-rose-50 hover:text-rose-600'
+                }`}
+                onClick={() => onToggleLike(proposal.id)}
+                disabled={isLikeLoading || isPassLoading || proposal.passedByCurrentUser}
+                title={t('proposals.addLike')}
+              >
+                <Heart size={18} fill={proposal.likedByCurrentUser ? 'currentColor' : 'none'} />
+              </button>
+            )}
+            {onTogglePass && (
+              <button
+                type="button"
+                className={`flex items-center justify-center rounded-xl p-2 transition-all disabled:opacity-60 ${
+                  proposal.passedByCurrentUser
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'bg-secondary text-foreground hover:bg-red-50 hover:text-red-600'
+                }`}
+                onClick={() => onTogglePass(proposal.id)}
+                disabled={isPassLoading || isLikeLoading || proposal.likedByCurrentUser}
+                title={t('explore.actions.pass')}
+              >
+                <X size={18} />
+              </button>
+            )}
             <button
+              type="button"
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-foreground transition-all hover:bg-primary hover:text-white sm:w-auto"
               onClick={() => onViewDetails(proposal.id)}
             >

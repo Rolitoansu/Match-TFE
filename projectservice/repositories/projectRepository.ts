@@ -230,6 +230,12 @@ export class ProjectRepository {
     return existingMatch ?? null
   }
 
+  async deleteMatch(projectId: number, userId: number, client: any = db) {
+    await client
+      .delete(matches)
+      .where(and(eq(matches.projectId, projectId), eq(matches.userId, userId)))
+  }
+
   async findProjectById(projectId: number, client: any = db) {
     const query = client
       .select({
