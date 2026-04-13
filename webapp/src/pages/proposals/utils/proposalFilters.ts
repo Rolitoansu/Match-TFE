@@ -7,7 +7,7 @@ import {
   type StatusTab,
   VALID_SORT_OPTIONS,
   VALID_STATUS_TABS,
-} from './proposalTypes'
+} from '../model/proposalTypes'
 
 function isValidStatusTab(value: unknown): value is StatusTab {
   return typeof value === 'string' && VALID_STATUS_TABS.includes(value as StatusTab)

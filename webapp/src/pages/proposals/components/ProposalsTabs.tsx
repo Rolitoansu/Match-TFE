@@ -1,12 +1,21 @@
-import type { StatusTab } from '../proposalTypes'
+import { useTranslation } from 'react-i18next'
+import type { StatusTab } from '../model/proposalTypes'
 
 type Props = {
-  tabs: Array<{ id: StatusTab; label: string }>
   selectedTab: StatusTab
   onSelectTab: (tab: StatusTab) => void
 }
 
-export function ProposalsTabs({ tabs, selectedTab, onSelectTab }: Props) {
+export function ProposalsTabs({ selectedTab, onSelectTab }: Props) {
+  const { t } = useTranslation()
+
+  const tabs: Array<{ id: StatusTab; label: string }> = [
+    { id: 'all', label: t('proposals.tabs.all') },
+    { id: 'open', label: t('proposals.tabs.open') },
+    { id: 'in_progress', label: t('proposals.tabs.inProgress') },
+    { id: 'completed', label: t('proposals.tabs.completed') },
+  ]
+
   return (
     <div className="mb-8 flex gap-6 overflow-x-auto border-b border-border sm:gap-8">
       {tabs.map((tab) => (

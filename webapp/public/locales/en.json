@@ -460,6 +460,11 @@
 			"professorsPlural": "professors",
 			"studentsPlural": "students"
 		},
+		"export": {
+			"label": "Export:",
+			"csv": "Download CSV",
+			"pdf": "Download PDF"
+		},
 		"assignment": {
 			"assigned": "Assigned",
 			"hasInterested": "Interested users",

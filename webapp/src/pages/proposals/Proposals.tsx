@@ -7,22 +7,17 @@ import { ProposalCard } from './components/ProposalCard'
 import { ProposalsFiltersPanel } from './components/ProposalsFiltersPanel'
 import { ProposalsHeader } from './components/ProposalsHeader'
 import { ProposalsTabs } from './components/ProposalsTabs'
-import { matchesSelectedTab, parseStoredFilters, sortProposals } from './proposalFilters'
-import {
-  DEFAULT_FILTERS,
-  FILTERS_STORAGE_KEY,
-  type Proposal,
-  type ProposalFilters,
-  type SortOption,
-  type StatusTab,
-} from './proposalTypes'
+import { matchesSelectedTab, sortProposals } from './utils/proposalFilters'
+import { exportToCSV, exportToPDF } from './utils/exportProposals'
+import { type Proposal } from './model/proposalTypes'
+import { useProposalFilters } from './hooks/useProposalFilters'
 
 export default function Proposals() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [proposals, setProposals] = useState<Proposal[]>([])
-  const [filters, setFilters] = useState<ProposalFilters>(parseStoredFilters)
+  const { filters, updateFilter, resetFilters, ensureSelectedTagIsAvailable } = useProposalFilters()
   const oppositeRolePluralLabel = user?.role === 'student'
     ? t('proposals.roles.professorsPlural')
     : t('proposals.roles.studentsPlural')
@@ -49,10 +44,6 @@ export default function Proposals() {
 
     fetchProposals()
   }, [])
-
-  useEffect(() => {
-    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters))
-  }, [filters])
 
   const availableTags = useMemo(() => {
     const uniqueTags = new Set<string>()
@@ -93,55 +84,13 @@ export default function Proposals() {
   const sortedProposals = useMemo(() => sortProposals(filteredProposals, sortBy), [filteredProposals, sortBy])
 
   useEffect(() => {
-    if (selectedTag !== 'all' && !availableTags.includes(selectedTag)) {
-      setFilters((previousFilters) => ({ ...previousFilters, selectedTag: 'all' }))
-    }
-  }, [availableTags, selectedTag])
-
-  const tabs: Array<{ id: StatusTab; label: string }> = [
-    { id: 'all', label: t('proposals.tabs.all') },
-    { id: 'open', label: t('proposals.tabs.open') },
-    { id: 'in_progress', label: t('proposals.tabs.inProgress') },
-    { id: 'completed', label: t('proposals.tabs.completed') },
-  ]
-
-  const statusLabel: Record<Proposal['status'], string> = {
-    proposed: t('proposals.status.open'),
-    in_progress: t('proposals.status.inProgress'),
-    completed: t('proposals.status.completed'),
-  }
-
-  const tfgTypeLabelById: Record<number, string> = {
-    1: t('tfgTypes.research'),
-    2: t('tfgTypes.hardwareSoftwareDevelopment'),
-    3: t('tfgTypes.professionalExperience'),
-    4: t('tfgTypes.qualitySecuritySystemsDesignAndImplementation'),
-    5: t('tfgTypes.specificHardwareSoftwareImplementation'),
-    6: t('tfgTypes.otherWorks'),
-  }
-
-  const sortOptions: Array<{ value: SortOption; label: string }> = [
-    { value: 'recent', label: t('proposals.sort.recent') },
-    { value: 'oldest', label: t('proposals.sort.oldest') },
-    { value: 'most_interested', label: t('proposals.sort.mostInterested') },
-    { value: 'title_asc', label: t('proposals.sort.titleAZ') },
-  ]
-
-  function resetFilters() {
-    setFilters(DEFAULT_FILTERS)
-  }
-
-  function updateFilter<Key extends keyof ProposalFilters>(key: Key, value: ProposalFilters[Key]) {
-    setFilters((previousFilters) => ({ ...previousFilters, [key]: value }))
-  }
+    ensureSelectedTagIsAvailable(availableTags)
+  }, [availableTags, ensureSelectedTagIsAvailable])
 
   return (
     <div className="mx-auto max-w-300 p-4 sm:p-6 lg:p-10">
       <ProposalsHeader
-        title={t('proposals.title')}
-        subtitle={t('proposals.subtitle', { rolePlural: oppositeRolePluralLabel })}
-        newProposalLabel={t('proposals.newProposal')}
-        searchPlaceholder={t('proposals.searchPlaceholder')}
+        rolePlural={oppositeRolePluralLabel}
         search={search}
         onSearchChange={(value) => updateFilter('search', value)}
         onCreateProposal={() => navigate('/proposals/new')}
@@ -154,35 +103,17 @@ export default function Proposals() {
         availableTags={availableTags}
         onlyInterested={onlyInterested}
         onlyLikedByMe={onlyLikedByMe}
-        tfgTypeOptions={[
-          { value: 1, label: t('tfgTypes.research') },
-          { value: 2, label: t('tfgTypes.hardwareSoftwareDevelopment') },
-          { value: 3, label: t('tfgTypes.professionalExperience') },
-          { value: 4, label: t('tfgTypes.qualitySecuritySystemsDesignAndImplementation') },
-          { value: 5, label: t('tfgTypes.specificHardwareSoftwareImplementation') },
-          { value: 6, label: t('tfgTypes.otherWorks') },
-        ]}
-        sortOptions={sortOptions}
-        labels={{
-          tfgType: t('proposals.filters.tfgType'),
-          allTypes: t('proposals.filters.allTypes'),
-          tag: t('proposals.filters.tag'),
-          allTags: t('proposals.filters.allTags'),
-          sortBy: t('proposals.filters.sortBy'),
-          clear: t('proposals.filters.clear'),
-          onlyInterested: t('proposals.onlyInterested'),
-          onlyLikedByMe: t('proposals.filters.onlyLikedByMe'),
-        }}
         onTypeChange={(value) => updateFilter('selectedType', value)}
         onTagChange={(value) => updateFilter('selectedTag', value)}
         onSortChange={(value) => updateFilter('sortBy', value)}
         onOnlyInterestedChange={(value) => updateFilter('onlyInterested', value)}
         onOnlyLikedByMeChange={(value) => updateFilter('onlyLikedByMe', value)}
         onReset={resetFilters}
+        onExportCSV={() => exportToCSV(sortedProposals, `propuestas_${new Date().toISOString().split('T')[0]}.csv`)}
+        onExportPDF={() => exportToPDF(sortedProposals, `propuestas_${new Date().toISOString().split('T')[0]}.pdf`).catch(() => {})}
       />
 
       <ProposalsTabs
-        tabs={tabs}
         selectedTab={selectedTab}
         onSelectTab={(tab) => updateFilter('selectedTab', tab)}
       />
@@ -192,26 +123,6 @@ export default function Proposals() {
           <ProposalCard
             key={proposal.id}
             proposal={proposal}
-            statusLabel={statusLabel}
-            tfgTypeLabelById={tfgTypeLabelById}
-            assignmentLabels={{
-              assigned: t('proposals.assignment.assigned'),
-              hasInterested: t('proposals.assignment.hasInterested'),
-              noInterested: t('proposals.assignment.noInterested'),
-            }}
-            fieldLabels={{
-              publishedBy: t('proposalDetails.publishedBy'),
-              tfgType: t('proposals.fields.tfgType'),
-              status: t('proposals.fields.status'),
-              interested: t('proposals.fields.interested'),
-            }}
-            badgeLabels={{
-              match: t('proposals.badges.match'),
-              like: t('proposals.badges.like'),
-              more: t('proposals.more'),
-              interestRegistered: t('proposals.interestRegistered'),
-            }}
-            viewDetailsLabel={t('proposals.viewDetails')}
             onViewDetails={(proposalId) => navigate(`/proposals/details/${proposalId}`)}
           />
         ))}

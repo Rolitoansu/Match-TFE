@@ -1,28 +1,9 @@
 import { ArrowUpRight, CheckCircle2, Clock, FileText, Heart, Users } from 'lucide-react'
-import type { Proposal } from '../proposalTypes'
+import { useTranslation } from 'react-i18next'
+import type { Proposal } from '../model/proposalTypes'
 
 type Props = {
   proposal: Proposal
-  statusLabel: Record<Proposal['status'], string>
-  tfgTypeLabelById: Record<number, string>
-  assignmentLabels: {
-    assigned: string
-    hasInterested: string
-    noInterested: string
-  }
-  fieldLabels: {
-    publishedBy: string
-    tfgType: string
-    status: string
-    interested: string
-  }
-  badgeLabels: {
-    match: string
-    like: string
-    more: string
-    interestRegistered: string
-  }
-  viewDetailsLabel: string
   onViewDetails: (proposalId: number) => void
 }
 
@@ -32,16 +13,24 @@ const STATUS_STYLE: Record<Proposal['status'], string> = {
   completed: 'bg-slate-100 text-slate-600',
 }
 
-export function ProposalCard({
-  proposal,
-  statusLabel,
-  tfgTypeLabelById,
-  assignmentLabels,
-  fieldLabels,
-  badgeLabels,
-  viewDetailsLabel,
-  onViewDetails,
-}: Props) {
+export function ProposalCard({ proposal, onViewDetails }: Props) {
+  const { t } = useTranslation()
+
+  const statusLabel: Record<Proposal['status'], string> = {
+    proposed: t('proposals.status.open'),
+    in_progress: t('proposals.status.inProgress'),
+    completed: t('proposals.status.completed'),
+  }
+
+  const tfgTypeLabelById: Record<number, string> = {
+    1: t('tfgTypes.research'),
+    2: t('tfgTypes.hardwareSoftwareDevelopment'),
+    3: t('tfgTypes.professionalExperience'),
+    4: t('tfgTypes.qualitySecuritySystemsDesignAndImplementation'),
+    5: t('tfgTypes.specificHardwareSoftwareImplementation'),
+    6: t('tfgTypes.otherWorks'),
+  }
+
   return (
     <div className="group bg-white border border-border rounded-3xl p-5 hover:border-primary/30 hover:shadow-xl hover:shadow-slate-200/50 transition-all">
       <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
@@ -55,7 +44,7 @@ export function ProposalCard({
                 {proposal.title}
               </h3>
               {proposal.likedByCurrentUser && (
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600" title={badgeLabels.interestRegistered}>
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600" title={t('proposals.interestRegistered')}>
                   <Heart size={13} fill="currentColor" />
                 </span>
               )}
@@ -65,13 +54,13 @@ export function ProposalCard({
                 <Clock size={14} /> {new Date(proposal.publicationDate).toLocaleString()}
               </span>
               <span className="text-xs font-medium text-muted-foreground">
-                {fieldLabels.publishedBy}: {proposal.creatorName} {proposal.creatorSurname}
+                {t('proposalDetails.publishedBy')}: {proposal.creatorName} {proposal.creatorSurname}
               </span>
               <span className="text-xs font-medium text-muted-foreground">
-                {fieldLabels.tfgType}: {tfgTypeLabelById[proposal.type]}
+                {t('proposals.fields.tfgType')}: {tfgTypeLabelById[proposal.type] ?? t('tfgTypes.otherWorks')}
               </span>
               <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                <CheckCircle2 size={14} /> {proposal.status === 'in_progress' ? assignmentLabels.assigned : proposal.interestCount > 0 ? assignmentLabels.hasInterested : assignmentLabels.noInterested}
+                <CheckCircle2 size={14} /> {proposal.status === 'in_progress' ? t('proposals.assignment.assigned') : proposal.interestCount > 0 ? t('proposals.assignment.hasInterested') : t('proposals.assignment.noInterested')}
               </span>
             </div>
 
@@ -87,12 +76,12 @@ export function ProposalCard({
                     }`}
                   >
                     {person.name} {person.surname}
-                    {person.matchStatus === 'accepted' ? ` (${badgeLabels.match})` : ` (${badgeLabels.like})`}
+                    {person.matchStatus === 'accepted' ? ` (${t('proposals.badges.match')})` : ` (${t('proposals.badges.like')})`}
                   </span>
                 ))}
                 {proposal.interestedUsers.length > 3 && (
                   <span className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                    +{proposal.interestedUsers.length - 3} {badgeLabels.more}
+                    +{proposal.interestedUsers.length - 3} {t('proposals.more')}
                   </span>
                 )}
               </div>
@@ -105,15 +94,15 @@ export function ProposalCard({
             <div className="text-center">
               <p className="text-sm font-bold text-foreground flex items-center gap-1.5 justify-center">
                 <Users size={16} className="text-primary" />
-                {proposal.status === 'in_progress' ? assignmentLabels.assigned : proposal.interestCount}
+                {proposal.status === 'in_progress' ? t('proposals.assignment.assigned') : proposal.interestCount}
               </p>
               <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">
-                {proposal.status === 'in_progress' ? fieldLabels.status : fieldLabels.interested}
+                {proposal.status === 'in_progress' ? t('proposals.fields.status') : t('proposals.fields.interested')}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm font-bold text-foreground">{statusLabel[proposal.status]}</p>
-              <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">{fieldLabels.status}</p>
+              <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">{t('proposals.fields.status')}</p>
             </div>
           </div>
 
@@ -122,7 +111,7 @@ export function ProposalCard({
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-foreground transition-all hover:bg-primary hover:text-white sm:w-auto"
               onClick={() => onViewDetails(proposal.id)}
             >
-              {viewDetailsLabel}
+              {t('proposals.viewDetails')}
               <ArrowUpRight size={14} />
             </button>
           </div>
