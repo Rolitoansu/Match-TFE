@@ -426,6 +426,21 @@
 		"newProposal": "New Proposal",
 		"searchPlaceholder": "Search by title or technology...",
 		"onlyInterested": "Show only proposals with interested users",
+		"filters": {
+			"tfgType": "TFG type",
+			"allTypes": "All types",
+			"tag": "Tag",
+			"allTags": "All tags",
+			"sortBy": "Sort by",
+			"clear": "Clear filters",
+			"onlyLikedByMe": "Only proposals liked by me"
+		},
+		"sort": {
+			"recent": "Most recent",
+			"oldest": "Oldest",
+			"mostInterested": "Most interested",
+			"titleAZ": "Title (A-Z)"
+		},
 		"interestRegistered": "Interest registered",
 		"viewDetails": "View Details",
 		"emptyFiltered": "No proposals match the selected filters.",

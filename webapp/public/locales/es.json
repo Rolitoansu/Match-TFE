@@ -426,6 +426,21 @@
 		"newProposal": "Nueva Propuesta",
 		"searchPlaceholder": "Buscar por título o tecnología...",
 		"onlyInterested": "Mostrar solo propuestas con interesados",
+		"filters": {
+			"tfgType": "Tipo de TFG",
+			"allTypes": "Todos los tipos",
+			"tag": "Etiqueta",
+			"allTags": "Todas las etiquetas",
+			"sortBy": "Ordenar por",
+			"clear": "Limpiar filtros",
+			"onlyLikedByMe": "Solo propuestas con mi like"
+		},
+		"sort": {
+			"recent": "Más recientes",
+			"oldest": "Más antiguas",
+			"mostInterested": "Más interesados",
+			"titleAZ": "Título (A-Z)"
+		},
 		"interestRegistered": "Interés registrado",
 		"viewDetails": "Ver Detalles",
 		"emptyFiltered": "No hay propuestas que coincidan con los filtros seleccionados.",

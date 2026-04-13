@@ -1,60 +1,41 @@
-import { 
-  Plus, 
-  Search, 
-  FileText, 
-  Users, 
-  ArrowUpRight,
-  Clock,
-  CheckCircle2,
-  Heart
-} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
 import useAuth from '../../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
-
-interface Proposal {
-  id: number
-  title: string
-  description: string
-  type: number
-  publicationDate: string
-  status: 'proposed' | 'in_progress' | 'completed'
-  creatorName: string
-  creatorSurname: string
-  interestCount: number
-  likedByCurrentUser: boolean
-  interestedUsers?: Array<{
-    id: number
-    name: string
-    surname: string
-    email: string | null
-    matchStatus: 'pending' | 'accepted' | 'rejected' | null
-    likedAt: string
-  }>
-  tags?: string[]
-}
-
-type StatusTab = 'all' | 'open' | 'in_progress' | 'completed'
-
-const STATUS_STYLE: Record<Proposal['status'], string> = {
-  proposed: 'bg-green-50 text-green-600',
-  in_progress: 'bg-blue-50 text-blue-600',
-  completed: 'bg-slate-100 text-slate-600',
-}
+import { ProposalCard } from './components/ProposalCard'
+import { ProposalsFiltersPanel } from './components/ProposalsFiltersPanel'
+import { ProposalsHeader } from './components/ProposalsHeader'
+import { ProposalsTabs } from './components/ProposalsTabs'
+import { matchesSelectedTab, parseStoredFilters, sortProposals } from './proposalFilters'
+import {
+  DEFAULT_FILTERS,
+  FILTERS_STORAGE_KEY,
+  type Proposal,
+  type ProposalFilters,
+  type SortOption,
+  type StatusTab,
+} from './proposalTypes'
 
 export default function Proposals() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [proposals, setProposals] = useState<Proposal[]>([])
-  const [search, setSearch] = useState('')
-  const [selectedTab, setSelectedTab] = useState<StatusTab>('all')
-  const [onlyInterested, setOnlyInterested] = useState(false)
+  const [filters, setFilters] = useState<ProposalFilters>(parseStoredFilters)
   const oppositeRolePluralLabel = user?.role === 'student'
     ? t('proposals.roles.professorsPlural')
     : t('proposals.roles.studentsPlural')
+
+  const {
+    search,
+    selectedTab,
+    onlyInterested,
+    onlyLikedByMe,
+    selectedType,
+    selectedTag,
+    sortBy,
+  } = filters
   
   useEffect(() => {
     async function fetchProposals() {
@@ -69,25 +50,53 @@ export default function Proposals() {
     fetchProposals()
   }, [])
 
+  useEffect(() => {
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters))
+  }, [filters])
+
+  const availableTags = useMemo(() => {
+    const uniqueTags = new Set<string>()
+
+    proposals.forEach((proposal) => {
+      for (const tag of proposal.tags ?? []) {
+        uniqueTags.add(tag)
+      }
+    })
+
+    return [...uniqueTags].sort((left, right) => left.localeCompare(right))
+  }, [proposals])
+
   const filteredProposals = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
-
     return proposals.filter((proposal) => {
       const matchesSearch = !normalizedSearch
         || proposal.title.toLowerCase().includes(normalizedSearch)
         || proposal.description.toLowerCase().includes(normalizedSearch)
         || (proposal.tags ?? []).some((tag) => tag.toLowerCase().includes(normalizedSearch))
 
-      const matchesTab = selectedTab === 'all'
-        || (selectedTab === 'open' && proposal.status === 'proposed')
-        || (selectedTab === 'in_progress' && proposal.status === 'in_progress')
-        || (selectedTab === 'completed' && proposal.status === 'completed')
+      const matchesTab = matchesSelectedTab(proposal.status, selectedTab)
 
       const matchesInterestFilter = !onlyInterested || proposal.interestCount > 0
+      const matchesLikedFilter = !onlyLikedByMe || proposal.likedByCurrentUser
+      const matchesTypeFilter = selectedType === 'all' || proposal.type === selectedType
+      const matchesTagFilter = selectedTag === 'all' || (proposal.tags ?? []).includes(selectedTag)
 
-      return matchesSearch && matchesTab && matchesInterestFilter
+      return matchesSearch
+        && matchesTab
+        && matchesInterestFilter
+        && matchesLikedFilter
+        && matchesTypeFilter
+        && matchesTagFilter
     })
-  }, [proposals, search, selectedTab, onlyInterested])
+  }, [proposals, search, selectedTab, onlyInterested, onlyLikedByMe, selectedType, selectedTag])
+
+  const sortedProposals = useMemo(() => sortProposals(filteredProposals, sortBy), [filteredProposals, sortBy])
+
+  useEffect(() => {
+    if (selectedTag !== 'all' && !availableTags.includes(selectedTag)) {
+      setFilters((previousFilters) => ({ ...previousFilters, selectedTag: 'all' }))
+    }
+  }, [availableTags, selectedTag])
 
   const tabs: Array<{ id: StatusTab; label: string }> = [
     { id: 'all', label: t('proposals.tabs.all') },
@@ -111,159 +120,103 @@ export default function Proposals() {
     6: t('tfgTypes.otherWorks'),
   }
 
+  const sortOptions: Array<{ value: SortOption; label: string }> = [
+    { value: 'recent', label: t('proposals.sort.recent') },
+    { value: 'oldest', label: t('proposals.sort.oldest') },
+    { value: 'most_interested', label: t('proposals.sort.mostInterested') },
+    { value: 'title_asc', label: t('proposals.sort.titleAZ') },
+  ]
+
+  function resetFilters() {
+    setFilters(DEFAULT_FILTERS)
+  }
+
+  function updateFilter<Key extends keyof ProposalFilters>(key: Key, value: ProposalFilters[Key]) {
+    setFilters((previousFilters) => ({ ...previousFilters, [key]: value }))
+  }
+
   return (
     <div className="mx-auto max-w-300 p-4 sm:p-6 lg:p-10">
-      <div className="mb-8 flex flex-col justify-between gap-4 md:mb-10 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{t('proposals.title')}</h1>
-          <p className="text-muted-foreground mt-1">{t('proposals.subtitle', { rolePlural: oppositeRolePluralLabel })}</p>
-        </div>
-        
-        <button 
-          onClick={() => navigate('/proposals/new')}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
-        >
-          <Plus size={20} />
-          {t('proposals.newProposal')}
-        </button>
-      </div>
+      <ProposalsHeader
+        title={t('proposals.title')}
+        subtitle={t('proposals.subtitle', { rolePlural: oppositeRolePluralLabel })}
+        newProposalLabel={t('proposals.newProposal')}
+        searchPlaceholder={t('proposals.searchPlaceholder')}
+        search={search}
+        onSearchChange={(value) => updateFilter('search', value)}
+        onCreateProposal={() => navigate('/proposals/new')}
+      />
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-          <input 
-            type="text" 
-            placeholder={t('proposals.searchPlaceholder')}
-            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-border focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-      </div>
+      <ProposalsFiltersPanel
+        selectedType={selectedType}
+        selectedTag={selectedTag}
+        sortBy={sortBy}
+        availableTags={availableTags}
+        onlyInterested={onlyInterested}
+        onlyLikedByMe={onlyLikedByMe}
+        tfgTypeOptions={[
+          { value: 1, label: t('tfgTypes.research') },
+          { value: 2, label: t('tfgTypes.hardwareSoftwareDevelopment') },
+          { value: 3, label: t('tfgTypes.professionalExperience') },
+          { value: 4, label: t('tfgTypes.qualitySecuritySystemsDesignAndImplementation') },
+          { value: 5, label: t('tfgTypes.specificHardwareSoftwareImplementation') },
+          { value: 6, label: t('tfgTypes.otherWorks') },
+        ]}
+        sortOptions={sortOptions}
+        labels={{
+          tfgType: t('proposals.filters.tfgType'),
+          allTypes: t('proposals.filters.allTypes'),
+          tag: t('proposals.filters.tag'),
+          allTags: t('proposals.filters.allTags'),
+          sortBy: t('proposals.filters.sortBy'),
+          clear: t('proposals.filters.clear'),
+          onlyInterested: t('proposals.onlyInterested'),
+          onlyLikedByMe: t('proposals.filters.onlyLikedByMe'),
+        }}
+        onTypeChange={(value) => updateFilter('selectedType', value)}
+        onTagChange={(value) => updateFilter('selectedTag', value)}
+        onSortChange={(value) => updateFilter('sortBy', value)}
+        onOnlyInterestedChange={(value) => updateFilter('onlyInterested', value)}
+        onOnlyLikedByMeChange={(value) => updateFilter('onlyLikedByMe', value)}
+        onReset={resetFilters}
+      />
 
-      <div className="mb-6 rounded-2xl border border-border bg-white p-4">
-        <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-border"
-            checked={onlyInterested}
-            onChange={(event) => setOnlyInterested(event.target.checked)}
-          />
-          {t('proposals.onlyInterested')}
-        </label>
-      </div>
-
-      <div className="mb-8 flex gap-6 overflow-x-auto border-b border-border sm:gap-8">
-        {tabs.map((tab) => (
-          <button 
-            key={tab.id}
-            onClick={() => setSelectedTab(tab.id)}
-            className={`relative min-w-max pb-4 text-sm font-bold transition-all ${
-              selectedTab === tab.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab.label}
-            {selectedTab === tab.id && (
-              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-full" />
-            )}
-          </button>
-        ))}
-      </div>
+      <ProposalsTabs
+        tabs={tabs}
+        selectedTab={selectedTab}
+        onSelectTab={(tab) => updateFilter('selectedTab', tab)}
+      />
 
       <div className="grid grid-cols-1 gap-4">
-        {filteredProposals.map((proposal) => (
-          <div 
-            key={proposal.id} 
-            className="group bg-white border border-border rounded-3xl p-5 hover:border-primary/30 hover:shadow-xl hover:shadow-slate-200/50 transition-all"
-          >
-            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-              
-              <div className="flex items-start gap-4 flex-1">
-                <div className={`p-3 rounded-2xl shrink-0 ${STATUS_STYLE[proposal.status]}`}>
-                  <FileText size={24} />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                      {proposal.title}
-                    </h3>
-                    {proposal.likedByCurrentUser && (
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600" title={t('proposals.interestRegistered')}>
-                        <Heart size={13} fill="currentColor" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <Clock size={14} /> {new Date(proposal.publicationDate).toLocaleString()}
-                    </span>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {t('proposalDetails.publishedBy')}: {proposal.creatorName} {proposal.creatorSurname}
-                    </span>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {t('proposals.fields.tfgType')}: {tfgTypeLabelById[proposal.type] ?? t('tfgTypes.otherWorks')}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <CheckCircle2 size={14} /> {proposal.status === 'in_progress' ? t('proposals.assignment.assigned') : proposal.interestCount > 0 ? t('proposals.assignment.hasInterested') : t('proposals.assignment.noInterested')}
-                    </span>
-                  </div>
-
-                  {proposal.interestedUsers && proposal.interestedUsers.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {proposal.interestedUsers.slice(0, 3).map((person) => (
-                        <span
-                          key={person.id}
-                          className={`rounded-full px-3 py-1 text-[11px] font-semibold border ${
-                            person.matchStatus === 'accepted'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
-                        >
-                          {person.name} {person.surname}
-                          {person.matchStatus === 'accepted' ? ` (${t('proposals.badges.match')})` : ` (${t('proposals.badges.like')})`}
-                        </span>
-                      ))}
-                      {proposal.interestedUsers.length > 3 && (
-                        <span className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                          +{proposal.interestedUsers.length - 3} {t('proposals.more')}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4 border-t border-slate-50 pt-4 sm:flex-row sm:items-center sm:justify-between lg:justify-end lg:gap-8 lg:border-t-0 lg:pt-0">
-                <div className="flex gap-6 sm:gap-4">
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-foreground flex items-center gap-1.5 justify-center">
-                      <Users size={16} className="text-primary" />
-                      {proposal.status === 'in_progress' ? t('proposals.assignment.assigned') : proposal.interestCount}
-                    </p>
-                    <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">
-                      {proposal.status === 'in_progress' ? t('proposals.fields.status') : t('proposals.fields.interested')}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-foreground">{statusLabel[proposal.status]}</p>
-                    <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">{t('proposals.fields.status')}</p>
-                  </div>
-                </div>
-
-                <div className="flex w-full items-center gap-2 sm:w-auto">
-                  <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-foreground transition-all hover:bg-primary hover:text-white sm:w-auto"
-                    onClick={() => navigate(`/proposals/details/${proposal.id}`)}>
-                    {t('proposals.viewDetails')}
-                    <ArrowUpRight size={14} />
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
+        {sortedProposals.map((proposal) => (
+          <ProposalCard
+            key={proposal.id}
+            proposal={proposal}
+            statusLabel={statusLabel}
+            tfgTypeLabelById={tfgTypeLabelById}
+            assignmentLabels={{
+              assigned: t('proposals.assignment.assigned'),
+              hasInterested: t('proposals.assignment.hasInterested'),
+              noInterested: t('proposals.assignment.noInterested'),
+            }}
+            fieldLabels={{
+              publishedBy: t('proposalDetails.publishedBy'),
+              tfgType: t('proposals.fields.tfgType'),
+              status: t('proposals.fields.status'),
+              interested: t('proposals.fields.interested'),
+            }}
+            badgeLabels={{
+              match: t('proposals.badges.match'),
+              like: t('proposals.badges.like'),
+              more: t('proposals.more'),
+              interestRegistered: t('proposals.interestRegistered'),
+            }}
+            viewDetailsLabel={t('proposals.viewDetails')}
+            onViewDetails={(proposalId) => navigate(`/proposals/details/${proposalId}`)}
+          />
         ))}
 
-        {filteredProposals.length === 0 && (
+        {sortedProposals.length === 0 && (
           <div className="bg-white border border-border rounded-3xl p-8 text-center text-sm text-muted-foreground">
             {t('proposals.emptyFiltered')}
           </div>
