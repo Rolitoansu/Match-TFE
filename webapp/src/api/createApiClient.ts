@@ -3,10 +3,6 @@ import { getApiBaseUrl } from './baseUrl'
 
 export type ApiHandler<T> = { success: (data: T) => void; failure: (error: Error) => void }
 
-/**
- * Factory function to create axios instances for both user and admin APIs
- * Handles token management and auto-refresh on 401 errors
- */
 export function createApiClient(
   tokenKey: string,
   handlers?: ApiHandler<any>
