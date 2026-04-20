@@ -9,6 +9,26 @@ const app = express()
 app.use(express.json())
 const userService = new UserApplicationService(JWT_SECRET)
 
+function getAuthenticatedEmail(req: express.Request, res: express.Response) {
+    const userEmail = req.headers['x-user-email'] as string | undefined
+
+    if (!userEmail) {
+        res.status(401).json({ error: 'Missing authenticated user email' })
+        return null
+    }
+
+    return userEmail
+}
+
+function handleServiceError(error: unknown, res: express.Response, fallbackMessage: string) {
+    if (error instanceof HttpError) {
+        return res.status(error.status).json(error.payload)
+    }
+
+    console.error(error)
+    return res.status(500).json({ error: fallbackMessage })
+}
+
 app.post('/register', validate(registerSchema), async (req, res) => {
     const { email, name, surname, password } = req.body
 
@@ -24,12 +44,7 @@ app.post('/register', validate(registerSchema), async (req, res) => {
 
         return res.json({ access_token: result.accessToken, user: result.user })
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error creating user' })
+        return handleServiceError(error, res, 'Error creating user')
     }
 })
 
@@ -41,41 +56,25 @@ app.get('/proposals/:id', validate(userIdParamsSchema, 'params'), async (req, re
         return res.json(result)
 
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error fetching project proposals' })
+        return handleServiceError(exception, res, 'Error fetching project proposals')
     }
 })
 
 app.get('/profile', async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
 
     try {
         const result = await userService.getAuthenticatedProfile(userEmail)
         return res.json(result)
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error fetching user profile' })
+        return handleServiceError(error, res, 'Error fetching user profile')
     }
 })
 
 app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
 
     const biography = req.body.biography !== undefined
         ? (req.body.biography?.trim() || null)
@@ -88,33 +87,20 @@ app.patch('/profile', validate(updateProfileSchema), async (req, res) => {
         const result = await userService.updateAuthenticatedProfile(userEmail, { biography, interests, notificationFrequency, notificationReminderHour })
         return res.json(result)
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error updating user profile' })
+        return handleServiceError(error, res, 'Error updating user profile')
     }
 })
 
 app.get('/:id', validate(userIdParamsSchema, 'params'), async (req, res) => {
     const userId = Number(req.params.id)
-    const requesterEmail = req.headers['x-user-email'] as string
-
-    if (!requesterEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
+    const requesterEmail = getAuthenticatedEmail(req, res)
+    if (!requesterEmail) return
 
     try {
         const result = await userService.getPublicProfile(userId, requesterEmail)
         return res.json(result)
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error fetching user profile' })
+        return handleServiceError(error, res, 'Error fetching user profile')
     }
 })
 
@@ -125,12 +111,7 @@ app.post('/admin/students/import', validate(adminStudentSchema), async (req, res
         const result = await userService.importStudents(studentList)
         return res.json(result)
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error importing students' })
+        return handleServiceError(error, res, 'Error importing students')
     }
 })
 
@@ -141,12 +122,7 @@ app.post('/admin/professors/import', validate(adminProfessorSchema), async (req,
         const result = await userService.importProfessors(professorList)
         return res.json(result)
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error importing professors' })
+        return handleServiceError(error, res, 'Error importing professors')
     }
 })
 
@@ -155,12 +131,7 @@ app.get('/admin/users', async (req, res) => {
         const result = await userService.listUsers()
         return res.json(result)
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error fetching users' })
+        return handleServiceError(error, res, 'Error fetching users')
     }
 })
 
@@ -172,12 +143,7 @@ app.patch('/admin/users/:id', validate(adminUpdateUserSchema), validate(userIdPa
         const result = await userService.updateUser(userId, { name, surname, email, biography })
         return res.json(result)
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error updating user' })
+        return handleServiceError(error, res, 'Error updating user')
     }
 })
 
@@ -188,12 +154,7 @@ app.delete('/admin/users/:id', validate(userIdParamsSchema, 'params'), async (re
         const result = await userService.deleteUser(userId)
         return res.json(result)
     } catch (error) {
-        if (error instanceof HttpError) {
-            return res.status(error.status).json(error.payload)
-        }
-
-        console.error(error)
-        return res.status(500).json({ error: 'Error deleting user' })
+        return handleServiceError(error, res, 'Error deleting user')
     }
 })
 

@@ -2,6 +2,9 @@ import db from '@match-tfe/db'
 import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
 import { and, desc, eq, inArray, ne } from 'drizzle-orm'
 
+const selectMinimalUserFields = { id: users.id, role: users.role }
+const selectUserFields = { id: users.id, name: users.name, surname: users.surname, email: users.email }
+
 export class ProjectRepository {
   transaction<T>(callback: (client: any) => Promise<T>) {
     return db.transaction(callback)
@@ -9,10 +12,7 @@ export class ProjectRepository {
 
   async getCurrentUserByEmail(userEmail: string) {
     const [user] = await db
-      .select({
-        id: users.id,
-        role: users.role,
-      })
+      .select(selectMinimalUserFields)
       .from(users)
       .where(eq(users.email, userEmail))
       .limit(1)
@@ -24,74 +24,8 @@ export class ProjectRepository {
     return user as { id: number; role: 'student' | 'professor' }
   }
 
-  async getAcceptedMatchContext(userId: number) {
-    const [acceptedAsInterestedUser] = await db
-      .select({ projectId: matches.projectId })
-      .from(matches)
-      .where(and(
-        eq(matches.userId, userId),
-        eq(matches.status, 'accepted')
-      ))
-      .limit(1)
-
-    if (acceptedAsInterestedUser) {
-      const [project] = await db
-        .select({
-          id: projects.id,
-          title: projects.title,
-          description: projects.description,
-          type: projects.tfeType,
-          publicationDate: projects.publicationDate,
-          status: projects.status,
-          proposerId: projects.proposerId,
-        })
-        .from(projects)
-        .where(eq(projects.id, acceptedAsInterestedUser.projectId))
-        .limit(1)
-
-      if (!project) {
-        return null
-      }
-
-      const counterpartUserId = project.proposerId
-
-      if (!counterpartUserId) {
-        return null
-      }
-
-      const [counterpart] = await db
-        .select({
-          id: users.id,
-          name: users.name,
-          surname: users.surname,
-          email: users.email,
-        })
-        .from(users)
-        .where(eq(users.id, counterpartUserId))
-        .limit(1)
-
-      if (!counterpart) {
-        return null
-      }
-
-      return { project, counterpart }
-    }
-
-    const [acceptedAsOwner] = await db
-      .select({ projectId: projects.id, interestedUserId: matches.userId })
-      .from(projects)
-      .innerJoin(matches, eq(matches.projectId, projects.id))
-      .where(and(
-        eq(matches.status, 'accepted'),
-        eq(projects.proposerId, userId)
-      ))
-      .limit(1)
-
-    if (!acceptedAsOwner) {
-      return null
-    }
-
-    const [project] = await db
+  private async getProjectBasicInfo(projectId: number, client: any = db) {
+    const [project] = await client
       .select({
         id: projects.id,
         title: projects.title,
@@ -99,31 +33,56 @@ export class ProjectRepository {
         type: projects.tfeType,
         publicationDate: projects.publicationDate,
         status: projects.status,
+        proposerId: projects.proposerId,
       })
       .from(projects)
-      .where(eq(projects.id, acceptedAsOwner.projectId))
+      .where(eq(projects.id, projectId))
       .limit(1)
 
-    if (!project) {
-      return null
-    }
+    return project ?? null
+  }
 
-    const [counterpart] = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        surname: users.surname,
-        email: users.email,
-      })
+  private async getUserBasicInfo(userId: number, client: any = db) {
+    const [user] = await client
+      .select({ ...selectUserFields, role: users.role })
       .from(users)
-      .where(eq(users.id, acceptedAsOwner.interestedUserId))
+      .where(eq(users.id, userId))
       .limit(1)
 
-    if (!counterpart) {
-      return null
+    return user ?? null
+  }
+
+  async getAcceptedMatchContext(userId: number) {
+    // Check as interested user (student/professor interested in a project)
+    const [acceptedAsInterestedUser] = await db
+      .select({ projectId: matches.projectId })
+      .from(matches)
+      .where(and(eq(matches.userId, userId), eq(matches.status, 'accepted')))
+      .limit(1)
+
+    if (acceptedAsInterestedUser) {
+      const project = await this.getProjectBasicInfo(acceptedAsInterestedUser.projectId)
+      if (!project?.proposerId) return null
+
+      const counterpart = await this.getUserBasicInfo(project.proposerId)
+      return counterpart ? { project, counterpart } : null
     }
 
-    return { project, counterpart }
+    // Check as owner (project proposer with accepted match)
+    const [acceptedAsOwner] = await db
+      .select({ projectId: projects.id, interestedUserId: matches.userId })
+      .from(projects)
+      .innerJoin(matches, eq(matches.projectId, projects.id))
+      .where(and(eq(matches.status, 'accepted'), eq(projects.proposerId, userId)))
+      .limit(1)
+
+    if (!acceptedAsOwner) return null
+
+    const project = await this.getProjectBasicInfo(acceptedAsOwner.projectId)
+    if (!project) return null
+
+    const counterpart = await this.getUserBasicInfo(acceptedAsOwner.interestedUserId)
+    return counterpart ? { project, counterpart } : null
   }
 
   async getProposalListByRole(role: 'student' | 'professor', _userId: number) {
@@ -275,47 +234,25 @@ export class ProjectRepository {
       .from(matches)
       .where(eq(matches.projectId, projectId))
 
-    if (Array.isArray(query)) {
-      return query
-    }
-
-    if (typeof query?.then === 'function') {
-      return await query
-    }
-
+    // Support both transaction and normal client
     if (typeof query?.limit === 'function') {
       return await query.limit(1000)
     }
 
-    return []
+    return Array.isArray(query) ? query : await query
   }
 
   async getInterestedUsers(projectId: number) {
     return db
-      .select({
-        id: users.id,
-        name: users.name,
-        surname: users.surname,
-        email: users.email,
-        matchStatus: matches.status,
-      })
+      .select({ ...selectUserFields, matchStatus: matches.status })
       .from(matches)
       .innerJoin(users, eq(users.id, matches.userId))
-      .where(and(
-        eq(matches.projectId, projectId),
-        inArray(matches.status, ['pending', 'accepted'])
-      ))
+      .where(and(eq(matches.projectId, projectId), inArray(matches.status, ['pending', 'accepted'])))
   }
 
   async getUsersByIds(userIds: number[]) {
-    if (userIds.length === 0) {
-      return []
-    }
-
-    return db
-      .select({ id: users.id, name: users.name, surname: users.surname, email: users.email })
-      .from(users)
-      .where(inArray(users.id, userIds))
+    if (userIds.length === 0) return []
+    return db.select(selectUserFields).from(users).where(inArray(users.id, userIds))
   }
 
   async getTags() {

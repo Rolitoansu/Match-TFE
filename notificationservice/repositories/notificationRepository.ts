@@ -2,36 +2,23 @@ import db from '@match-tfe/db'
 import { notifications, users } from '@match-tfe/db/schema'
 import { and, desc, eq, inArray, isNotNull, or } from 'drizzle-orm'
 
+const selectUserFields = { id: users.id, role: users.role, email: users.email, name: users.name }
+const selectNotificationFields = { id: notifications.id, type: notifications.type, content: notifications.content, read: notifications.read, timestamp: notifications.timestamp }
+
 export class NotificationRepository {
   async findUserByEmail(email: string) {
-    const [user] = await db
-      .select({ id: users.id, role: users.role, email: users.email, name: users.name })
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1)
-
+    const [user] = await db.select(selectUserFields).from(users).where(eq(users.email, email)).limit(1)
     return user ?? null
   }
 
   async findUserById(userId: number) {
-    const [user] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1)
-
+    const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1)
     return user ?? null
   }
 
   async listUserNotifications(userId: number) {
     return db
-      .select({
-        id: notifications.id,
-        type: notifications.type,
-        content: notifications.content,
-        read: notifications.read,
-        timestamp: notifications.timestamp,
-      })
+      .select(selectNotificationFields)
       .from(notifications)
       .where(eq(notifications.userId, userId))
       .orderBy(desc(notifications.timestamp))
@@ -41,18 +28,8 @@ export class NotificationRepository {
   async createNotification(input: { userId: number; type: string; content: string }) {
     const [created] = await db
       .insert(notifications)
-      .values({
-        type: input.type,
-        content: input.content,
-        userId: input.userId,
-      })
-      .returning({
-        id: notifications.id,
-        type: notifications.type,
-        content: notifications.content,
-        read: notifications.read,
-        timestamp: notifications.timestamp,
-      })
+      .values({ type: input.type, content: input.content, userId: input.userId })
+      .returning(selectNotificationFields)
 
     return created ?? null
   }
@@ -61,17 +38,8 @@ export class NotificationRepository {
     const [updated] = await db
       .update(notifications)
       .set({ read: true })
-      .where(and(
-        eq(notifications.id, notificationId),
-        eq(notifications.userId, userId)
-      ))
-      .returning({
-        id: notifications.id,
-        type: notifications.type,
-        content: notifications.content,
-        read: notifications.read,
-        timestamp: notifications.timestamp,
-      })
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
+      .returning(selectNotificationFields)
 
     return updated ?? null
   }
@@ -86,10 +54,7 @@ export class NotificationRepository {
   async deleteNotification(userId: number, notificationId: number) {
     const [deleted] = await db
       .delete(notifications)
-      .where(and(
-        eq(notifications.id, notificationId),
-        eq(notifications.userId, userId)
-      ))
+      .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
       .returning({ id: notifications.id })
 
     return deleted ?? null
@@ -104,10 +69,7 @@ export class NotificationRepository {
         timestamp: notifications.timestamp,
       })
       .from(notifications)
-      .where(and(
-        eq(notifications.read, false),
-        isNotNull(notifications.userId)
-      ))
+      .where(and(eq(notifications.read, false), isNotNull(notifications.userId)))
       .orderBy(desc(notifications.timestamp))
   }
 
@@ -140,16 +102,11 @@ export class NotificationRepository {
       ? or(filterByIds, filterByEmails)
       : filterByIds ?? filterByEmails
 
-    if (!recipientFilter) {
-      return []
-    }
+    if (!recipientFilter) return []
 
     return db
       .select({ id: users.id, email: users.email, name: users.name, surname: users.surname })
       .from(users)
-      .where(and(
-        eq(users.role, 'student'),
-        recipientFilter
-      ))
+      .where(and(eq(users.role, 'student'), recipientFilter))
   }
 }

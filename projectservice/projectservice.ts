@@ -8,43 +8,47 @@ const app = express()
 app.use(express.json())
 const projectService = new ProjectApplicationService()
 
-app.get('/proposals', async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+function getAuthenticatedEmail(req: express.Request, res: express.Response) {
+    const userEmail = req.headers['x-user-email'] as string | undefined
 
     if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
+        res.status(401).json({ error: 'Missing authenticated user email' })
+        return null
     }
+
+    return userEmail
+}
+
+function handleServiceError(error: unknown, res: express.Response, fallbackMessage: string) {
+    if (error instanceof HttpError) {
+        return res.status(error.status).json(error.payload)
+    }
+
+    console.error(error)
+    return res.status(500).json({ error: fallbackMessage })
+}
+
+app.get('/proposals', async (req, res) => {
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
 
     try {
         const result = await projectService.getProposals(userEmail)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error fetching project proposals' })
+        return handleServiceError(exception, res, 'Error fetching project proposals')
     }
 })
 
 app.get('/explore', async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
 
     try {
         const result = await projectService.getExplore(userEmail)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error fetching explore proposals' })
+        return handleServiceError(exception, res, 'Error fetching explore proposals')
     }
 })
 
@@ -53,198 +57,125 @@ app.get('/tags', async (_req, res) => {
         const result = await projectService.getTags()
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error fetching tags' })
+        return handleServiceError(exception, res, 'Error fetching tags')
     }
 })
 
 app.post('/proposals', validate(TFECreationSchema), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
     const { title, description, type, tags: tagNames } = req.body
 
     try {
         const result = await projectService.createProposal(userEmail, { title, description, type, tags: tagNames })
         return res.status(201).json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error creating project proposal' })
+        return handleServiceError(exception, res, 'Error creating project proposal')
     }
 })
 
 app.get('/proposals/:id', validate(GetTFESchema, 'params'), async (req, res) => {
     const projectId = Number(req.params.id)
-    const userEmail = req.headers['x-user-email'] as string
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
 
     try {
         const result = await projectService.getProposalById(userEmail, projectId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error fetching project proposal' })
+        return handleServiceError(exception, res, 'Error fetching project proposal')
     }
 })
 
 app.patch('/proposals/:id/renew', validate(GetTFESchema, 'params'), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
     const projectId = Number(req.params.id)
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
 
     try {
         const result = await projectService.renewProposal(userEmail, projectId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error renewing proposal' })
+        return handleServiceError(exception, res, 'Error renewing proposal')
     }
 })
 
 app.patch('/proposals/:id/cancel', validate(GetTFESchema, 'params'), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
     const projectId = Number(req.params.id)
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
 
     try {
         const result = await projectService.cancelProposalExecution(userEmail, projectId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error cancelling proposal execution' })
+        return handleServiceError(exception, res, 'Error cancelling proposal execution')
     }
 })
 
 app.patch('/proposals/:id/complete', validate(GetTFESchema, 'params'), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
     const projectId = Number(req.params.id)
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
 
     try {
         const result = await projectService.completeProposal(userEmail, projectId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error completing proposal execution' })
+        return handleServiceError(exception, res, 'Error completing proposal execution')
     }
 })
 
 app.post('/proposals/:id/like', validate(GetTFESchema, 'params'), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
     const projectId = Number(req.params.id)
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
 
     try {
         const result = await projectService.toggleProposalLike(userEmail, projectId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error toggling like for proposal' })
+        return handleServiceError(exception, res, 'Error toggling like for proposal')
     }
 })
 
 app.delete('/proposals/:id/like', validate(GetTFESchema, 'params'), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
     const projectId = Number(req.params.id)
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
 
     try {
         const result = await projectService.toggleProposalLike(userEmail, projectId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error toggling like for proposal' })
+        return handleServiceError(exception, res, 'Error toggling like for proposal')
     }
 })
 
 app.post('/proposals/:id/pass', validate(GetTFESchema, 'params'), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
     const projectId = Number(req.params.id)
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
 
     try {
         const result = await projectService.passProposal(userEmail, projectId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error registering pass for proposal' })
+        return handleServiceError(exception, res, 'Error registering pass for proposal')
     }
 })
 
 app.post('/proposals/:id/match/:userId', validate(AcceptMatchParamsSchema, 'params'), async (req, res) => {
-    const userEmail = req.headers['x-user-email'] as string
+    const userEmail = getAuthenticatedEmail(req, res)
+    if (!userEmail) return
     const projectId = Number(req.params.id)
     const interestedUserId = Number(req.params.userId)
-
-    if (!userEmail) {
-        return res.status(401).json({ error: 'Missing authenticated user email' })
-    }
 
     try {
         const result = await projectService.acceptProposalMatch(userEmail, projectId, interestedUserId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error accepting match for proposal' })
+        return handleServiceError(exception, res, 'Error accepting match for proposal')
     }
 })
 
@@ -253,12 +184,7 @@ app.get('/admin/tags', async (_req, res) => {
         const result = await projectService.listAdminTags()
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error fetching tags' })
+        return handleServiceError(exception, res, 'Error fetching tags')
     }
 })
 
@@ -269,12 +195,7 @@ app.post('/admin/tags', validate(AdminTagCreateSchema), async (req, res) => {
         const result = await projectService.createAdminTag(name)
         return res.status(201).json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error creating tag' })
+        return handleServiceError(exception, res, 'Error creating tag')
     }
 })
 
@@ -285,12 +206,7 @@ app.post('/admin/tags/import', validate(AdminTagImportSchema), async (req, res) 
         const result = await projectService.importAdminTags(tagList)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error importing tags' })
+        return handleServiceError(exception, res, 'Error importing tags')
     }
 })
 
@@ -301,12 +217,7 @@ app.delete('/admin/tags/:id', validate(TagIdParamsSchema, 'params'), async (req,
         const result = await projectService.deleteAdminTag(tagId)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error deleting tag' })
+        return handleServiceError(exception, res, 'Error deleting tag')
     }
 })
 
@@ -318,12 +229,7 @@ app.patch('/admin/tags/:id', validate(TagIdParamsSchema, 'params'), validate(Adm
         const result = await projectService.updateAdminTag(tagId, name)
         return res.json(result)
     } catch (exception) {
-        if (exception instanceof HttpError) {
-            return res.status(exception.status).json(exception.payload)
-        }
-
-        console.error(exception)
-        return res.status(500).json({ error: 'Error updating tag' })
+        return handleServiceError(exception, res, 'Error updating tag')
     }
 })
 

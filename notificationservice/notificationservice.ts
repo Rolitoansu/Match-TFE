@@ -12,6 +12,26 @@ const notificationService = new NotificationApplicationService()
 const pendingMatchesCron = process.env.PENDING_MATCHES_CRON ?? '0 * * * *'
 const pendingMatchesTimezone = process.env.NOTIFICATION_TIMEZONE ?? 'Europe/Madrid'
 
+function getAuthenticatedEmail(req: express.Request, res: express.Response) {
+  const requesterEmail = req.headers['x-user-email'] as string | undefined
+
+  if (!requesterEmail) {
+    res.status(401).json({ error: 'Missing authenticated user email' })
+    return null
+  }
+
+  return requesterEmail
+}
+
+function handleServiceError(error: unknown, res: express.Response, fallbackMessage: string) {
+  if (error instanceof HttpError) {
+    return res.status(error.status).json(error.payload)
+  }
+
+  console.error(error)
+  return res.status(500).json({ error: fallbackMessage })
+}
+
 cron.schedule(
   pendingMatchesCron,
   async () => {
@@ -26,11 +46,8 @@ cron.schedule(
 )
 
 app.post('/students/email', validate(sendStudentsEmailSchema), async (req, res) => {
-  const requesterEmail = req.headers['x-user-email'] as string
-
-  if (!requesterEmail) {
-    return res.status(401).json({ error: 'Missing authenticated user email' })
-  }
+  const requesterEmail = getAuthenticatedEmail(req, res)
+  if (!requesterEmail) return
 
   try {
     const result = await notificationService.sendEmailToStudents({
@@ -43,32 +60,19 @@ app.post('/students/email', validate(sendStudentsEmailSchema), async (req, res) 
 
     return res.json(result)
   } catch (error) {
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.payload)
-    }
-
-    console.error(error)
-    return res.status(500).json({ error: 'Error sending notification emails' })
+    return handleServiceError(error, res, 'Error sending notification emails')
   }
 })
 
 app.get('/', async (req, res) => {
-  const requesterEmail = req.headers['x-user-email'] as string
-
-  if (!requesterEmail) {
-    return res.status(401).json({ error: 'Missing authenticated user email' })
-  }
+  const requesterEmail = getAuthenticatedEmail(req, res)
+  if (!requesterEmail) return
 
   try {
     const result = await notificationService.listUserNotifications(requesterEmail)
     return res.json(result)
   } catch (error) {
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.payload)
-    }
-
-    console.error(error)
-    return res.status(500).json({ error: 'Error listing notifications' })
+    return handleServiceError(error, res, 'Error listing notifications')
   }
 })
 
@@ -82,74 +86,45 @@ app.post('/users', validate(createUserNotificationSchema), async (req, res) => {
 
     return res.status(201).json(result)
   } catch (error) {
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.payload)
-    }
-
-    console.error(error)
-    return res.status(500).json({ error: 'Error creating notification' })
+    return handleServiceError(error, res, 'Error creating notification')
   }
 })
 
 app.patch('/:id/read', validate(notificationIdParamsSchema, 'params'), async (req, res) => {
-  const requesterEmail = req.headers['x-user-email'] as string
-
-  if (!requesterEmail) {
-    return res.status(401).json({ error: 'Missing authenticated user email' })
-  }
+  const requesterEmail = getAuthenticatedEmail(req, res)
+  if (!requesterEmail) return
 
   try {
     const notificationId = Number(req.params.id)
     const result = await notificationService.markNotificationAsRead(requesterEmail, notificationId)
     return res.json(result)
   } catch (error) {
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.payload)
-    }
-
-    console.error(error)
-    return res.status(500).json({ error: 'Error marking notification as read' })
+    return handleServiceError(error, res, 'Error marking notification as read')
   }
 })
 
 app.delete('/:id', validate(notificationIdParamsSchema, 'params'), async (req, res) => {
-  const requesterEmail = req.headers['x-user-email'] as string
-
-  if (!requesterEmail) {
-    return res.status(401).json({ error: 'Missing authenticated user email' })
-  }
+  const requesterEmail = getAuthenticatedEmail(req, res)
+  if (!requesterEmail) return
 
   try {
     const notificationId = Number(req.params.id)
     const result = await notificationService.deleteNotification(requesterEmail, notificationId)
     return res.json(result)
   } catch (error) {
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.payload)
-    }
-
-    console.error(error)
-    return res.status(500).json({ error: 'Error deleting notification' })
+    return handleServiceError(error, res, 'Error deleting notification')
   }
 })
 
 app.delete('/', async (req, res) => {
-  const requesterEmail = req.headers['x-user-email'] as string
-
-  if (!requesterEmail) {
-    return res.status(401).json({ error: 'Missing authenticated user email' })
-  }
+  const requesterEmail = getAuthenticatedEmail(req, res)
+  if (!requesterEmail) return
 
   try {
     const result = await notificationService.clearUserNotifications(requesterEmail)
     return res.json(result)
   } catch (error) {
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.payload)
-    }
-
-    console.error(error)
-    return res.status(500).json({ error: 'Error clearing notifications' })
+    return handleServiceError(error, res, 'Error clearing notifications')
   }
 })
 

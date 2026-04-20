@@ -58,7 +58,10 @@ If you only need to re-apply the schema manually:
 ```bash
 docker compose run --rm db-init
 
-# Re-apply sample seed data from init.sql
+# Start the seed container during up
+docker compose --profile seed up db-seed
+
+# Re-apply sample seed data from init.sql without keeping the container around
 docker compose --profile seed run --rm db-seed
 ```
 

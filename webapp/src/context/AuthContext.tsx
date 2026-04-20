@@ -1,110 +1,58 @@
-import { useState, useEffect, createContext } from 'react'
-import { Outlet } from 'react-router-dom'
+import { createContext } from 'react'
+import { createAuthProvider, type AuthProviderConfig } from './createAuthContext'
 import api, { setupHandlers } from '../api/axios'
-import { isAxiosError } from 'axios'
 
 export interface MatchTFEUser {
-    id: number
-    email: string
-    name: string
-    surname: string
-    registrationDate: string
-    biography: string
-    notificationFrequency: 'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly'
-    notificationReminderHour: number
-    interests: string[]
-    role: 'student' | 'professor'
+  id: number
+  email: string
+  name: string
+  surname: string
+  registrationDate: string
+  biography: string
+  notificationFrequency: 'disabled' | 'daily' | 'weekly' | 'biweekly' | 'monthly'
+  notificationReminderHour: number
+  interests: string[]
+  role: 'student' | 'professor'
 }
 
 export type User = MatchTFEUser
 
 interface AuthContextType {
-    user: User | null 
-    login: (email: string, password: string) => Promise<void>
-    logout: () => Promise<void>
-    register: (email: string, name: string, surname: string, password: string) => Promise<void>
+  user: User | null
+  data: User | null
+  login: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
+  register: (email: string, name: string, surname: string, password: string) => Promise<void>
+  isLoading: boolean
 }
 
-export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  data: null,
+  login: async () => {},
+  logout: async () => {},
+  register: async () => {},
+  isLoading: true,
+})
+
+setupHandlers(
+  () => {},
+  (error: Error) => {
+    console.error('Authentication error:', error)
+  }
+)
+
+const authConfig: AuthProviderConfig = {
+  api,
+  tokenKey: 'accessToken',
+  refreshEndpoint: '/auth/refresh',
+  loginEndpoint: '/auth/login',
+  logoutEndpoint: '/auth/logout',
+  dataKey: 'user',
+}
+
+const AuthProviderComponent = createAuthProvider(AuthContext, authConfig, { supportsRegister: true })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null)
-    const [loading, setLoading] = useState(true)
-    
-    useEffect(() => {
-        setupHandlers(
-            (userData) => {
-                setUser(userData)
-            },
-            (error) => {
-                setUser(null)
-                localStorage.removeItem('accessToken')
-                console.error('Authentication error:', error)
-            }
-        )
-    }, [])
-
-        useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const { data } = await api.post('/auth/refresh', {}, { withCredentials: true })
-                localStorage.setItem('accessToken', data.access_token)
-                setUser(data.user)
-            } catch (err) {
-                setUser(null)
-                if (!isAxiosError(err) || (err.response?.status !== 401 && err.response?.status !== 403)) {
-                    throw err
-                }
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        checkAuth()
-    }, [])
-    
-    const register = async (email: string, name: string, surname: string, password: string) => {
-        try {
-            const { data } = await api.post('/user/register', { email, name, surname, password }, { withCredentials: true })
-            setUser(data.user)
-        } catch (error) {
-            console.error(error)
-            throw error
-        }
-    }
-
-    const login = async (email: string, password: string) => {
-        try {
-            const { data } = await api.post('/auth/login', { email, password }, { withCredentials: true })
-            setUser(data.user)
-            localStorage.setItem('accessToken', data.access_token)
-        } catch (error) {
-            setUser(null)
-            localStorage.removeItem('accessToken')
-            console.error(error)
-            throw error
-        }
-    }
-
-    const logout = async () => {
-        try {
-            await api.post('/auth/logout', {}, { withCredentials: true })
-        } catch (error) {
-            console.error(error)
-        } finally {
-            localStorage.removeItem('accessToken')
-            setUser(null)
-        }
-    }
-
-    return (
-        <AuthContext.Provider value={{ 
-            user, 
-            login, 
-            logout,
-            register,
-        }}>
-            { !loading && (children ?? <Outlet />) }
-        </AuthContext.Provider>
-    )
+  return <AuthProviderComponent>{children}</AuthProviderComponent>
 }

@@ -1,16 +1,6 @@
-import axios from 'axios'
-import { getApiBaseUrl } from './baseUrl'
+import { createApiClient } from './createApiClient'
 
-const adminApi = axios.create({
-    baseURL: getApiBaseUrl()
-})
-
-adminApi.interceptors.request.use(config => {
-    const token = localStorage.getItem('adminAccessToken')
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-})
+const adminApi = createApiClient('adminAccessToken')
 
 export default adminApi
+

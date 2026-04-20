@@ -137,7 +137,7 @@ export default function Explore() {
               <FileText size={14} />
               {t('explore.matched.viewDetails')}
             </button>
-            <button
+            <button 
               type="button"
               onClick={() => navigate(`/users/${matchedProposal.counterpartId}`)}
               className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:opacity-90 transition-opacity"
@@ -156,6 +156,8 @@ export default function Explore() {
       return
     }
 
+    const proposalId = currentProposal.id
+
     try {
       setLoadingLike(true)
       setProposals((previous) => previous.map((proposal, index) => {
@@ -172,8 +174,8 @@ export default function Explore() {
 
       const { data } = await api.post<{ liked: boolean; matchStatus: MatchStatus }>(`/project/proposals/${currentProposal.id}/like`)
 
-      setProposals((previous) => previous.map((proposal, index) => {
-        if (index !== currentIndex) {
+      setProposals((previous) => previous.map((proposal) => {
+        if (proposal.id !== proposalId) {
           return proposal
         }
 
@@ -183,9 +185,11 @@ export default function Explore() {
           matchStatus: data.matchStatus,
         }
       }))
+
+      setCurrentIndex((previous) => previous + 1)
     } catch (likeError) {
-      setProposals((previous) => previous.map((proposal, index) => {
-        if (index !== currentIndex) {
+      setProposals((previous) => previous.map((proposal) => {
+        if (proposal.id !== proposalId) {
           return proposal
         }
 
@@ -340,16 +344,6 @@ export default function Explore() {
           <p className="mt-4 text-center text-[11px] uppercase tracking-wider text-muted-foreground">
             {Math.min(currentIndex + 1, proposals.length)} de {proposals.length}
           </p>
-
-          {currentProposal.matchStatus === 'pending' && (
-              <p className="mt-3 text-center text-xs text-amber-600 font-medium">{t('explore.status.pending')}</p>
-          )}
-          {currentProposal.matchStatus === 'accepted' && (
-              <p className="mt-3 text-center text-xs text-emerald-600 font-medium">{t('explore.status.accepted')}</p>
-          )}
-          {currentProposal.matchStatus === 'rejected' && (
-              <p className="mt-3 text-center text-xs text-rose-600 font-medium">{t('explore.status.rejected')}</p>
-          )}
         </div>
       </div>
     </div>

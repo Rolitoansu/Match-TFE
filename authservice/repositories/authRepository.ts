@@ -2,39 +2,30 @@ import db from '@match-tfe/db'
 import { administrators, tags, userTags, users } from '@match-tfe/db/schema'
 import { eq } from 'drizzle-orm'
 
-export class AuthRepository {
-  async getUserSessionByEmail(email: string) {
-    const [user] = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        surname: users.surname,
-        registrationDate: users.registrationDate,
-        biography: users.biography,
-        notificationFrequency: users.notificationFrequency,
-        notificationReminderHour: users.notificationReminderHour,
-        role: users.role,
-      })
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1)
+const selectUserFields = {
+  id: users.id,
+  name: users.name,
+  surname: users.surname,
+  registrationDate: users.registrationDate,
+  biography: users.biography,
+  notificationFrequency: users.notificationFrequency,
+  notificationReminderHour: users.notificationReminderHour,
+  role: users.role,
+}
 
+export class AuthRepository {
+  private async findUserByEmail(email: string) {
+    const [user] = await db.select(selectUserFields).from(users).where(eq(users.email, email)).limit(1)
     return user ?? null
+  }
+
+  async getUserSessionByEmail(email: string) {
+    return this.findUserByEmail(email)
   }
 
   async getUserPasswordByEmail(email: string) {
     const [user] = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        surname: users.surname,
-        passwordHash: users.passwordHash,
-        registrationDate: users.registrationDate,
-        biography: users.biography,
-        notificationFrequency: users.notificationFrequency,
-        notificationReminderHour: users.notificationReminderHour,
-        role: users.role,
-      })
+      .select({ ...selectUserFields, passwordHash: users.passwordHash })
       .from(users)
       .where(eq(users.email, email))
       .limit(1)

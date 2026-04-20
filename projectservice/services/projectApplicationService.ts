@@ -646,17 +646,27 @@ export class ProjectApplicationService {
             throw new HttpError(400, { error: 'This proposal is not from the opposite role' })
         }
 
+        const existingInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id)
+
+        if (existingInteraction?.status === 'accepted') {
+            throw new HttpError(409, { error: 'Cannot remove an accepted match' })
+        }
+
         await this.projectRepository.transaction(async (trx) => {
-            const existingInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id, trx)
+            if (existingInteraction?.status === 'rejected') {
+                await this.projectRepository.deleteMatch(projectId, currentUser.id, trx)
+                return
+            }
 
             if (!existingInteraction) {
                 await this.projectRepository.insertMatch(projectId, currentUser.id, 'rejected', trx)
-            } else {
-                await this.projectRepository.updateMatchStatus(projectId, currentUser.id, 'rejected', trx)
+                return
             }
+
+            await this.projectRepository.updateMatchStatus(projectId, currentUser.id, 'rejected', trx)
         })
 
-        return { passed: true }
+        return { passed: !existingInteraction || existingInteraction.status !== 'rejected' }
     }
 
     async listAdminTags() {

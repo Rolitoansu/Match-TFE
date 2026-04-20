@@ -689,6 +689,7 @@ describe('ProjectApplicationService', () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
       .mockReturnValueOnce(createLimitChain([{ id: 5, studentId: null, tutorId: 2, status: 'proposed' }]) as any)
+      .mockReturnValueOnce(createLimitChain([]) as any)
     vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
       const trx = {
         select: vi.fn().mockReturnValue(createLimitChain([])),
@@ -702,6 +703,26 @@ describe('ProjectApplicationService', () => {
     const result = await service.passProposal('s@example.com', 5)
 
     expect(result.passed).toBe(true)
+  })
+
+  it('removes existing rejected pass on passProposal toggle', async () => {
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, studentId: null, tutorId: 2, status: 'proposed' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ status: 'rejected' }]) as any)
+
+    vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+      const trx = {
+        select: vi.fn(),
+        delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+      }
+      await cb(trx)
+    })
+
+    const service = new ProjectApplicationService()
+    const result = await service.passProposal('s@example.com', 5)
+
+    expect(result.passed).toBe(false)
   })
 
   it('throws 404 on passProposal when user is not found', async () => {
@@ -742,9 +763,9 @@ describe('ProjectApplicationService', () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
       .mockReturnValueOnce(createLimitChain([{ id: 5, studentId: null, tutorId: 2, status: 'proposed' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ status: 'pending' }]) as any)
     vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
       const trx = {
-        select: vi.fn().mockReturnValue(createLimitChain([{ status: 'pending' }])),
         insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
         update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) }),
       }

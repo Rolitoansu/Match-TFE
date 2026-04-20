@@ -1,5 +1,4 @@
 import express from 'express'
-import proxy from 'express-http-proxy'
 import cors from 'cors'
 import authRoutes from './routes/authRoutes'
 import userRoutes from './routes/userRoutes'

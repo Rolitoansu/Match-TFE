@@ -1,9 +1,11 @@
 -- Seed-only script.
 -- Schema is created by Drizzle from database/schema.ts via `db-init`.
+-- This script is idempotent and safe to run multiple times.
 
 -- Seed default admin user (password: admin123)
 INSERT INTO administrators (email, password_hash) VALUES
-    ('admin@matchtfe.com', '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i');
+    ('admin@matchtfe.com', '$2b$10$4hVb1Fxcv.Qbj2fCUkdcSO59YT4WvsoQi7LDHiIAfEF3FJIQXT43i')
+ON CONFLICT (email) DO NOTHING;
 
 -- Seed mock users (password for all: admin123)
 INSERT INTO users (name, surname, password_hash, email, biography, role) VALUES
@@ -38,7 +40,8 @@ INSERT INTO users (name, surname, password_hash, email, biography, role) VALUES
         'carlos.lopez@uni.es',
         'Estudiante con foco en ciberseguridad y sistemas distribuidos.',
         'student'
-    );
+    )
+ON CONFLICT (email) DO NOTHING;
 
 -- Seed tags
 INSERT INTO tags (name) VALUES

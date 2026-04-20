@@ -2,60 +2,54 @@ import db from '@match-tfe/db'
 import { matches, projects, projectTags, tags, userTags, users } from '@match-tfe/db/schema'
 import { and, desc, eq, inArray, or } from 'drizzle-orm'
 
+const selectFullUserFields = {
+  id: users.id,
+  name: users.name,
+  surname: users.surname,
+  email: users.email,
+  biography: users.biography,
+  role: users.role,
+  registrationDate: users.registrationDate,
+  notificationFrequency: users.notificationFrequency,
+  notificationReminderHour: users.notificationReminderHour,
+}
+
 export class UserRepository {
   transaction<T>(callback: (client: any) => Promise<T>) {
     return db.transaction(callback)
   }
 
   async findByEmail(email: string) {
-    const [user] = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        surname: users.surname,
-        email: users.email,
-        passwordHash: users.passwordHash,
-        registrationDate: users.registrationDate,
-        biography: users.biography,
-        notificationFrequency: users.notificationFrequency,
-        notificationReminderHour: users.notificationReminderHour,
-        role: users.role,
-      })
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1)
-
+    const [user] = await db.select(selectFullUserFields).from(users).where(eq(users.email, email)).limit(1)
     return user ?? null
   }
 
   async findById(userId: number) {
-    const [user] = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        surname: users.surname,
-        email: users.email,
-        biography: users.biography,
-        role: users.role,
-        registrationDate: users.registrationDate,
-        notificationFrequency: users.notificationFrequency,
-        notificationReminderHour: users.notificationReminderHour,
-      })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1)
-
+    const [user] = await db.select(selectFullUserFields).from(users).where(eq(users.id, userId)).limit(1)
     return user ?? null
   }
 
   async findRoleById(userId: number) {
-    const [user] = await db
-      .select({ id: users.id, role: users.role })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1)
-
+    const [user] = await db.select({ id: users.id, role: users.role }).from(users).where(eq(users.id, userId)).limit(1)
     return user ?? null
+  }
+
+  private async createUserWithRole(input: {
+    email: string
+    name: string
+    surname: string
+    passwordHash: string
+    registrationDate: Date
+  }, role: 'student' | 'professor', client: any = db) {
+    const insertion = client.insert(users).values({ ...input, role })
+
+    if (typeof insertion?.returning === 'function') {
+      const [createdUser] = await insertion.returning({ id: users.id })
+      return createdUser ?? null
+    }
+
+    await insertion
+    return null
   }
 
   async createStudent(input: {
@@ -65,25 +59,7 @@ export class UserRepository {
     passwordHash: string
     registrationDate: Date
   }, client: any = db) {
-    const insertion = client
-      .insert(users)
-      .values({
-        email: input.email,
-        name: input.name,
-        surname: input.surname,
-        passwordHash: input.passwordHash,
-        registrationDate: input.registrationDate,
-        role: 'student',
-      })
-
-    if (typeof insertion?.returning === 'function') {
-      const [createdUser] = await insertion.returning({ id: users.id })
-      return createdUser ?? null
-    }
-
-    await insertion
-
-    return null
+    return this.createUserWithRole(input, 'student', client)
   }
 
   async createProfessor(input: {
@@ -93,25 +69,7 @@ export class UserRepository {
     passwordHash: string
     registrationDate: Date
   }, client: any = db) {
-    const insertion = client
-      .insert(users)
-      .values({
-        email: input.email,
-        name: input.name,
-        surname: input.surname,
-        passwordHash: input.passwordHash,
-        registrationDate: input.registrationDate,
-        role: 'professor',
-      })
-
-    if (typeof insertion?.returning === 'function') {
-      const [createdUser] = await insertion.returning({ id: users.id })
-      return createdUser ?? null
-    }
-
-    await insertion
-
-    return null
+    return this.createUserWithRole(input, 'professor', client)
   }
 
   async getProposalsForUser(userId: number, role: 'student' | 'professor') {
