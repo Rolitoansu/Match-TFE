@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer'
 import { NotificationRepository } from '../repositories/notificationRepository'
+import { createNotificationMailClient, resolveNotificationSenderEmail, type NotificationMailClient } from './notificationMailClient'
 
 export class HttpError extends Error {
   constructor(
@@ -42,7 +42,13 @@ const REMINDER_INTERVAL_DAYS: Record<NotificationFrequency, number> = {
 }
 
 export class NotificationApplicationService {
-  private readonly notificationRepository = new NotificationRepository()
+  private readonly notificationRepository: NotificationRepository
+  private readonly mailClient: NotificationMailClient
+
+  constructor(dependencies?: { notificationRepository?: NotificationRepository; mailClient?: NotificationMailClient }) {
+    this.notificationRepository = dependencies?.notificationRepository ?? new NotificationRepository()
+    this.mailClient = dependencies?.mailClient ?? createNotificationMailClient()
+  }
 
   private getHourInTimezone(now: Date, timezone: string) {
     const rawHour = new Intl.DateTimeFormat('en-GB', {
@@ -216,8 +222,7 @@ export class NotificationApplicationService {
     }
 
     const subject = process.env.PENDING_MATCHES_SUBJECT ?? 'Resumen de notificaciones pendientes en Match-TFE'
-    const senderEmail = process.env.SMTP_FROM ?? process.env.SMTP_USER ?? 'no-reply@matchtfe.local'
-    const transporter = this.createTransporter()
+    const senderEmail = resolveNotificationSenderEmail()
 
     const sendResults = await Promise.allSettled(dueUsers.map(async (user) => {
       const unreadForUser = unreadByUserId.get(user.id) ?? []
@@ -239,7 +244,7 @@ export class NotificationApplicationService {
         ? `<p>Y ${unreadForUser.length - 10} notificaciones más sin leer.</p>`
         : ''
 
-      await transporter.sendMail({
+      await this.mailClient.sendMail({
         from: senderEmail,
         to: user.email,
         subject,
@@ -301,11 +306,10 @@ export class NotificationApplicationService {
       throw new HttpError(404, { error: 'No student recipients found' })
     }
 
-    const senderEmail = process.env.SMTP_FROM ?? process.env.SMTP_USER ?? 'no-reply@matchtfe.local'
-    const transporter = this.createTransporter()
+    const senderEmail = resolveNotificationSenderEmail()
 
     const sendResults = await Promise.allSettled(studentRows.map(async (student) => {
-      await transporter.sendMail({
+      await this.mailClient.sendMail({
         from: senderEmail,
         to: student.email,
         subject: input.subject,
@@ -329,23 +333,5 @@ export class NotificationApplicationService {
         ? 'Email delivery completed with partial failures'
         : 'Emails sent successfully',
     }
-  }
-
-  private createTransporter() {
-    const host = process.env.SMTP_HOST
-    const port = Number(process.env.SMTP_PORT ?? 587)
-    const user = process.env.SMTP_USER
-    const pass = process.env.SMTP_PASS
-
-    if (!host || !user || !pass) {
-      return nodemailer.createTransport({ jsonTransport: true })
-    }
-
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    })
   }
 }

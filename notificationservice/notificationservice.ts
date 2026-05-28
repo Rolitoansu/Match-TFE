@@ -8,7 +8,13 @@ const PORT = process.env.PORT || 5004
 const app = express()
 app.use(express.json())
 
-const notificationService = new NotificationApplicationService()
+let notificationService: NotificationApplicationService
+try {
+  notificationService = new NotificationApplicationService()
+} catch (error) {
+  console.error('[notificationservice] failed to initialize notification service:', error)
+  process.exit(1)
+}
 const pendingMatchesCron = process.env.PENDING_MATCHES_CRON ?? '0 * * * *'
 const pendingMatchesTimezone = process.env.NOTIFICATION_TIMEZONE ?? 'Europe/Madrid'
 

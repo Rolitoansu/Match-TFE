@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import nodemailer from 'nodemailer'
 import db from '@match-tfe/db'
 import { HttpError, NotificationApplicationService } from './notificationApplicationService'
-
-vi.mock('nodemailer', () => ({
-  default: { createTransport: vi.fn() },
-}))
 
 vi.mock('@match-tfe/db', () => ({
   default: {
@@ -57,7 +52,9 @@ describe('NotificationApplicationService', () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student', email: 's@example.com', name: 'Student' }]) as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail: vi.fn() },
+    })
 
     await expect(service.sendEmailToStudents({
       requesterEmail: 's@example.com',
@@ -71,13 +68,14 @@ describe('NotificationApplicationService', () => {
 
   it('sends emails to matched students', async () => {
     const sendMail = vi.fn().mockResolvedValue(undefined)
-    vi.mocked(nodemailer.createTransport).mockReturnValue({ sendMail } as any)
 
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 2, role: 'professor', email: 'p@example.com', name: 'Prof' }]) as any)
       .mockReturnValueOnce(createWhereChain([{ id: 10, email: 'st@example.com', name: 'Stu', surname: 'Dent' }]) as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail },
+    })
     const result = await service.sendEmailToStudents({
       requesterEmail: 'p@example.com',
       subject: 'Asunto de prueba',
@@ -98,7 +96,9 @@ describe('NotificationApplicationService', () => {
         { id: 11, type: 'info', content: 'B', read: true, timestamp: new Date() },
       ]) as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail: vi.fn() },
+    })
     const result = await service.listUserNotifications('student@example.com')
 
     expect(result.notifications).toHaveLength(2)
@@ -118,7 +118,9 @@ describe('NotificationApplicationService', () => {
       }),
     } as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail: vi.fn() },
+    })
     const result = await service.markNotificationAsRead('student@example.com', 10)
 
     expect(result.notification.read).toBe(true)
@@ -134,7 +136,9 @@ describe('NotificationApplicationService', () => {
       }),
     } as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail: vi.fn() },
+    })
     const result = await service.clearUserNotifications('student@example.com')
 
     expect(result.deleted).toBe(2)
@@ -145,7 +149,9 @@ describe('NotificationApplicationService', () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createWhereOrderChain([]) as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail: vi.fn() },
+    })
     const result = await service.sendUnreadNotificationsSummaryEmails('UTC')
 
     expect(result).toMatchObject({
@@ -178,7 +184,9 @@ describe('NotificationApplicationService', () => {
         },
       ]) as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail: vi.fn() },
+    })
     const result = await service.sendUnreadNotificationsSummaryEmails('UTC')
 
     expect(result.sent).toBe(0)
@@ -207,7 +215,9 @@ describe('NotificationApplicationService', () => {
         },
       ]) as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail: vi.fn() },
+    })
     const result = await service.sendUnreadNotificationsSummaryEmails('UTC')
 
     expect(result.sent).toBe(0)
@@ -216,7 +226,6 @@ describe('NotificationApplicationService', () => {
 
   it('sends unread notification summary when user is due', async () => {
     const sendMail = vi.fn().mockResolvedValue(undefined)
-    vi.mocked(nodemailer.createTransport).mockReturnValue({ sendMail } as any)
     const nowUtcHour = new Date().getUTCHours()
 
     vi.mocked(db.select)
@@ -245,11 +254,59 @@ describe('NotificationApplicationService', () => {
       }),
     } as any)
 
-    const service = new NotificationApplicationService()
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail },
+    })
     const result = await service.sendUnreadNotificationsSummaryEmails('UTC')
 
     expect(sendMail).toHaveBeenCalledOnce()
     expect(result.sent).toBe(1)
     expect(result.failed).toBe(0)
+  })
+
+  it('fails fast when Gmail configuration is missing', () => {
+    const previousProvider = process.env.NOTIFICATION_EMAIL_PROVIDER
+    const previousUser = process.env.GMAIL_USER
+    const previousClientId = process.env.GMAIL_CLIENT_ID
+    const previousClientSecret = process.env.GMAIL_CLIENT_SECRET
+    const previousRefreshToken = process.env.GMAIL_REFRESH_TOKEN
+
+    delete process.env.NOTIFICATION_EMAIL_PROVIDER
+    delete process.env.GMAIL_USER
+    delete process.env.GMAIL_CLIENT_ID
+    delete process.env.GMAIL_CLIENT_SECRET
+    delete process.env.GMAIL_REFRESH_TOKEN
+
+    expect(() => new NotificationApplicationService()).toThrow('Missing required environment variable: GMAIL_USER')
+
+    if (previousProvider === undefined) {
+      delete process.env.NOTIFICATION_EMAIL_PROVIDER
+    } else {
+      process.env.NOTIFICATION_EMAIL_PROVIDER = previousProvider
+    }
+
+    if (previousUser === undefined) {
+      delete process.env.GMAIL_USER
+    } else {
+      process.env.GMAIL_USER = previousUser
+    }
+
+    if (previousClientId === undefined) {
+      delete process.env.GMAIL_CLIENT_ID
+    } else {
+      process.env.GMAIL_CLIENT_ID = previousClientId
+    }
+
+    if (previousClientSecret === undefined) {
+      delete process.env.GMAIL_CLIENT_SECRET
+    } else {
+      process.env.GMAIL_CLIENT_SECRET = previousClientSecret
+    }
+
+    if (previousRefreshToken === undefined) {
+      delete process.env.GMAIL_REFRESH_TOKEN
+    } else {
+      process.env.GMAIL_REFRESH_TOKEN = previousRefreshToken
+    }
   })
 })

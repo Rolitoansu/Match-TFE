@@ -27,18 +27,21 @@ DB_USER=<admin_user>            # Admin name for the database instance
 DB_PASSWORD=<admin_password>    # Password for the database
 DB_NAME=<database_name>         # Name of the database       
 
-# Notification Service (SMTP)
-SMTP_HOST=<smtp_host>
-SMTP_PORT=<smtp_port>
-SMTP_USER=<smtp_user>
-SMTP_PASS=<smtp_password>
-SMTP_FROM=<optional_sender_email>
+# Notification Service (Gmail OAuth2)
+NOTIFICATION_EMAIL_PROVIDER=gmail
+GMAIL_USER=<gmail_account_sender>
+GMAIL_CLIENT_ID=<google_oauth_client_id>
+GMAIL_CLIENT_SECRET=<google_oauth_client_secret>
+GMAIL_REFRESH_TOKEN=<google_oauth_refresh_token>
+GMAIL_FROM=<optional_sender_email>
 NOTIFICATION_TIMEZONE=<optional_timezone>          # default: Europe/Madrid
 PENDING_MATCHES_CRON=<optional_cron_expression>    # default: 0 * * * * (hourly; filtered by each user's preferences)
 PENDING_MATCHES_SUBJECT=<optional_email_subject>
 ```
 
 Reminder emails are sent automatically per user based on their configured frequency and reminder hour, and include a summary of unread notifications.
+
+The notification service now uses Gmail with OAuth2 for production email delivery. If the Gmail variables are missing, the service fails fast on startup instead of silently falling back to a fake transport.
 
 ### 2. Launching the System
 
