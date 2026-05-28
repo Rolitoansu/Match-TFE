@@ -6,6 +6,8 @@ type Props = {
   proposal: Proposal
   onViewDetails: (proposalId: number) => void
   onToggleLike?: (proposalId: number) => void
+  onToggleFavorite?: (proposalId: number) => void
+  isFavorite?: boolean
   isLikeLoading?: boolean
   onTogglePass?: (proposalId: number) => void
   isPassLoading?: boolean
@@ -17,8 +19,9 @@ const STATUS_STYLE: Record<Proposal['status'], string> = {
   completed: 'bg-slate-100 text-slate-600',
 }
 
-export function ProposalCard({ proposal, onViewDetails, onToggleLike, isLikeLoading = false, onTogglePass, isPassLoading = false }: Props) {
+export function ProposalCard({ proposal, onViewDetails, onToggleLike, onToggleFavorite, isFavorite, isLikeLoading = false, onTogglePass, isPassLoading = false }: Props) {
   const { t } = useTranslation()
+  const liked = isFavorite ?? proposal.likedByCurrentUser
 
   const statusLabel: Record<Proposal['status'], string> = {
     proposed: t('proposals.status.open'),
@@ -106,19 +109,19 @@ export function ProposalCard({ proposal, onViewDetails, onToggleLike, isLikeLoad
           </div>
 
           <div className="flex w-full items-center gap-2 sm:w-auto">
-            {onToggleLike && (
+            {(onToggleLike || onToggleFavorite) && (
               <button
                 type="button"
                 className={`flex items-center justify-center rounded-xl p-2 transition-all disabled:opacity-60 ${
-                  proposal.likedByCurrentUser
+                  liked
                     ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
                     : 'bg-secondary text-foreground hover:bg-rose-50 hover:text-rose-600'
                 }`}
-                onClick={() => onToggleLike(proposal.id)}
+                onClick={() => (onToggleFavorite ? onToggleFavorite(proposal.id) : onToggleLike?.(proposal.id))}
                 disabled={isLikeLoading || isPassLoading || proposal.passedByCurrentUser}
                 title={t('proposals.addLike')}
               >
-                <Heart size={18} fill={proposal.likedByCurrentUser ? 'currentColor' : 'none'} />
+                <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
               </button>
             )}
             {onTogglePass && (
