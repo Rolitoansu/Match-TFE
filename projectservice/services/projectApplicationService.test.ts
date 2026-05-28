@@ -2,6 +2,12 @@
 import db from '@match-tfe/db'
 import { ProjectApplicationService } from './projectApplicationService'
 
+vi.mock('axios', () => ({
+  default: {
+    post: vi.fn(),
+  },
+}))
+
 vi.mock('@match-tfe/db', () => ({
   default: {
     select: vi.fn(),
@@ -434,6 +440,44 @@ describe('ProjectApplicationService', () => {
     expect(result.matchStatus).toBe('pending')
   })
 
+  it('sends a direct email notification to the proposal owner on like', async () => {
+    const previousNodeEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+
+    const axios = await import('axios')
+
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ id: 5, studentId: null, tutorId: 9, status: 'proposed', title: 'Mi TFE' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ status: 'pending' }]) as any)
+      .mockReturnValueOnce(createLimitChain([{ status: 'pending' }]) as any)
+    vi.mocked(db.transaction).mockImplementation(async (cb: any) => {
+      const trx = {
+        select: vi
+          .fn()
+          .mockReturnValueOnce(createLimitChain([]))
+          .mockReturnValueOnce(createLimitChain([])),
+        insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
+        update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) }),
+      }
+      await cb(trx)
+    })
+
+    const service = new ProjectApplicationService()
+    await service.likeProposal('s@example.com', 5)
+
+    expect(axios.default.post).toHaveBeenCalledWith(
+      expect.stringContaining('/users/email'),
+      expect.objectContaining({
+        userId: 9,
+        type: 'proposal_liked',
+        subject: 'Tu propuesta ha recibido un like',
+      })
+    )
+
+    process.env.NODE_ENV = previousNodeEnv
+  })
+
   it('throws 404 on likeProposal when proposal is unavailable', async () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
@@ -518,7 +562,7 @@ describe('ProjectApplicationService', () => {
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
       .mockReturnValueOnce(createLimitChain([{ status: 'pending' }]) as any)
 
-    vi.mocked(db.delete).mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) } as any)
+    vi.mocked(db.update).mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) } as any)
 
     const service = new ProjectApplicationService()
     const result = await service.toggleProposalLike('s@example.com', 5)
@@ -715,6 +759,7 @@ describe('ProjectApplicationService', () => {
       const trx = {
         select: vi.fn(),
         delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
+        update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) }),
       }
       await cb(trx)
     })

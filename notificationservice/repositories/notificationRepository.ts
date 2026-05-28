@@ -12,7 +12,7 @@ export class NotificationRepository {
   }
 
   async findUserById(userId: number) {
-    const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1)
+    const [user] = await db.select({ id: users.id, email: users.email, name: users.name }).from(users).where(eq(users.id, userId)).limit(1)
     return user ?? null
   }
 

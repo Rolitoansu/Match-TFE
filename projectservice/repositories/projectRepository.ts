@@ -181,7 +181,7 @@ export class ProjectRepository {
 
   async findExistingMatch(projectId: number, userId: number, client: any = db) {
     const [existingMatch] = await client
-      .select({ status: matches.status })
+      .select({ status: matches.status, updatedAt: matches.updatedAt })
       .from(matches)
       .where(and(eq(matches.projectId, projectId), eq(matches.userId, userId)))
       .limit(1)
@@ -190,8 +190,10 @@ export class ProjectRepository {
   }
 
   async deleteMatch(projectId: number, userId: number, client: any = db) {
+    // Mark as rejected and update timestamp instead of deleting, so we can debounce quick toggles
     await client
-      .delete(matches)
+      .update(matches)
+      .set({ status: 'rejected', updatedAt: new Date() })
       .where(and(eq(matches.projectId, projectId), eq(matches.userId, userId)))
   }
 
@@ -373,7 +375,7 @@ export class ProjectRepository {
 
     await client
       .update(matches)
-      .set({ status })
+      .set({ status, updatedAt: new Date() })
       .where(condition)
   }
 

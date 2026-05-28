@@ -88,6 +88,38 @@ describe('NotificationApplicationService', () => {
     expect(result.failed).toBe(0)
   })
 
+  it('creates a notification and sends a direct email to the recipient user', async () => {
+    const sendMail = vi.fn().mockResolvedValue(undefined)
+
+    vi.mocked(db.select)
+      .mockReturnValueOnce(createLimitChain([{ id: 2, role: 'professor', email: 'owner@example.com', name: 'Owner' }]) as any)
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([{ id: 99, email: 'owner@example.com', name: 'Owner' }]),
+      } as any)
+
+    vi.mocked(db.insert).mockReturnValueOnce({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: 123, type: 'proposal_liked', content: 'Tu propuesta "T" ha recibido un like.', read: false, timestamp: new Date() }]),
+      }),
+    } as any)
+
+    const service = new NotificationApplicationService({
+      mailClient: { sendMail },
+    })
+
+    const result = await service.sendUserEmail({
+      userId: 99,
+      type: 'proposal_liked',
+      subject: 'Tu propuesta ha recibido un like',
+      content: 'Tu propuesta "T" ha recibido un like.',
+    })
+
+    expect(sendMail).toHaveBeenCalledOnce()
+    expect(result.message).toBe('Email sent successfully')
+  })
+
   it('lists user notifications and calculates unread count', async () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1 }]) as any)

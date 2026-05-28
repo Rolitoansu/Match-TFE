@@ -24,6 +24,13 @@ type CreateUserNotificationInput = {
   content: string
 }
 
+type SendUserEmailInput = {
+  userId: number
+  type: string
+  subject: string
+  content: string
+}
+
 type UnreadNotificationRow = {
   userId: number
   type: string
@@ -116,6 +123,35 @@ export class NotificationApplicationService {
     return {
       notification: created,
       message: 'Notification created successfully',
+    }
+  }
+
+  async sendUserEmail(input: SendUserEmailInput) {
+    const recipient = await this.notificationRepository.findUserById(input.userId)
+
+    if (!recipient) {
+      throw new HttpError(404, { error: 'Notification recipient not found' })
+    }
+
+    const created = await this.notificationRepository.createNotification({
+      userId: input.userId,
+      type: input.type,
+      content: input.content,
+    })
+
+    const senderEmail = resolveNotificationSenderEmail()
+
+    await this.mailClient.sendMail({
+      from: senderEmail,
+      to: recipient.email,
+      subject: input.subject,
+      text: input.content,
+      html: `<p>${input.content.replace(/\n/g, '<br/>')}</p>`,
+    })
+
+    return {
+      notification: created,
+      message: 'Email sent successfully',
     }
   }
 

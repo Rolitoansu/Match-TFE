@@ -45,6 +45,23 @@ export class ProjectApplicationService {
         }
     }
 
+    private async sendProposalLikeEmail(userId: number, proposalTitle: string) {
+        if (process.env.NODE_ENV === 'test') {
+            return
+        }
+
+        try {
+            await axios.post(`${NOTIFICATION_SERVICE_URL}/users/email`, {
+                userId,
+                type: 'proposal_liked',
+                subject: 'Tu propuesta ha recibido un like',
+                content: `Tu propuesta "${proposalTitle}" ha recibido un like.`,
+            })
+        } catch (error) {
+            console.warn('[projectservice] direct like email dispatch failed:', error)
+        }
+    }
+
     private async getUserWithRole(userEmail: string): Promise<CurrentUser | null> {
         return this.projectRepository.getCurrentUserByEmail(userEmail)
     }
@@ -512,12 +529,23 @@ export class ProjectApplicationService {
 
             const existingInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id, trx)
 
+            const lapseSeconds = Number(process.env.LIKE_LAPSE_SECONDS ?? '30')
+            const now = Date.now()
+
             if (!existingInteraction) {
                 await this.projectRepository.insertMatch(projectId, currentUser.id, 'pending', trx)
             } else if (existingInteraction.status !== 'accepted') {
-                await this.projectRepository.updateMatchStatus(projectId, currentUser.id, 'pending', trx)
+                // Debounce rapid unlike/like: if last updated within lapseSeconds, do not count as new like
+                const lastUpdated = existingInteraction.updatedAt ? new Date(existingInteraction.updatedAt).getTime() : 0
+                if (now - lastUpdated >= lapseSeconds * 1000) {
+                    await this.projectRepository.updateMatchStatus(projectId, currentUser.id, 'pending', trx)
+                }
             }
         })
+
+        if (ownerId) {
+            await this.sendProposalLikeEmail(ownerId, proposal.title)
+        }
 
         const updatedInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id)
 
@@ -542,6 +570,19 @@ export class ProjectApplicationService {
         }
 
         if (existingInteraction?.status === 'pending') {
+            const lapseSeconds = Number(process.env.LIKE_LAPSE_SECONDS ?? '30')
+            const now = Date.now()
+            const lastUpdated = existingInteraction.updatedAt ? new Date(existingInteraction.updatedAt).getTime() : 0
+
+            // If the user toggles like very quickly, ignore the removal (debounce)
+            if (now - lastUpdated < lapseSeconds * 1000) {
+                return {
+                    liked: true,
+                    matchStatus: 'pending',
+                    matched: false,
+                }
+            }
+
             await this.projectRepository.deleteMatch(projectId, currentUser.id)
 
             return {

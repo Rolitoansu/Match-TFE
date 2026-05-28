@@ -38,6 +38,7 @@ export const matches = pgTable('matches', {
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   projectId: integer('project_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
   status: matchStatusEnum('status').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.projectId, table.userId] }),
 ])

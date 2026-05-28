@@ -1,6 +1,6 @@
 import express from 'express'
 import cron from 'node-cron'
-import { createUserNotificationSchema, notificationIdParamsSchema, validate, sendStudentsEmailSchema } from './validate'
+import { createUserNotificationSchema, notificationIdParamsSchema, sendStudentsEmailSchema, sendUserEmailNotificationSchema, validate } from './validate'
 import { HttpError, NotificationApplicationService } from './services/notificationApplicationService'
 
 const PORT = process.env.PORT || 5004
@@ -67,6 +67,21 @@ app.post('/students/email', validate(sendStudentsEmailSchema), async (req, res) 
     return res.json(result)
   } catch (error) {
     return handleServiceError(error, res, 'Error sending notification emails')
+  }
+})
+
+app.post('/users/email', validate(sendUserEmailNotificationSchema), async (req, res) => {
+  try {
+    const result = await notificationService.sendUserEmail({
+      userId: req.body.userId,
+      type: req.body.type,
+      subject: req.body.subject,
+      content: req.body.content,
+    })
+
+    return res.status(201).json(result)
+  } catch (error) {
+    return handleServiceError(error, res, 'Error sending direct notification email')
   }
 })
 

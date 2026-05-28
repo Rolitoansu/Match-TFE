@@ -28,6 +28,13 @@ export const createUserNotificationSchema = z.object({
   content: z.string('Expected content').trim().min(5, 'Content is too short').max(2000, 'Content is too long'),
 })
 
+export const sendUserEmailNotificationSchema = z.object({
+  userId: z.number('Expected userId').int().positive(),
+  type: z.string('Expected type').trim().min(2, 'Type is too short').max(50, 'Type is too long'),
+  subject: z.string('Expected subject').trim().min(3, 'Subject is too short').max(140, 'Subject is too long'),
+  content: z.string('Expected content').trim().min(5, 'Content is too short').max(5000, 'Content is too long'),
+})
+
 export const notificationIdParamsSchema = z.object({
   id: z.coerce.number('Expected notification id').int().positive(),
 })
