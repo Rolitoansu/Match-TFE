@@ -6,3 +6,7 @@ packages:
   - 'notificationservice'
   - 'gatewayservice'
   - 'database'
+
+allowBuilds:
+  bcrypt: true
+  esbuild: true
