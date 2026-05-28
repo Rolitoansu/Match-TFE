@@ -7,6 +7,12 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    allowedHosts: ['match-tfe.duckdns.org', 'localhost', '127.0.0.1']
+  },
+  preview: {
+    allowedHosts: ['match-tfe.duckdns.org', 'localhost', '127.0.0.1']
+  },
   test: {
     browser: {
       enabled: true,
