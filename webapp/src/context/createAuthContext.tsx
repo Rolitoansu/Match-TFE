@@ -57,11 +57,11 @@ export function createAuthProvider(
       checkAuth()
     }, [])
 
-    const login = async (credentials: any) => {
+    const login = async (email: string, password: string) => {
       try {
         const response = await config.api.post(
           config.loginEndpoint,
-          credentials,
+          { email, password },
           { withCredentials: true }
         )
         const { access_token } = response.data
