@@ -3,7 +3,7 @@ name: match-tfe-release
 services:
   postgres:
     container_name: database-matchtfe-release
-    image: postgres:18-alpine
+    image: postgres:17-alpine
     restart: unless-stopped
     ports:
       - "127.0.0.1:${DB_PORT}:${DB_PORT}"

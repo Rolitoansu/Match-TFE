@@ -37,7 +37,7 @@ services:
 
   db-seed:
     container_name: dbseed-matchtfe
-    image: postgres:18-alpine
+    image: postgres:17-alpine
     profiles:
       - seed
     command:
