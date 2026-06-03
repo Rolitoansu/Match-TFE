@@ -1,7 +1,7 @@
 FROM node:25.7-alpine AS development
 WORKDIR /usr/src/gatewayservice
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8
 COPY . .
 
 RUN pnpm install
@@ -12,7 +12,7 @@ CMD ["pnpm", "run", "dev"]
 FROM node:25.7-alpine AS release
 WORKDIR /usr/src/gatewayservice
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8
 COPY . .
 
 RUN pnpm install

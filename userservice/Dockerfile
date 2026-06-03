@@ -1,6 +1,6 @@
 FROM node:25-alpine AS development
 WORKDIR /usr/src
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY userservice/ ./userservice/
@@ -14,7 +14,7 @@ CMD ["pnpm", "run", "dev"]
 
 FROM node:25-alpine AS release
 WORKDIR /usr/src
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY userservice/ ./userservice/

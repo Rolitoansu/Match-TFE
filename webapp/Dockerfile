@@ -1,6 +1,6 @@
 FROM node:25.7-alpine AS development
 WORKDIR /app
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8
 
 COPY ./webapp ./
 RUN pnpm install
@@ -10,7 +10,7 @@ CMD ["pnpm", "run", "dev"]
 
 FROM node:25.7-alpine AS build
 WORKDIR /app
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8
 
 COPY ./webapp ./
 RUN pnpm install
