@@ -299,15 +299,11 @@ describe('NotificationApplicationService', () => {
   it('fails fast when Gmail configuration is missing', () => {
     const previousProvider = process.env.NOTIFICATION_EMAIL_PROVIDER
     const previousUser = process.env.GMAIL_USER
-    const previousClientId = process.env.GMAIL_CLIENT_ID
-    const previousClientSecret = process.env.GMAIL_CLIENT_SECRET
-    const previousRefreshToken = process.env.GMAIL_REFRESH_TOKEN
+    const previousAppPassword = process.env.GMAIL_APP_PASSWORD
 
     delete process.env.NOTIFICATION_EMAIL_PROVIDER
     delete process.env.GMAIL_USER
-    delete process.env.GMAIL_CLIENT_ID
-    delete process.env.GMAIL_CLIENT_SECRET
-    delete process.env.GMAIL_REFRESH_TOKEN
+    delete process.env.GMAIL_APP_PASSWORD
 
     expect(() => new NotificationApplicationService()).toThrow('Missing required environment variable: GMAIL_USER')
 
@@ -323,22 +319,10 @@ describe('NotificationApplicationService', () => {
       process.env.GMAIL_USER = previousUser
     }
 
-    if (previousClientId === undefined) {
-      delete process.env.GMAIL_CLIENT_ID
+    if (previousAppPassword === undefined) {
+      delete process.env.GMAIL_APP_PASSWORD
     } else {
-      process.env.GMAIL_CLIENT_ID = previousClientId
-    }
-
-    if (previousClientSecret === undefined) {
-      delete process.env.GMAIL_CLIENT_SECRET
-    } else {
-      process.env.GMAIL_CLIENT_SECRET = previousClientSecret
-    }
-
-    if (previousRefreshToken === undefined) {
-      delete process.env.GMAIL_REFRESH_TOKEN
-    } else {
-      process.env.GMAIL_REFRESH_TOKEN = previousRefreshToken
+      process.env.GMAIL_APP_PASSWORD = previousAppPassword
     }
   })
 })
