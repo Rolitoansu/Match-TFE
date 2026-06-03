@@ -41,10 +41,11 @@ services:
     image: postgres:18-alpine
     profiles:
       - seed
+    # CORREGIDO: Apunta al servicio correcto y al puerto interno real de Docker (5432)
     command:
       - sh
       - -c
-      - PGPASSWORD="$DB_PASSWORD" psql -h postgres -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f /seed/init.sql
+      - PGPASSWORD="$DB_PASSWORD" psql -h postgres -p 5432 -U "$DB_USER" -d "$DB_NAME" -f /seed/init.sql
     depends_on:
       postgres:
         condition: service_healthy
@@ -184,6 +185,7 @@ services:
 networks:
   match_network_release:
     driver: bridge
+    name: match_network_release
 
 volumes:
   postgres_data_release:
