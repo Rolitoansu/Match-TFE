@@ -51,8 +51,6 @@ services:
         condition: service_completed_successfully
     env_file:
       - .env
-    volumes:
-      - ./init.sql:/seed/init.sql:ro
     networks:
       - match_network
 
