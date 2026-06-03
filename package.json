@@ -9,6 +9,10 @@
     "webapp"
   ],
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@swc/core",
+      "core-js"
+    ]
   }
 }
