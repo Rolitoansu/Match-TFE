@@ -145,8 +145,8 @@ services:
   gatewayservice:
     container_name: gatewayservice-matchtfe-release
     build:
-      context: ./gatewayservice
-      dockerfile: ./Dockerfile
+      context: .
+      dockerfile: ./gatewayservice/Dockerfile
       target: release
     restart: unless-stopped
     depends_on:
