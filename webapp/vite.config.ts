@@ -20,6 +20,10 @@ export default defineConfig({
       instances: [
         { browser: 'chromium' }
       ]
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
     }
   }
 })
