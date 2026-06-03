@@ -9,7 +9,7 @@
     "webapp"
   ],
   "scripts": {
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "pnpm -r run test:coverage"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -17,9 +17,5 @@
       "@swc/core",
       "core-js"
     ]
-  },
-  "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.8",
-    "vitest": "^4.1.8"
   }
 }
