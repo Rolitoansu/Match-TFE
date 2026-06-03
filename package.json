@@ -8,11 +8,18 @@
     "gatewayservice",
     "webapp"
   ],
+  "scripts": {
+    "test:coverage": "vitest run --coverage"
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
       "@swc/core",
       "core-js"
     ]
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.8",
+    "vitest": "^4.1.8"
   }
 }
