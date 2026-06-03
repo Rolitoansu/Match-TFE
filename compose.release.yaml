@@ -185,7 +185,7 @@ services:
 networks:
   match_network_release:
     driver: bridge
-    name: match_network_release
+    name: match_network_release_v2
 
 volumes:
   postgres_data_release:
