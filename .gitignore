@@ -12,7 +12,6 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-pnpm-lock.yaml
 dist
 dist-ssr
 *.local
@@ -30,3 +29,6 @@ dist-ssr
 
 # System Files
 .env
+
+# Coverage files
+coverage
