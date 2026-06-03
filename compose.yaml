@@ -246,6 +246,7 @@ services:
 networks:
   match_network:
     driver: bridge
+    name: match_tfe_network
 
 volumes:
   postgres_data:

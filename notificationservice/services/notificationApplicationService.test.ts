@@ -65,7 +65,7 @@ function createOrderLimitChain<T>(rows: T[]) {
 
 describe('NotificationApplicationService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('throws 403 when requester is not professor', async () => {
