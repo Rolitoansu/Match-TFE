@@ -440,12 +440,7 @@ describe('ProjectApplicationService', () => {
     expect(result.matchStatus).toBe('pending')
   })
 
-  it('sends a direct email notification to the proposal owner on like', async () => {
-    const previousNodeEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'production'
-
-    const axios = await import('axios')
-
+  it('does not send a direct email notification on like', async () => {
     vi.mocked(db.select)
       .mockReturnValueOnce(createLimitChain([{ id: 1, role: 'student' }]) as any)
       .mockReturnValueOnce(createLimitChain([{ id: 5, studentId: null, tutorId: 9, status: 'proposed', title: 'Mi TFE' }]) as any)
@@ -466,16 +461,11 @@ describe('ProjectApplicationService', () => {
     const service = new ProjectApplicationService()
     await service.likeProposal('s@example.com', 5)
 
-    expect(axios.default.post).toHaveBeenCalledWith(
+    const axios = await import('axios')
+    expect(axios.default.post).not.toHaveBeenCalledWith(
       expect.stringContaining('/users/email'),
-      expect.objectContaining({
-        userId: 9,
-        type: 'proposal_liked',
-        subject: 'Tu propuesta ha recibido un like',
-      })
+      expect.anything()
     )
-
-    process.env.NODE_ENV = previousNodeEnv
   })
 
   it('throws 404 on likeProposal when proposal is unavailable', async () => {

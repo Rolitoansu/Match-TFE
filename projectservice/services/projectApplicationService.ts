@@ -45,23 +45,6 @@ export class ProjectApplicationService {
         }
     }
 
-    private async sendProposalLikeEmail(userId: number, proposalTitle: string) {
-        if (process.env.NODE_ENV === 'test') {
-            return
-        }
-
-        try {
-            await axios.post(`${NOTIFICATION_SERVICE_URL}/users/email`, {
-                userId,
-                type: 'proposal_liked',
-                subject: 'Tu propuesta ha recibido un like',
-                content: `Tu propuesta "${proposalTitle}" ha recibido un like.`,
-            })
-        } catch (error) {
-            console.warn('[projectservice] direct like email dispatch failed:', error)
-        }
-    }
-
     private async getUserWithRole(userEmail: string): Promise<CurrentUser | null> {
         return this.projectRepository.getCurrentUserByEmail(userEmail)
     }
@@ -542,10 +525,6 @@ export class ProjectApplicationService {
                 }
             }
         })
-
-        if (ownerId) {
-            await this.sendProposalLikeEmail(ownerId, proposal.title)
-        }
 
         const updatedInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id)
 

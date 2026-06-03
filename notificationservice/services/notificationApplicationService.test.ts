@@ -12,35 +12,55 @@ vi.mock('@match-tfe/db', () => ({
 }))
 
 function createLimitChain<T>(rows: T[]) {
-  return {
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
+  const chain = {
+    from: vi.fn(),
+    where: vi.fn(),
     limit: vi.fn().mockResolvedValue(rows),
   }
+
+  chain.from.mockReturnValue(chain)
+  chain.where.mockReturnValue(chain)
+
+  return chain
 }
 
 function createWhereChain<T>(rows: T[]) {
-  return {
-    from: vi.fn().mockReturnThis(),
+  const chain = {
+    from: vi.fn(),
     where: vi.fn().mockResolvedValue(rows),
   }
+
+  chain.from.mockReturnValue(chain)
+
+  return chain
 }
 
 function createWhereOrderChain<T>(rows: T[]) {
-  return {
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
+  const chain = {
+    from: vi.fn(),
+    where: vi.fn(),
     orderBy: vi.fn().mockResolvedValue(rows),
   }
+
+  chain.from.mockReturnValue(chain)
+  chain.where.mockReturnValue(chain)
+
+  return chain
 }
 
 function createOrderLimitChain<T>(rows: T[]) {
-  return {
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    orderBy: vi.fn().mockReturnThis(),
+  const chain = {
+    from: vi.fn(),
+    where: vi.fn(),
+    orderBy: vi.fn(),
     limit: vi.fn().mockResolvedValue(rows),
   }
+
+  chain.from.mockReturnValue(chain)
+  chain.where.mockReturnValue(chain)
+  chain.orderBy.mockReturnValue(chain)
+
+  return chain
 }
 
 describe('NotificationApplicationService', () => {

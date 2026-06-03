@@ -48,6 +48,47 @@ const REMINDER_INTERVAL_DAYS: Record<NotificationFrequency, number> = {
   monthly: 30,
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function multilineToHtml(value: string) {
+  return value
+    .split('\n')
+    .map((line) => line.trim().length > 0
+      ? `<p style="margin:0 0 12px;line-height:1.6;color:#334155;">${escapeHtml(line)}</p>`
+      : '<div style="height:12px"></div>')
+    .join('')
+}
+
+function buildEmailShell(input: { title: string; intro: string; bodyHtml: string; footer: string }) {
+  return `<!doctype html>
+<html lang="es">
+  <body style="margin:0;padding:0;background:#eef2ff;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+    <div style="max-width:720px;margin:0 auto;padding:32px 16px;">
+      <div style="border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,.12);background:#ffffff;">
+        <div style="padding:28px 32px;background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);color:#fff;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;opacity:.85;">Match-TFE</div>
+          <h1 style="margin:10px 0 0;font-size:28px;line-height:1.2;">${escapeHtml(input.title)}</h1>
+        </div>
+        <div style="padding:32px;">
+          <p style="margin:0 0 20px;font-size:16px;line-height:1.7;color:#334155;">${escapeHtml(input.intro)}</p>
+          ${input.bodyHtml}
+          <div style="margin-top:28px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:13px;line-height:1.6;color:#64748b;">
+            ${escapeHtml(input.footer)}
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>`
+}
+
 export class NotificationApplicationService {
   private readonly notificationRepository: NotificationRepository
   private readonly mailClient: NotificationMailClient
@@ -146,7 +187,14 @@ export class NotificationApplicationService {
       to: recipient.email,
       subject: input.subject,
       text: input.content,
-      html: `<p>${input.content.replace(/\n/g, '<br/>')}</p>`,
+      html: buildEmailShell({
+        title: input.subject,
+        intro: 'Se ha generado una nueva notificación en Match-TFE.',
+        bodyHtml: `<div style="padding:18px 20px;border:1px solid #dbeafe;border-radius:18px;background:#f8fbff;">
+          ${multilineToHtml(input.content)}
+        </div>`,
+        footer: 'Si no esperabas este mensaje, puedes ignorarlo.',
+      }),
     })
 
     return {
@@ -274,10 +322,10 @@ export class NotificationApplicationService {
       const text = `Hola ${user.name},\n\nTienes ${unreadForUser.length} notificaciones sin leer en Match-TFE.\n\nResumen:\n${lines.join('\n')}${moreLine}\n\nEntra en la plataforma para revisarlas.\n\nUn saludo,\nEquipo Match-TFE`
       const htmlItems = unreadForUser
         .slice(0, 10)
-        .map((notification) => `<li><strong>[${notification.type}]</strong> ${notification.content}</li>`)
+        .map((notification) => `<li style="margin:0 0 12px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc;"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2563eb;margin-bottom:6px;">${escapeHtml(notification.type)}</div><div style="font-size:15px;line-height:1.6;color:#0f172a;">${escapeHtml(notification.content).replace(/\n/g, '<br/>')}</div></li>`)
         .join('')
       const htmlMoreLine = unreadForUser.length > 10
-        ? `<p>Y ${unreadForUser.length - 10} notificaciones más sin leer.</p>`
+        ? `<p style="margin:16px 0 0;color:#475569;">Y ${unreadForUser.length - 10} notificaciones más sin leer.</p>`
         : ''
 
       await this.mailClient.sendMail({
@@ -285,7 +333,19 @@ export class NotificationApplicationService {
         to: user.email,
         subject,
         text,
-        html: `<p>Hola ${user.name},</p><p>Tienes <strong>${unreadForUser.length}</strong> notificaciones sin leer en Match-TFE.</p><p>Resumen:</p><ol>${htmlItems}</ol>${htmlMoreLine}<p>Entra en la plataforma para revisarlas.</p><p>Un saludo,<br/>Equipo Match-TFE</p>`,
+        html: buildEmailShell({
+          title: 'Resumen de notificaciones pendientes',
+          intro: `Hola ${user.name}, tienes ${unreadForUser.length} notificaciones sin leer en Match-TFE.`,
+          bodyHtml: `<div style="margin:0 0 24px;padding:20px;border-radius:18px;background:linear-gradient(180deg,#eff6ff 0%,#ffffff 100%);border:1px solid #bfdbfe;">
+            <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#2563eb;margin-bottom:6px;">Pendientes</div>
+            <div style="font-size:42px;line-height:1;font-weight:800;color:#0f172a;">${unreadForUser.length}</div>
+            <div style="margin-top:8px;font-size:14px;line-height:1.6;color:#475569;">Este resumen se genera automáticamente con el cronjob programado.</div>
+          </div>
+          <div style="margin-bottom:10px;font-size:15px;font-weight:700;color:#0f172a;">Resumen</div>
+          <ul style="list-style:none;padding:0;margin:0;">${htmlItems}</ul>
+          ${htmlMoreLine}`,
+          footer: 'Entra en Match-TFE para revisarlas. Un saludo, Equipo Match-TFE.',
+        }),
       })
 
       return user.email
@@ -350,7 +410,14 @@ export class NotificationApplicationService {
         to: student.email,
         subject: input.subject,
         text: input.message,
-        html: `<p>${input.message.replace(/\n/g, '<br/>')}</p>`,
+        html: buildEmailShell({
+          title: input.subject,
+          intro: `Hola ${student.name}, tienes un mensaje nuevo en Match-TFE.`,
+          bodyHtml: `<div style="padding:18px 20px;border:1px solid #dbeafe;border-radius:18px;background:#f8fbff;">
+            ${multilineToHtml(input.message)}
+          </div>`,
+          footer: 'Mensaje enviado desde Match-TFE.',
+        }),
       })
       return student.email
     }))
