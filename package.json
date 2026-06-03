@@ -7,5 +7,8 @@
     "userservice",
     "gatewayservice",
     "webapp"
-  ]
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
 }
