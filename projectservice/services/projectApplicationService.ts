@@ -528,6 +528,14 @@ export class ProjectApplicationService {
 
         const updatedInteraction = await this.projectRepository.findExistingMatch(projectId, currentUser.id)
 
+        if (ownerId) {
+            await this.sendNotification(
+                ownerId,
+                'proposal_liked',
+                `Tu propuesta "${proposal.title}" ha recibido un like.`
+            )
+        }
+
         return {
             liked: true,
             matchStatus: updatedInteraction?.status ?? 'pending',
@@ -616,7 +624,7 @@ export class ProjectApplicationService {
             await this.projectRepository.updateMatchStatus(projectId, interestedUserId, 'accepted', trx)
             await this.projectRepository.updateProjectStatusInTransaction(projectId, 'in_progress', trx)
         })
-
+        
         await this.sendNotification(
             interestedUserId,
             'match_available',

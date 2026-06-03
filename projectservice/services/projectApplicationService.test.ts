@@ -215,6 +215,8 @@ describe('ProjectApplicationService', () => {
       await cb(trx)
     })
 
+    vi.mocked(db.update).mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) } as any)
+
     const service = new ProjectApplicationService()
     await expect(service.createProposal('s@example.com', { title: 'T', type: 2, tags: ['IA', 'Cloud'] })).rejects.toMatchObject({
       status: 400,

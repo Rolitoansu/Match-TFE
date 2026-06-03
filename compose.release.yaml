@@ -38,10 +38,9 @@ services:
 
   db-seed:
     container_name: dbseed-matchtfe-release
-    image: postgres:18-alpine
+    image: postgres:17-alpine
     profiles:
       - seed
-    # CORREGIDO: Apunta al servicio correcto y al puerto interno real de Docker (5432)
     command:
       - sh
       - -c
