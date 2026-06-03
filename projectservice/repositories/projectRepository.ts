@@ -190,10 +190,8 @@ export class ProjectRepository {
   }
 
   async deleteMatch(projectId: number, userId: number, client: any = db) {
-    // Mark as rejected and update timestamp instead of deleting, so we can debounce quick toggles
     await client
-      .update(matches)
-      .set({ status: 'rejected', updatedAt: new Date() })
+      .delete(matches)
       .where(and(eq(matches.projectId, projectId), eq(matches.userId, userId)))
   }
 

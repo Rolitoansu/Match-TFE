@@ -549,19 +549,6 @@ export class ProjectApplicationService {
         }
 
         if (existingInteraction?.status === 'pending') {
-            const lapseSeconds = Number(process.env.LIKE_LAPSE_SECONDS ?? '30')
-            const now = Date.now()
-            const lastUpdated = existingInteraction.updatedAt ? new Date(existingInteraction.updatedAt).getTime() : 0
-
-            // If the user toggles like very quickly, ignore the removal (debounce)
-            if (now - lastUpdated < lapseSeconds * 1000) {
-                return {
-                    liked: true,
-                    matchStatus: 'pending',
-                    matched: false,
-                }
-            }
-
             await this.projectRepository.deleteMatch(projectId, currentUser.id)
 
             return {

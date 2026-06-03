@@ -553,6 +553,7 @@ describe('ProjectApplicationService', () => {
       .mockReturnValueOnce(createLimitChain([{ status: 'pending' }]) as any)
 
     vi.mocked(db.update).mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) } as any)
+    vi.mocked(db.delete).mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) } as any)
 
     const service = new ProjectApplicationService()
     const result = await service.toggleProposalLike('s@example.com', 5)
