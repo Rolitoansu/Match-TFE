@@ -7,7 +7,7 @@ COPY . .
 RUN pnpm install
 
 EXPOSE 8000
-CMD ["pnpm", "run", "dev"]
+CMD ["pnpm", "--filter", "@match-tfe/gatewayservice", "run", "dev"]
 
 FROM node:25.7-alpine AS release
 WORKDIR /usr/src/gatewayservice
@@ -19,4 +19,4 @@ RUN pnpm install
 
 ENV NODE_ENV=production
 EXPOSE 8000
-CMD ["pnpm", "exec", "tsx", "gatewayservice.ts"]
+CMD ["pnpm", "--filter", "@match-tfe/gatewayservice", "exec", "tsx", "gatewayservice.ts"]
