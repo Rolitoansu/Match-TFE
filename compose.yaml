@@ -2,7 +2,7 @@ name: match-tfe
 services:
   postgres:
     container_name: database-matchtfe
-    image: postgres:18-alpine
+    image: postgres:17-alpine
     restart: always
     ports:
       - "${DB_PORT}:${DB_PORT}"
@@ -36,14 +36,14 @@ services:
       - match_network
 
   db-seed:
-    container_name: dbseed-matchtfe
+    container_name: dbseed-matchtfe-release
     image: postgres:17-alpine
     profiles:
       - seed
     command:
       - sh
       - -c
-      - PGPASSWORD="$DB_PASSWORD" psql -h postgres -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f /seed/init.sql
+      - PGPASSWORD="$DB_PASSWORD" psql -h postgres -p 5432 -U "$DB_USER" -d "$DB_NAME" -f /seed/init.sql
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,6 +51,8 @@ services:
         condition: service_completed_successfully
     env_file:
       - .env
+    volumes:
+      - ./init.sql:/seed/init.sql:ro
     networks:
       - match_network
 
@@ -246,7 +248,6 @@ services:
 networks:
   match_network:
     driver: bridge
-    name: match_tfe_network
 
 volumes:
   postgres_data:
