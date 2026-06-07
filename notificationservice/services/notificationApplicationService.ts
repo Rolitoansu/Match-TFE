@@ -339,7 +339,6 @@ export class NotificationApplicationService {
           bodyHtml: `<div style="margin:0 0 24px;padding:20px;border-radius:18px;background:linear-gradient(180deg,#eff6ff 0%,#ffffff 100%);border:1px solid #bfdbfe;">
             <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#2563eb;margin-bottom:6px;">Pendientes</div>
             <div style="font-size:42px;line-height:1;font-weight:800;color:#0f172a;">${unreadForUser.length}</div>
-            <div style="margin-top:8px;font-size:14px;line-height:1.6;color:#475569;">Este resumen se genera automáticamente con el cronjob programado.</div>
           </div>
           <div style="margin-bottom:10px;font-size:15px;font-weight:700;color:#0f172a;">Resumen</div>
           <ul style="list-style:none;padding:0;margin:0;">${htmlItems}</ul>
