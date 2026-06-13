@@ -3,13 +3,9 @@ import { render } from 'vitest-browser-react'
 import type { StatusTab } from '../model/proposalTypes'
 import { ProposalsTabs } from './ProposalsTabs'
 
-// ─── Mock ─────────────────────────────────────────────────────────────────────
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
-
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const TABS: Array<{ id: StatusTab; label: string }> = [
   { id: 'all', label: 'proposals.tabs.all' },
@@ -17,8 +13,6 @@ const TABS: Array<{ id: StatusTab; label: string }> = [
   { id: 'in_progress', label: 'proposals.tabs.inProgress' },
   { id: 'completed', label: 'proposals.tabs.completed' },
 ]
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 test('renders all four tab labels', async () => {
   const screen = await render(<ProposalsTabs selectedTab="all" onSelectTab={() => {}} />)
@@ -31,7 +25,6 @@ test('renders all four tab labels', async () => {
 test('the active tab button carries the primary text colour class', async () => {
   const screen = await render(<ProposalsTabs selectedTab="open" onSelectTab={() => {}} />)
 
-  // Find the button by its accessible role and name to target the element, not a text node
   const activeButton = screen.getByRole('button', { name: 'proposals.tabs.open' })
   await expect.element(activeButton).toHaveClass('text-primary')
 })
@@ -52,7 +45,6 @@ test.each(TABS)(
       <ProposalsTabs selectedTab="completed" onSelectTab={onSelectTab} />,
     )
 
-    // Use getByRole to click the button element itself, not a descendant text node
     await screen.getByRole('button', { name: label }).click()
     expect(onSelectTab).toHaveBeenCalledWith(id)
   },

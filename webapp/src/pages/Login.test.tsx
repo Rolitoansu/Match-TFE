@@ -5,8 +5,6 @@ import { AuthContext } from '../context/AuthContext'
 import type { User } from '../context/AuthContext'
 import Login from './Login'
 
-// ─── mocks (npm packages — vi.mock works with node_modules) ───────────────────
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
@@ -16,8 +14,6 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return { ...actual, useNavigate: () => navigateMock }
 })
-
-// ─── helper: build a complete AuthContext value with a spy login function ──────
 
 function makeAuthValue(
   loginFn: (email: string, password: string) => Promise<void> = vi.fn().mockResolvedValue(undefined),
@@ -42,13 +38,9 @@ function renderLogin(ctx = makeAuthValue()) {
   )
 }
 
-// ─── setup ────────────────────────────────────────────────────────────────────
-
 beforeEach(() => {
   navigateMock.mockReset()
 })
-
-// ─── tests ────────────────────────────────────────────────────────────────────
 
 test('renders the title, email and password labels, and the submit button', async () => {
   const screen = await renderLogin()
@@ -93,7 +85,6 @@ test('displays an error message when login fails', async () => {
 })
 
 test('the submit button is disabled while the login request is in flight', async () => {
-  // Never resolves — keeps isLoading=true so the button stays disabled
   const loginSpy = vi.fn().mockReturnValue(new Promise<void>(() => {}))
   const screen = await renderLogin(makeAuthValue(loginSpy))
 
@@ -101,6 +92,5 @@ test('the submit button is disabled while the login request is in flight', async
   await screen.getByRole('textbox').nth(1).fill('secret123')
   await screen.getByRole('button', { name: 'login.submit' }).click()
 
-  // While loading, the button shows a spinner — query by role only (no name filter)
   await expect.element(screen.getByRole('button')).toBeDisabled()
 })

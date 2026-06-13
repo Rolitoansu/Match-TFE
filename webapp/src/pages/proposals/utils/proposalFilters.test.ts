@@ -6,8 +6,6 @@ import {
 import type { Proposal } from '../model/proposalTypes'
 import { matchesSelectedTab, parseStoredFilters, sortProposals } from './proposalFilters'
 
-// ─── parseStoredFilters ───────────────────────────────────────────────────────
-
 describe('parseStoredFilters', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -77,8 +75,6 @@ describe('parseStoredFilters', () => {
   })
 })
 
-// ─── matchesSelectedTab ───────────────────────────────────────────────────────
-
 describe('matchesSelectedTab', () => {
   test('"all" matches every proposal status', () => {
     expect(matchesSelectedTab('proposed', 'all')).toBe(true)
@@ -104,8 +100,6 @@ describe('matchesSelectedTab', () => {
     expect(matchesSelectedTab('in_progress', 'completed')).toBe(false)
   })
 })
-
-// ─── sortProposals ────────────────────────────────────────────────────────────
 
 function makeProposal(overrides: Partial<Proposal>): Proposal {
   return {

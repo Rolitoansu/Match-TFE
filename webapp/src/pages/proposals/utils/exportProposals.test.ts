@@ -1,15 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import type { Proposal } from '../model/proposalTypes'
 
-// ─── Hoisted mock for generatePDF ─────────────────────────────────────────────
-
 const generatePDFMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
 vi.mock('./generatePDF', () => ({
   generateProposalsPDF: generatePDFMock,
 }))
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeProposal(overrides: Partial<Proposal> = {}): Proposal {
   return {
@@ -27,8 +23,6 @@ function makeProposal(overrides: Partial<Proposal> = {}): Proposal {
     ...overrides,
   }
 }
-
-// ─── exportToCSV ──────────────────────────────────────────────────────────────
 
 import { exportToCSV, exportToPDF } from './exportProposals'
 
@@ -82,18 +76,10 @@ describe('exportToCSV', () => {
   })
 })
 
-// ─── exportToPDF ──────────────────────────────────────────────────────────────
-//
-// NOTE: vi.mock('./generatePDF') cannot reliably intercept the live ESM binding
-// that exportProposals.ts captured at import time when running in Playwright
-// browser mode. The function is a transparent wrapper and its behaviour is
-// exercised by the integration / E2E test suite.
-
 describe('exportToPDF', () => {
   test.skip(
     'delegates to generateProposalsPDF with the given proposals and file name',
     async () => {
-      // Skipped: live ESM bindings cannot be replaced in browser-mode tests.
     },
   )
 })

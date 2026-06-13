@@ -2,16 +2,12 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { ProposalsHeader } from './ProposalsHeader'
 
-// ─── Mock ─────────────────────────────────────────────────────────────────────
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, params?: Record<string, string>) =>
       params ? `${key}:${JSON.stringify(params)}` : key,
   }),
 }))
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 test('renders the proposals title', async () => {
   const screen = await render(
@@ -83,7 +79,6 @@ test('onCreateProposal is called when the new proposal button is clicked', async
     />,
   )
 
-  // Use getByRole to target the button element directly (not a child text node)
   await screen.getByRole('button').click()
   expect(onCreateProposal).toHaveBeenCalledTimes(1)
 })

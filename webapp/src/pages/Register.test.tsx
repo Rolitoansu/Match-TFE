@@ -5,8 +5,6 @@ import { AuthContext } from '../context/AuthContext'
 import type { User } from '../context/AuthContext'
 import Register from './Register'
 
-// ─── mocks (npm packages — vi.mock works with node_modules) ───────────────────
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
@@ -16,8 +14,6 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return { ...actual, useNavigate: () => navigateMock }
 })
-
-// ─── helper: build a complete AuthContext value with a spy register function ───
 
 function makeAuthValue(
   registerFn: (
@@ -47,11 +43,6 @@ function renderRegister(ctx = makeAuthValue()) {
   )
 }
 
-/**
- * Fill all five Register form fields.
- * Input order by DOM position: [0] name, [1] surname, [2] email,
- * [3] password, [4] repeat-password.
- */
 async function fillForm(
   screen: Awaited<ReturnType<typeof render>>,
   opts: {
@@ -77,13 +68,9 @@ async function fillForm(
   await screen.getByRole('textbox').nth(4).fill(repeat)
 }
 
-// ─── setup ────────────────────────────────────────────────────────────────────
-
 beforeEach(() => {
   navigateMock.mockReset()
 })
-
-// ─── tests ────────────────────────────────────────────────────────────────────
 
 test('renders the title and a link to the login page', async () => {
   const screen = await renderRegister()
@@ -96,7 +83,6 @@ test('renders the title and a link to the login page', async () => {
 test('renders all five form fields', async () => {
   const screen = await renderRegister()
 
-  // Verify each of the five inputs is accessible by index
   for (let i = 0; i < 5; i++) {
     await expect.element(screen.getByRole('textbox').nth(i)).toBeInTheDocument()
   }

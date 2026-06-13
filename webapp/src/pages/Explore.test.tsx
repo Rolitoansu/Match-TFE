@@ -1,12 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { MemoryRouter } from 'react-router-dom'
-
-// ─── mock axios BEFORE any module that uses it is imported ────────────────────
-// We mock the axios package itself so that axios.create() returns a spy object.
-// This must come before the import of Explore (which transitively imports api/axios
-// which calls axios.create() at module load time).
-
 const getMock = vi.hoisted(() => vi.fn())
 const postMock = vi.hoisted(() => vi.fn())
 
@@ -32,8 +26,6 @@ vi.mock('axios', () => {
   }
 })
 
-// ─── mocks (npm packages — must come after axios mock) ────────────────────────
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, params?: Record<string, string>) =>
@@ -47,12 +39,7 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => navigateMock }
 })
 
-// ─── lazy import so the axios mock is already in place ────────────────────────
-// Using dynamic import ensures the module sees the mocked axios.create().
-
 const { default: Explore } = await import('./Explore')
-
-// ─── fixtures ─────────────────────────────────────────────────────────────────
 
 function makeProposal(overrides: Record<string, unknown> = {}) {
   return {
@@ -82,8 +69,6 @@ function makeExploreResponse(overrides: Record<string, unknown> = {}) {
   }
 }
 
-// ─── helper ───────────────────────────────────────────────────────────────────
-
 function renderExplore() {
   return render(
     <MemoryRouter>
@@ -92,18 +77,13 @@ function renderExplore() {
   )
 }
 
-// ─── setup ────────────────────────────────────────────────────────────────────
-
 beforeEach(() => {
   navigateMock.mockReset()
   getMock.mockReset()
   postMock.mockReset()
 })
 
-// ─── tests ────────────────────────────────────────────────────────────────────
-
 test('shows a loading indicator while the data is being fetched', async () => {
-  // Never resolves — keeps loading state alive during the assertion
   getMock.mockReturnValue(new Promise(() => {}))
 
   const screen = await renderExplore()

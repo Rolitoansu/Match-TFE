@@ -3,13 +3,9 @@ import { render } from 'vitest-browser-react'
 import type { Proposal } from '../model/proposalTypes'
 import { ProposalCard } from './ProposalCard'
 
-// ─── Mock ─────────────────────────────────────────────────────────────────────
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeProposal(overrides: Partial<Proposal> = {}): Proposal {
   return {
@@ -28,8 +24,6 @@ function makeProposal(overrides: Partial<Proposal> = {}): Proposal {
     ...overrides,
   }
 }
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 test('renders the proposal title and the creator name', async () => {
   const screen = await render(
