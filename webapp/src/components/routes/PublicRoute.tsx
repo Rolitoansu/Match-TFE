@@ -4,9 +4,5 @@ import useAuth from '../../hooks/useAuth'
 export const PublicRoute = () => {
     const { user } = useAuth()
 
-    if (user) {
-        return <Navigate to="/home" replace />
-    }
-
-    return <Outlet />
+    return user ? <Navigate to="/home" replace /> : <Outlet />
 };

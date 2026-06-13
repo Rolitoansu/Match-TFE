@@ -142,7 +142,6 @@ export class ProjectApplicationService {
 
             const likedByCurrentUser = interestedMatches.some((match: { userId: number }) => match.userId === currentUser.id)
             
-                // Check if current user has rejected/passed this proposal
                 const userRejection = proposalMatches.find(
                     (match: { userId: number; status: 'pending' | 'accepted' | 'rejected' }) => match.userId === currentUser.id && match.status === 'rejected'
                 )
@@ -518,7 +517,6 @@ export class ProjectApplicationService {
             if (!existingInteraction) {
                 await this.projectRepository.insertMatch(projectId, currentUser.id, 'pending', trx)
             } else if (existingInteraction.status !== 'accepted') {
-                // Debounce rapid unlike/like: if last updated within lapseSeconds, do not count as new like
                 const lastUpdated = existingInteraction.updatedAt ? new Date(existingInteraction.updatedAt).getTime() : 0
                 if (now - lastUpdated >= lapseSeconds * 1000) {
                     await this.projectRepository.updateMatchStatus(projectId, currentUser.id, 'pending', trx)
