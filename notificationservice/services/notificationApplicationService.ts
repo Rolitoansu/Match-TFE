@@ -319,7 +319,7 @@ export class NotificationApplicationService {
         ? `\nY ${unreadForUser.length - 10} notificaciones más sin leer.`
         : ''
 
-      const text = `Hola ${user.name},\n\nTienes ${unreadForUser.length} notificaciones sin leer en Match-TFE.\n\nResumen:\n${lines.join('\n')}${moreLine}\n\nEntra en la plataforma para revisarlas.\n\nUn saludo,\nEquipo Match-TFE`
+      const text = `Hola ${user.name},\n\nTienes ${unreadForUser.length} notificaciones sin leer en Match-TFE.\n\nResumen:\n${lines.join('\n')}${moreLine}\n\nEntra en la plataforma para revisarlas.\n\nUn saludo,\nMatch-TFE`
       const htmlItems = unreadForUser
         .slice(0, 10)
         .map((notification) => `<li style="margin:0 0 12px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc;"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2563eb;margin-bottom:6px;">${escapeHtml(notification.type)}</div><div style="font-size:15px;line-height:1.6;color:#0f172a;">${escapeHtml(notification.content).replace(/\n/g, '<br/>')}</div></li>`)
@@ -343,7 +343,7 @@ export class NotificationApplicationService {
           <div style="margin-bottom:10px;font-size:15px;font-weight:700;color:#0f172a;">Resumen</div>
           <ul style="list-style:none;padding:0;margin:0;">${htmlItems}</ul>
           ${htmlMoreLine}`,
-          footer: 'Entra en Match-TFE para revisarlas. Un saludo, Equipo Match-TFE.',
+          footer: 'Entra en Match-TFE para revisarlas. Un saludo, Match-TFE.',
         }),
       })
 
